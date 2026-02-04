@@ -7,11 +7,11 @@
 - **User Model:** Define the `User` struct (ID, Username, PasswordHash) and auto-migrate schema using GORM.
 - **Authentication APIs:**
     - `POST /register`: Accept JSON, hash password (bcrypt), create user in SQLite.
-    - `POST /login`: Verify credentials, generate **JWT**.
-- **Middleware:** Create an Auth Middleware function to validate JWTs on protected routes.
+    - `POST /login`: Verify credentials, generate **JWT**, and set it (or a refresh token) in an **HttpOnly**, **Secure**, `SameSite=strict` cookie rather than exposing it to JavaScript.
+- **Middleware:** Create an Auth Middleware function to validate JWTs from cookies on protected routes and implement CSRF protections (e.g., same-site cookies plus CSRF token) and basic XSS mitigations (input validation, safe templating, CSP).
 #### **Frontend (Angular + RxJS)**
 - **Project Initialization:** Create Angular app with routing enabled.
-- **Auth Service:** Implement `AuthService` to handle HTTP calls and store JWTs in `localStorage`.
+- **Auth Service:** Implement `AuthService` to handle HTTP calls and rely on JWTs sent via HttpOnly cookies (optionally keeping only a short-lived access token in memory); avoid storing JWTs in `localStorage` or other JavaScript-accessible persistent storage.
 - **Auth Views:** Create `LoginComponent` and `RegisterComponent` with form validation.
 - **Routing:** Set up `AuthGuard` to redirect unauthenticated users to Login.
 - **Dashboard Shell:** Create a basic `HomeComponent` that displays the logged-in username.
