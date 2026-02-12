@@ -12,9 +12,8 @@ def parse_and_create_issues(filename):
         print(f"Error: File '{filename}' not found.")
         sys.exit(1)
 
-    # 1. Generate a label from the filename (e.g., "sprint1_plan.md" -> "sprint1")
-    # We strip the extension and any trailing "_plan" or similar if you prefer, 
-    # but simplest is just taking the root filename.
+    # 1. Generate a label from the filename (e.g., "sprint1_plan.md" -> "sprint1_plan")
+    # We strip only the file extension and use the root filename as the sprint label.
     base_name = os.path.basename(filename)
     sprint_label = os.path.splitext(base_name)[0]
 
@@ -35,7 +34,14 @@ def parse_and_create_issues(filename):
         parts = chunk.split('\n', 1)
         title = parts[0].strip()
         body = parts[1].strip() if len(parts) > 1 else ""
-        body = re.sub(r'\n---\s*$', '', body).strip()
+        
+        if body:
+            lines = body.splitlines()
+            for idx in range(len(lines) - 1, -1, -1):
+                if re.fullmatch(r'---\s*', lines[idx]):
+                    del lines[idx]
+                    break
+            body = "\n".join(lines).strip()
 
         if not title:
             continue
@@ -69,7 +75,7 @@ def parse_and_create_issues(filename):
                 check=True
             )
             print(f" ✅ Success: {result.stdout.strip()}")
-            time.sleep(1) # Rate limit protection
+            time.sleep(0.1) # Rate limit protection
             
         except subprocess.CalledProcessError as e:
             print(f" ❌ Failed to create issue '{title}'")

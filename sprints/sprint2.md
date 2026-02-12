@@ -20,7 +20,7 @@ Define the `Room` data structure in GORM. A room represents a single game instan
 ### Checklist
 - [ ] Create `Room` struct in `pkg/models` (Code, HostID, Status, MaxPlayers).
 - [ ] Add `rooms` to GORM AutoMigration in `main.go`.
-- [ ] Create a helper function `GenerateRoomCode()` that produces a random 6-char string (A-Z, 0-9).
+- [ ] Create a helper function `GenerateRoomCode()` (in `pkg/utils` or the room service/handler layer) that produces a random 6-char string (A-Z, 0-9).
 - [ ] Define Room Status constants (`WAITING`, `PLAYING`, `FINISHED`).
 
 ---
