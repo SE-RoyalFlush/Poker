@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-server
+/backend/cmd/server/server
 
 # macOS
 .DS_Store
