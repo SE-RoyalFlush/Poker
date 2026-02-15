@@ -1,0 +1,14 @@
+# Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
