@@ -13,14 +13,15 @@ This guide will help you set up and run the Poker backend server locally.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/pshimanshu/Poker.git
+git clone https://github.com/SE-RoyalFlush/Poker.git
 cd Poker/backend
 ```
 
-### 2. Initialize Go Module
+### 2. Verify Go Modules
 
 ```bash
-go mod init github.com/pshimanshu/Poker/backend
+go mod download
+go mod tidy
 ```
 
 ### 3. Run
