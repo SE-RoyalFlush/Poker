@@ -1,0 +1,95 @@
+openapi: 3.0.3
+info:
+  title: Poker Backend API
+  version: 0.1.0
+  description: >
+    OpenAPI spec for the Poker backend (Go + Gorilla Mux).
+servers:
+  - url: http://localhost:8080
+    description: Local server
+
+tags:
+  - name: System
+    description: System/health endpoints
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Returns server liveness status.
+      operationId: getHealth
+      responses:
+        "200":
+          description: Server is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: alive
+
+  # Note: OpenAPI can't truly describe "any unmatched route" behavior in `paths`,
+  # so we document the 404 response format and provide an example route.
+  /random:
+    get:
+      tags: [System]
+      summary: Example of standardized 404 response
+      description: >
+        This route is not implemented; it exists in this spec only to show the
+        structured JSON 404 error returned by the API for unknown routes.
+      operationId: getRandomExample404
+      responses:
+        "404":
+          description: Not Found (standard error format)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Not Found
+                message: The requested resource was not found
+                status: 404
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          description: Liveness indicator
+          enum: [alive]
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error, message, status]
+      properties:
+        error:
+          type: string
+          description: High-level error type/category
+          example: Not Found
+        message:
+          type: string
+          description: Human-readable error message
+          example: The requested resource was not found
+        status:
+          type: integer
+          format: int32
+          description: HTTP status code
+          example: 404
+
+  responses:
+    NotFound:
+      description: Standard 404 response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Not Found
+            message: The requested resource was not found
+            status: 404
