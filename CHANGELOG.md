@@ -7,5 +7,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Basic Go Setup: Health Check and APIs](https://github.com/pshimanshu/Poker/issues/3)
 
 ### Fixed
