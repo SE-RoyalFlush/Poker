@@ -17,10 +17,11 @@ git clone https://github.com/pshimanshu/Poker.git
 cd Poker/backend
 ```
 
-### 2. Initialize Go Module
+### 2. Verify Go Modules
 
 ```bash
-go mod init github.com/pshimanshu/Poker/backend
+go mod download
+go mod tidy
 ```
 
 ### 3. Run
