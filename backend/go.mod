@@ -1,4 +1,4 @@
-module github.com/pshimanshu/Poker/backend
+module github.com/SE-RoyalFlush/Poker/backend
 
 go 1.25.6
 

@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/gorilla/mux"
-	"github.com/pshimanshu/Poker/backend/pkg/api"
 )
 
 func main() {
