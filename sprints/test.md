@@ -19,7 +19,7 @@ We need to initialize the Go project structure to support a clean architecture. 
 * **Verify 404:** Call a random route (e.g., `/random`) and ensure it returns a structured JSON 404 error, not the default text.
 
 ### Checklist
-- [ ] Initialize `go.mod` with project name `github.com/royalflush/backend`.
+- [ ] Initialize `go.mod` with project name `github.com/SE-RoyalFlush/Poker/backend`.
 - [ ] Create folder structure: `cmd/server`, `pkg/api`, `pkg/models`, `pkg/middleware`.
 - [ ] Install `github.com/gorilla/mux`.
 - [ ] Implement `main.go` to initialize the server.

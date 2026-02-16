@@ -1,0 +1,28 @@
+meta {
+  name: random-404
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/random
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("status is 404", function () {
+    expect(res.status).to.equal(404);
+  });
+  
+  test("structured error body", function () {
+    expect(res.body.error).to.equal("Not Found");
+    expect(res.body.message).to.exist;
+    expect(res.body.status).to.equal(404);
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
