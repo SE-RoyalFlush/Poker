@@ -15,9 +15,9 @@ assignees: ''
 Detailed description
 
 ### Checklist
-- [x] Task 1
-- [x] Task 2
+- [ ] Task 1
+- [ ] Task 2
 - [ ] Task 3
 
 ### Test Outline
-* **Verify Server Start:** Ensure the application starts on port 8080 without panic.
+* **Test Case 1:** Description of test case.
