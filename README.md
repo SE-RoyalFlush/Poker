@@ -40,7 +40,7 @@ The application emphasizes low-latency communication and a responsive user exper
 
 | Role | Name |
 | :---: | :---: |
-| **Backend** | Sai Puneeth Bonagiri<br>Sai Shravanth Reddy Madem |
-| **Frontend** | Himanshu Potham Shetty<br>Devi Sanikommu |
+| **Backend** | Sai Puneeth Bonagiri<br>Himanshu Potham Shetty |
+| **Frontend** | Sai Shravanth Reddy Madem<br>Devi Sanikommu |
 
 ---
