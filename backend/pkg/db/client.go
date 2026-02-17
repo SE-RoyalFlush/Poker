@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,6 +17,8 @@ var (
 	instance *gorm.DB
 	once     sync.Once
 	dbErr    error
+
+	ErrNotInitialized = errors.New("database not initialized: call Connect() first")
 )
 
 // Config holds database configuration
@@ -44,6 +47,10 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 	once.Do(func() {
 		if cfg == nil {
 			cfg = DefaultConfig()
+		}
+
+		if os.Getenv("ENVIRONMENT") == "production" {
+			cfg.LogLevel = logger.Silent
 		}
 
 		// Ensure the data directory exists
@@ -108,7 +115,10 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 // Returns error if Connect() hasn't been called successfully
 func GetDB() (*gorm.DB, error) {
 	if instance == nil {
-		return nil, dbErr
+		if dbErr != nil {
+			return nil, dbErr
+		}
+		return nil, ErrNotInitialized
 	}
 	return instance, nil
 }
@@ -137,7 +147,10 @@ func Close() error {
 // Ping verifies database connectivity
 func Ping() error {
 	if instance == nil {
-		return dbErr
+		if dbErr != nil {
+			return dbErr
+		}
+		return ErrNotInitialized
 	}
 
 	sqlDB, err := instance.DB()
@@ -146,4 +159,10 @@ func Ping() error {
 	}
 
 	return sqlDB.Ping()
+}
+
+func ResetForTesting() {
+	instance = nil
+	dbErr = nil
+	once = sync.Once{}
 }

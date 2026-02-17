@@ -108,4 +108,3 @@ components:
             error: Not Found
             message: The requested resource was not found
             status: 404
-            

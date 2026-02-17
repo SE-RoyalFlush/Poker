@@ -11,16 +11,11 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/gorilla/mux"
-	"gorm.io/gorm/logger"
 )
 
 func main() {
 	// Initialize database connection
 	dbCfg := db.DefaultConfig()
-
-	if os.Getenv("ENVIRONMENT") == "production" {
-		dbCfg.LogLevel = logger.Silent
-	}
 
 	_, err := db.Connect(dbCfg)
 	if err != nil {
