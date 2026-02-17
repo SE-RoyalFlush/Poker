@@ -26,6 +26,52 @@ The application emphasizes low-latency communication and a responsive user exper
 
 ---
 
+## 🧱 Frontend Baseline Decisions
+
+This project has a locked frontend baseline that must stay stable before feature work.
+
+### Node Policy
+* Required runtime: **Node 20 LTS**
+* Source of truth: `.nvmrc` contains `20`
+* Enforcement:
+  * `frontend/package.json` -> `"engines": { "node": "20.x" }`
+  * `frontend/.npmrc` -> `engine-strict=true`
+* Developer workflow: run `nvm use 20` before any frontend `npm` command
+
+### Angular Version Policy
+* All `@angular/*` packages are pinned to `21.1.4` in `frontend/package.json`
+* No caret ranges are used for Angular packages to prevent team drift
+
+### UI Library Decision
+* Chosen UI library: **Angular Material**
+* Installed and pinned packages:
+  * `@angular/material@21.1.4`
+  * `@angular/cdk@21.1.4`
+  * `@angular/animations@21.1.4`
+* Configuration:
+  * Theme import in `frontend/src/styles.scss`
+  * Animations provider in `frontend/src/app/app.config.ts`
+* Baseline usage example: `frontend/src/app/pages/login/login.html` renders Material components (`mat-card`, `mat-raised-button`)
+
+### Routing Architecture
+* Public routes:
+  * `/login`
+  * `/register`
+* Protected-shell routes (auth guard intentionally deferred):
+  * `/dashboard`
+  * `/lobby`
+  * `/table/:id`
+* Redirects:
+  * `/` -> `/login`
+  * `**` -> `/login`
+* Route config location: `frontend/src/app/app.routes.ts`
+
+### Scope Guard
+* Baseline setup includes **only** structural placeholders and configuration
+* Authentication logic and feature logic are intentionally out of scope
+
+---
+
 ## 🛠 Tech Stack
 
 | Domain | Technology | Usage |
