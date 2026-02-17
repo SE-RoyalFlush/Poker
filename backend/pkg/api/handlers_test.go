@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"gorm.io/gorm/logger"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
@@ -57,8 +59,8 @@ var _ = Describe("API Handlers", func() {
 					DatabasePath:    tempDir + "/test.db",
 					MaxOpenConns:    10,
 					MaxIdleConns:    2,
-					ConnMaxLifetime: 5,
-					LogLevel:        0, // Silent
+					ConnMaxLifetime: 5 * time.Minute,
+					LogLevel:        logger.Silent,
 				}
 				_, err := db.Connect(cfg)
 				Expect(err).NotTo(HaveOccurred())

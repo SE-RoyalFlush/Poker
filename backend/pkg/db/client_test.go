@@ -117,4 +117,37 @@ var _ = Describe("Database Client", func() {
 		err := db.Close()
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	It("should allow retry after failed connection", func() {
+		// First attempt with invalid path
+		invalidCfg := &db.Config{
+			DatabasePath:    "/invalid/path/test.db",
+			MaxOpenConns:    10,
+			MaxIdleConns:    2,
+			ConnMaxLifetime: 1 * time.Minute,
+			LogLevel:        logger.Silent,
+		}
+
+		instance1, err1 := db.Connect(invalidCfg)
+		Expect(err1).To(HaveOccurred())
+		Expect(instance1).To(BeNil())
+
+		// Second attempt with valid path should succeed
+		testDBPath := filepath.Join(tempDir, "test.db")
+		validCfg := &db.Config{
+			DatabasePath:    testDBPath,
+			MaxOpenConns:    10,
+			MaxIdleConns:    2,
+			ConnMaxLifetime: 1 * time.Minute,
+			LogLevel:        logger.Silent,
+		}
+
+		instance2, err2 := db.Connect(validCfg)
+		Expect(err2).NotTo(HaveOccurred())
+		Expect(instance2).NotTo(BeNil())
+
+		// Verify connection works
+		err := db.Ping()
+		Expect(err).NotTo(HaveOccurred())
+	})
 })
