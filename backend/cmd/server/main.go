@@ -47,6 +47,17 @@ func main() {
 	}()
 
 	// Initialize router
+	envLoaded := false
+	for _, envPath := range []string{".env", "../.env"} {
+		if err := godotenv.Load(envPath); err == nil {
+			envLoaded = true
+			break
+		}
+	}
+	if !envLoaded {
+		log.Println("No .env file found; using system environment variables")
+	}
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/health", api.HealthHandler).Methods("GET")
@@ -87,6 +98,29 @@ func main() {
 	})
 
 	// Start server with timeouts and graceful shutdown
+	csrfAuthKey := []byte(os.Getenv("CSRF_AUTH_KEY"))
+	if len(csrfAuthKey) != 32 {
+		log.Println("CSRF_AUTH_KEY must be 32 bytes; using insecure development key")
+		csrfAuthKey = []byte("dev-only-32-byte-csrf-secret-key!")
+	}
+
+	csrfMiddleware := csrf.Protect(
+		csrfAuthKey,
+		csrf.RequestHeader("X-CSRF-Token"),
+		csrf.Path("/"),
+		csrf.Secure(false),
+		csrf.HttpOnly(true),
+		csrf.SameSite(csrf.SameSiteLaxMode),
+	)
+
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:4200"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"X-CSRF-Token"},
+		AllowCredentials: true,
+	})
+
 	srv := &http.Server{
 		Addr:         ":8080",
 		Handler:      corsMiddleware.Handler(csrfMiddleware(router)),
