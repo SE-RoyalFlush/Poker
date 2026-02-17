@@ -17,10 +17,6 @@ tests {
   
   test("body.status is alive", function () {
     expect(res.body.status).to.equal("alive");
+    expect(res.body.database).to.equal("connected");
   });
-}
-
-settings {
-  encodeUrl: true
-  timeout: 0
 }
