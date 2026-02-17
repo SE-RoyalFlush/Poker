@@ -38,7 +38,7 @@ func main() {
 	csrfAuthKey := []byte(os.Getenv("CSRF_AUTH_KEY"))
 	if len(csrfAuthKey) != 32 {
 		log.Println("CSRF_AUTH_KEY must be 32 bytes; using insecure development key")
-		csrfAuthKey = []byte("dev-only-32-byte-csrf-secret-key!")
+		csrfAuthKey = []byte("dev-only-32-byte-csrf-secret-key")
 	}
 
 	csrfMiddleware := csrf.Protect(
