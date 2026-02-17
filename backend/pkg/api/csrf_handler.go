@@ -17,6 +17,8 @@ func CSRFTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-CSRF-Token", token)
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Pragma", "no-cache")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(CSRFResponse{CSRFToken: token}); err != nil {
