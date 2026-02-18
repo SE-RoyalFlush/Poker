@@ -136,11 +136,8 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 	if err := instance.AutoMigrate(models.AllModels()...); err != nil {
 		dbErr = err
 		log.Printf("Failed to run migrations: %v", err)
-		if sqlDB, err := instance.DB(); err == nil {
-			err := sqlDB.Close()
-			if err != nil {
-				return nil, err
-			}
+		if closeErr := sqlDB.Close(); closeErr != nil {
+			return nil, closeErr
 		}
 		instance = nil
 		return nil, dbErr
