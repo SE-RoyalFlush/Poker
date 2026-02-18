@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,10 +16,11 @@ import (
 
 var (
 	instance    *gorm.DB
-	mu          sync.Mutex
+	mu          sync.RWMutex
 	initialized bool
 
 	ErrNotInitialized = errors.New("database not initialized: call Connect() first")
+	ErrInvalidPath    = errors.New("database path cannot be empty")
 	dbErr             = ErrNotInitialized
 )
 
@@ -56,6 +58,13 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 
 	if cfg == nil {
 		cfg = DefaultConfig()
+	}
+
+	// Validate database path
+	if strings.TrimSpace(cfg.DatabasePath) == "" {
+		dbErr = ErrInvalidPath
+		log.Printf("Failed to connect: %v", dbErr)
+		return nil, dbErr
 	}
 
 	if os.Getenv("ENVIRONMENT") == "production" {
@@ -105,6 +114,9 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 	if err := instance.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
 		dbErr = err
 		log.Printf("Failed to enable foreign keys: %v", err)
+		if closeErr := sqlDB.Close(); closeErr != nil {
+			log.Printf("Error closing database after failed foreign key enable: %v", closeErr)
+		}
 		instance = nil
 		return nil, dbErr
 	}
@@ -128,6 +140,9 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 // GetDB returns the existing database instance
 // Returns error if Connect() hasn't been called successfully
 func GetDB() (*gorm.DB, error) {
+	mu.RLock()
+	defer mu.RUnlock()
+
 	if instance == nil {
 		return nil, dbErr
 	}
@@ -137,6 +152,9 @@ func GetDB() (*gorm.DB, error) {
 // Close closes the database connection
 // Should be called during graceful shutdown
 func Close() error {
+	mu.Lock()
+	defer mu.Unlock()
+
 	if instance == nil {
 		return nil
 	}
@@ -151,12 +169,20 @@ func Close() error {
 		return err
 	}
 
+	// Reset singleton state to allow reconnection
+	instance = nil
+	initialized = false
+	dbErr = ErrNotInitialized
+
 	log.Println("✓ Database connection closed")
 	return nil
 }
 
 // Ping verifies database connectivity
 func Ping() error {
+	mu.RLock()
+	defer mu.RUnlock()
+
 	if instance == nil {
 		return dbErr
 	}
