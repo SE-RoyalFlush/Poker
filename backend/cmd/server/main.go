@@ -10,10 +10,24 @@ import (
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 func main() {
+	envLoaded := false
+	for _, envPath := range []string{".env", "../.env"} {
+		if err := godotenv.Load(envPath); err == nil {
+			envLoaded = true
+			break
+		}
+	}
+	if !envLoaded {
+		log.Println("No .env file found; using system environment variables")
+	}
+
 	// Initialize database connection
 	dbCfg := db.DefaultConfig()
 
@@ -36,13 +50,46 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/health", api.HealthHandler).Methods("GET")
+	router.HandleFunc("/api/csrf", api.CSRFTokenHandler).Methods("GET")
 
 	router.NotFoundHandler = http.HandlerFunc(api.NotFoundHandler)
+
+	csrfAuthKey := []byte(os.Getenv("CSRF_AUTH_KEY"))
+	if len(csrfAuthKey) != 32 {
+		log.Println("CSRF_AUTH_KEY must be 32 bytes; using insecure development key")
+		csrfAuthKey = []byte("dev-only-32-byte-csrf-secret-key")
+	}
+
+	// Configure whether the CSRF cookie should be marked Secure.
+	// Default to Secure=true, and only disable it in explicit development environments.
+	appEnv := os.Getenv("APP_ENV")
+	goEnv := os.Getenv("GO_ENV")
+	csrfSecure := true
+	if appEnv == "development" || goEnv == "development" {
+		csrfSecure = false
+	}
+
+	csrfMiddleware := csrf.Protect(
+		csrfAuthKey,
+		csrf.RequestHeader("X-CSRF-Token"),
+		csrf.Path("/"),
+		csrf.Secure(csrfSecure),
+		csrf.HttpOnly(true),
+		csrf.SameSite(csrf.SameSiteLaxMode),
+	)
+
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:4200"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"X-CSRF-Token"},
+		AllowCredentials: true,
+	})
 
 	// Start server with timeouts and graceful shutdown
 	srv := &http.Server{
 		Addr:         ":8080",
-		Handler:      router,
+		Handler:      corsMiddleware.Handler(csrfMiddleware(router)),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
