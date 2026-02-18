@@ -12,3 +12,7 @@
 # IDE
 .vscode/
 .idea/
+
+# Environment files
+.env
+*.env

@@ -1,0 +1,52 @@
+name: Backend Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/pull_request_test.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/pull_request_test.yml'
+
+jobs:
+  test:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Verify Go installation
+        run: go version
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Clean test cache
+        working-directory: ./backend
+        run: go clean -testcache
+
+      - name: Run tests
+        working-directory: ./backend
+        run: go test -v -race -cover ./pkg/...
+
+      - name: Test summary
+        if: always()
+        working-directory: ./backend
+        run: |
+          echo "✅ Backend tests completed"
+          go test -cover ./pkg/... | grep -E "coverage|PASS|FAIL"
