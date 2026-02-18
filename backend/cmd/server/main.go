@@ -41,11 +41,20 @@ func main() {
 		csrfAuthKey = []byte("dev-only-32-byte-csrf-secret-key")
 	}
 
+	// Configure whether the CSRF cookie should be marked Secure.
+	// Default to Secure=true, and only disable it in explicit development environments.
+	appEnv := os.Getenv("APP_ENV")
+	goEnv := os.Getenv("GO_ENV")
+	csrfSecure := true
+	if appEnv == "development" || goEnv == "development" {
+		csrfSecure = false
+	}
+
 	csrfMiddleware := csrf.Protect(
 		csrfAuthKey,
 		csrf.RequestHeader("X-CSRF-Token"),
 		csrf.Path("/"),
-		csrf.Secure(false),
+		csrf.Secure(csrfSecure),
 		csrf.HttpOnly(true),
 		csrf.SameSite(csrf.SameSiteLaxMode),
 	)
