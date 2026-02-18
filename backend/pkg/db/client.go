@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -130,7 +131,20 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 
 	log.Printf("✓ Database connection established: %s", cfg.DatabasePath)
 
-	// Only mark as initialized after successful connection
+	// Run auto-migrations for all models
+	log.Println("Running database migrations...")
+	if err := instance.AutoMigrate(models.AllModels()...); err != nil {
+		dbErr = err
+		log.Printf("Failed to run migrations: %v", err)
+		if sqlDB, err := instance.DB(); err == nil {
+			sqlDB.Close()
+		}
+		instance = nil
+		return nil, dbErr
+	}
+	log.Println("✓ Database migrations completed")
+
+	// Only mark as initialized after successful connection and migration
 	initialized = true
 	dbErr = nil
 

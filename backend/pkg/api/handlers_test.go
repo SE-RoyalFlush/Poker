@@ -23,7 +23,7 @@ var _ = Describe("API Handlers", func() {
 		)
 
 		BeforeEach(func() {
-			req = httptest.NewRequest(http.MethodGet, "/health", nil)
+			req = httptest.NewRequest(http.MethodGet, "/api/health", nil)
 			recorder = httptest.NewRecorder()
 		})
 
