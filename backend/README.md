@@ -30,8 +30,13 @@ go mod tidy
 go run ./cmd/server
 ```
 
-### 4. API Quick Check
-Health Check: Expected `200 OK`
+### 4. Run Tests
 ```bash
-curl -i http://localhost:8080/health
+go clean -testcache
+
+# Run all tests
+go test ./pkg/...
+
+# Run tests with coverage
+go test -cover ./pkg/...
 ```
