@@ -46,6 +46,7 @@ func main() {
 		}
 	}()
 
+	// Initialize router
 	router := mux.NewRouter()
 
 	router.HandleFunc("/health", api.HealthHandler).Methods("GET")
@@ -85,6 +86,7 @@ func main() {
 		AllowCredentials: true,
 	})
 
+	// Start server with timeouts and graceful shutdown
 	srv := &http.Server{
 		Addr:         ":8080",
 		Handler:      corsMiddleware.Handler(csrfMiddleware(router)),

@@ -12,6 +12,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 	github.com/rs/cors v1.11.1
+	github.com/gorilla/mux v1.8.1
+	github.com/onsi/ginkgo/v2 v2.28.1
+	github.com/onsi/gomega v1.39.1
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
 )
