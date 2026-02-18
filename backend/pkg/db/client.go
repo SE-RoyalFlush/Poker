@@ -137,7 +137,10 @@ func Connect(cfg *Config) (*gorm.DB, error) {
 		dbErr = err
 		log.Printf("Failed to run migrations: %v", err)
 		if sqlDB, err := instance.DB(); err == nil {
-			sqlDB.Close()
+			err := sqlDB.Close()
+			if err != nil {
+				return nil, err
+			}
 		}
 		instance = nil
 		return nil, dbErr

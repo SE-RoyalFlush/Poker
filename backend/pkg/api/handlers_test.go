@@ -33,7 +33,10 @@ var _ = Describe("API Handlers", func() {
 			})
 
 			AfterEach(func() {
-				db.Close()
+				err := db.Close()
+				if err != nil {
+					return
+				}
 			})
 
 			It("should return status alive and database disconnected", func() {
@@ -67,7 +70,10 @@ var _ = Describe("API Handlers", func() {
 			})
 
 			AfterEach(func() {
-				db.Close()
+				err := db.Close()
+				if err != nil {
+					return
+				}
 			})
 
 			It("should return status alive and database connected", func() {

@@ -86,7 +86,10 @@ var _ = Describe("Auth API", func() {
 				Expect(recorder.Code).To(Equal(http.StatusConflict))
 
 				var errResp api.ErrorResponse
-				json.Unmarshal(recorder.Body.Bytes(), &errResp)
+				err := json.Unmarshal(recorder.Body.Bytes(), &errResp)
+				if err != nil {
+					return
+				}
 				Expect(errResp.Error).To(Equal("Conflict"))
 			})
 		})
