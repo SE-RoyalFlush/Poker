@@ -43,7 +43,6 @@
     "@angular/build": "21.1.4",
     "@angular/cli": "21.1.4",
     "@angular/compiler-cli": "21.1.4",
-    "@angular/material": "^21.1.4",
     "@types/lodash": "^4.17.23",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
