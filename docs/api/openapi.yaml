@@ -7,12 +7,14 @@ info:
     Currently includes health check with database status and standardized JSON error format.
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/api
     description: Local server
 
 tags:
   - name: System
     description: System/health endpoints
+  - name: Authentication
+    description: User registration and login
 
 paths:
   /health:
@@ -39,6 +41,65 @@ paths:
                   value:
                     status: alive
                     database: disconnected
+
+  /register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      description: Accepts a username and password, hashes the password, and creates a new user in the database.
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad Request (validation failed or invalid JSON)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                shortUsername:
+                  summary: Username too short
+                  value:
+                    error: Bad Request
+                    message: Username must be at least 3 characters
+                    status: 400
+                shortPassword:
+                  summary: Password too short
+                  value:
+                    error: Bad Request
+                    message: Password must be at least 6 characters
+                    status: 400
+        "409":
+          description: Conflict (username already exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Conflict
+                message: Username already exists
+                status: 409
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Internal Server Error
+                message: Database error
+                status: 500
 
   # Note: OpenAPI can't truly describe "any unmatched route" behavior in `paths`,
   # so we document the 404 response format and provide an example route.
@@ -77,6 +138,40 @@ components:
           type: string
           description: Database connection status
           enum: [connected, disconnected]
+
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          example: testuser
+        password:
+          type: string
+          minLength: 6
+          example: password123
+
+    User:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+        DeletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        username:
+          type: string
+          example: testuser
+      required: [ID, username]
 
     ErrorResponse:
       type: object
