@@ -1,24 +1,28 @@
-# Sprint 1 Retrospective: Backend Foundation
+# Sprint 1 Retrospective: Backend & Frontend Foundation
 
 **Sprint Duration:** Sprint 1  
-**Team Focus:** Backend Development  
+**Team Focus:** Backend Development + Frontend Scaffolding  
 **Date:** February 2026
 
 ---
 
 ## Executive Summary
 
-Sprint 1 established the foundational architecture for our Poker platform's backend. While we did not achieve our original ambitious goal of a complete authentication system with frontend integration, we successfully built a secure, production-ready foundation that follows industry best practices and Go conventions.
+Sprint 1 established the foundational architecture for both backend and frontend development on the Poker platform. We did not complete the full secure authentication user journey, but we delivered a strong backend core and a usable Angular frontend scaffold that is ready for integration work in Sprint 2.
 
 **Key Achievements:**
 - Established Go project structure with clean architecture
 - Implemented database layer with GORM and SQLite
 - Configured production-grade security middleware (CORS & CSRF)
 - Delivered first functional API endpoint (User Registration)
+- Initialized Angular workspace with Angular Material and routing
+- Added frontend route skeleton with public and protected-shell paths
+- Created initial page scaffolds and backend API proxy configuration
 
 **Completion Rate:** 
-Backend: 5/6 planned issues completed + 1 new issue
+Backend: 4/6 planned issues completed + 1 new issue
 Frontend: 1/6 planned issues completed + 2 new issues
+Overall: 5/12 planned issues completed, with 8 total work items delivered including unplanned scope
 
 
 ---
@@ -212,6 +216,90 @@ type User struct {
 
 ---
 
+### Phase 6: Frontend Initialization & Global Styles (Issue #1-6)
+
+In parallel with backend hardening, we established the Angular frontend baseline and development tooling.
+
+**Implementation Details:**
+- Initialized Angular workspace in `frontend/` with standalone component architecture
+- Installed and configured Angular Material (`@angular/material`, `@angular/cdk`, `@angular/animations`)
+- Added Material prebuilt theme (`indigo-pink`) in `frontend/angular.json`
+- Configured global styling and typography baseline in `frontend/src/styles.scss`
+- Enforced Node version policy with `engines.node: 20.x` in `frontend/package.json`
+- Added `lodash` and `@types/lodash` as utility dependencies
+
+**Key Files Created:**
+- [frontend/angular.json](frontend/angular.json) - Angular build/serve configuration and global theme setup
+- [frontend/package.json](frontend/package.json) - Frontend dependencies and scripts
+- [frontend/src/styles.scss](frontend/src/styles.scss) - Global styles and Material surface defaults
+- [frontend/src/app/app.config.ts](frontend/src/app/app.config.ts) - Router + animations providers
+
+**Testing:**
+- ✅ Frontend unit test suite runs successfully (`npm test -- --watch=false`)
+- ✅ Angular Material components render in UI scaffold (`login` page uses `mat-card` + `mat-button`)
+- ✅ Router outlet bootstraps correctly via unit tests (`frontend/src/app/app.spec.ts`)
+
+**Architectural Decisions:**
+We chose standalone Angular components and provider-based app configuration to reduce module overhead and keep feature delivery fast. Angular Material was selected to ensure accessible, consistent UI primitives from the start.
+
+---
+
+### Phase 7: Frontend Routing & Layout Scaffolding (New Scope)
+
+To avoid blocking future feature work, we added route architecture and page-level navigation scaffolding ahead of auth service implementation.
+
+**Implementation Details:**
+- Configured route groups for:
+  - Public pages: `/login`, `/register`
+  - Protected-shell pages: `/dashboard`, `/lobby`, `/table/:id`
+- Added default redirect from `/` to `/login` and wildcard fallback to `/login`
+- Implemented `ProtectedShell` layout with nested `<router-outlet />` for protected pages
+- Added root application toolbar shell for shared app chrome
+
+**Key Files Created:**
+- [frontend/src/app/app.routes.ts](frontend/src/app/app.routes.ts) - Route map and lazy component loading
+- [frontend/src/app/layouts/protected-shell/protected-shell.ts](frontend/src/app/layouts/protected-shell/protected-shell.ts) - Protected layout shell
+- [frontend/src/app/layouts/protected-shell/protected-shell.html](frontend/src/app/layouts/protected-shell/protected-shell.html) - Nested outlet template
+- [frontend/src/app/app.html](frontend/src/app/app.html) - App-level toolbar and router outlet
+
+**Testing:**
+- ✅ Route configuration compiles with lazy-loaded standalone components
+- ✅ App shell unit tests verify router outlet rendering
+- 🟡 AuthGuard integration intentionally deferred to authentication stories
+
+**Architecture Rationale:**
+This route-first scaffold allows frontend and backend work to proceed in parallel. It provides a stable navigation contract while auth/session logic is still being implemented.
+
+---
+
+### Phase 8: Frontend Page Scaffolds & API Proxy Setup (New Scope)
+
+We delivered placeholder pages and local API proxying to enable rapid integration in Sprint 2.
+
+**Implementation Details:**
+- Created standalone page components for `login`, `register`, `dashboard`, `lobby`, and `table`
+- Added placeholder templates/styles to define route targets and UI structure
+- Configured Angular dev server proxy for `/api` → `http://localhost:8080`
+- Created core project directories (`core`, `features`, `shared`) for future feature organization
+
+**Key Files Created:**
+- [frontend/src/app/pages/login/login.ts](frontend/src/app/pages/login/login.ts) - Login page scaffold
+- [frontend/src/app/pages/register/register.ts](frontend/src/app/pages/register/register.ts) - Registration page scaffold
+- [frontend/src/app/pages/dashboard/dashboard.ts](frontend/src/app/pages/dashboard/dashboard.ts) - Dashboard scaffold
+- [frontend/src/app/pages/lobby/lobby.ts](frontend/src/app/pages/lobby/lobby.ts) - Lobby scaffold
+- [frontend/src/app/pages/table/table.ts](frontend/src/app/pages/table/table.ts) - Table scaffold
+- [frontend/proxy.conf.json](frontend/proxy.conf.json) - Backend API proxy configuration
+
+**Testing:**
+- ✅ Placeholder route components compile and load through Angular router
+- ✅ Proxy configuration is wired into Angular `serve` development target
+- 🟡 No auth flow integration yet (depends on backend login/me/logout APIs)
+
+**Delivery Impact:**
+Sprint 2 can start directly with real feature implementation (forms, services, guards) without revisiting setup work. Integration with backend endpoints can begin immediately via `/api` proxy.
+
+---
+
 ## What We Didn't Achieve
 
 ### Planned But Not Completed (Backend)
@@ -239,20 +327,66 @@ Frontend cannot display user-specific data or verify session state.
 
 ---
 
-### Frontend Work (Completely Unaddressed)
+### Frontend Work (Partially Completed)
 
-The original sprint plan included 6 frontend issues:
-- #1-6: Angular Init & Global Styles
-- #1-7: Core HTTP & Interceptor Setup
-- #1-8: Authentication Service
-- #1-9: Registration Component
-- #1-10: Login Component
-- #1-12: Protected Home Dashboard & Guard
+Sprint 1 frontend delivery was foundational rather than feature-complete.
+
+**Completed in Sprint 1:**
+- ✅ Issue #1-6: Angular Init & Global Styles
+- ✅ New Scope: Routing and protected-shell scaffolding
+- ✅ New Scope: Placeholder page components and dev proxy setup
+
+**Planned But Not Completed (Frontend):**
+
+#### Issue #1-7: Core HTTP & Interceptor Setup
+**Scope:** `HttpClient` setup with `withCredentials` and CSRF header injection
 
 **Why Not Completed:**
-- Team capacity: We focused exclusively on backend to build a solid foundation
-- Sequential dependency: Frontend work requires stable backend APIs
-- Learning curve: Go was new to the team; we prioritized getting it right
+- Prioritized frontend scaffolding before API integration logic
+- Backend auth/session endpoints were still pending
+
+**Impact:**
+Frontend cannot yet send authenticated cookie-based requests with a centralized interceptor.
+
+#### Issue #1-8: Authentication Service
+**Scope:** Central auth state service (`login`, `register`, `logout`, `checkSession`)
+
+**Why Not Completed:**
+- Blocked by incomplete backend login/me/logout APIs
+- Scope deferred to Sprint 2 vertical-slice implementation
+
+**Impact:**
+No shared authentication state or reactive session model in frontend.
+
+#### Issue #1-9: Registration Component
+**Scope:** Production-ready reactive registration form integrated with backend
+
+**Why Not Completed:**
+- Current registration page is a placeholder scaffold
+- Form validation, API wiring, and error UX were not implemented
+
+**Impact:**
+Users cannot register through the frontend yet, despite backend endpoint availability.
+
+#### Issue #1-10: Login Component
+**Scope:** Login form with API integration, UX feedback, and route navigation
+
+**Why Not Completed:**
+- Depends on backend login endpoint and auth service completion
+- Placeholder screen exists but lacks business logic
+
+**Impact:**
+No frontend login user journey is currently available.
+
+#### Issue #1-12: Protected Home Dashboard & Guard
+**Scope:** AuthGuard-protected dashboard with user-aware session checks
+
+**Why Not Completed:**
+- Guard implementation depends on Issue #1-8 and backend `/api/me`
+- Dashboard page exists only as a placeholder
+
+**Impact:**
+Protected routes are scaffolded but not yet enforced by authentication.
 
 ---
 
@@ -434,9 +568,9 @@ The original sprint plan included 6 frontend issues:
 ### Capacity Adjustment
 
 **Sprint 1 Reality Check:**
-- Completed: 5 backend issues in full sprint
-- Original Plan: 12 issues (backend + frontend)
-- Actual Velocity: ~40% of plan
+- Completed Planned Scope: 5/12 issues (~42%)
+- Total Delivered: 8 issues (5 backend, 3 frontend) including unplanned scaffolding work
+- Delivery Pattern: Planned auth features slipped; foundational platform work expanded
 
 **Sprint 2 Adjusted Plan:**
 - Target: 8-9 issues (finish remaining auth backend + frontend foundation)
@@ -454,7 +588,7 @@ The original sprint plan included 6 frontend issues:
 **Risk:** CSRF token handling between Angular and Go backend  
 **Mitigation:**
 - Backend CSRF already implemented
-- Frontend interceptor must extract token from cookie and add to headers
+- Frontend interceptor should fetch token from `GET /api/csrf` and attach `X-CSRF-Token` on state-changing requests
 - Allocate extra testing time for this integration point
 
 **Risk:** Testing debt from Sprint 1  
@@ -471,10 +605,12 @@ The original sprint plan included 6 frontend issues:
 
 | Metric | Value                                                       |
 |--------|-------------------------------------------------------------|
-| **Planned Issues** | 12 (7 backend, 5 frontend) + 3 New (1 backend + 2 frontend) |
+| **Planned Issues** | 12 (6 backend, 6 frontend) + 3 New (1 backend + 2 frontend) |
 | **Completed Issues** | 8 (5 backend, 3 frontend)                                   |
+| **Planned Completion Rate** | 42% (5/12 planned issues)                               |
 | **API Endpoints** | 3 (`/api/health`, `/api/register`, `/api/csrf`)             |
 | **Database Models** | 1 (`User`)                                                  |
+| **Frontend Routes Scaffolded** | 5 (`/login`, `/register`, `/dashboard`, `/lobby`, `/table/:id`) |
 
 ### Velocity Calculation for Sprint 2
 
@@ -527,7 +663,7 @@ The original sprint plan included 6 frontend issues:
 
 ## Conclusion
 
-Sprint 1 was a **foundation-building sprint** that established production-grade infrastructure for the Poker platform. While we completed only 40% of our original ambitious plan, the work we delivered is solid, secure, and scalable.
+Sprint 1 was a **foundation-building sprint** that established production-grade backend infrastructure and a frontend application scaffold for the Poker platform. While planned authentication features remain incomplete, the delivered architecture is stable and integration-ready.
 
 **Key Accomplishments:**
 - ✅ Team aligned on Go best practices (Issue #1-14)
@@ -535,12 +671,14 @@ Sprint 1 was a **foundation-building sprint** that established production-grade 
 - ✅ Robust database layer with GORM (Issue #1-2)
 - ✅ Production-ready security middleware (Issue #1-3)
 - ✅ Functional user registration API (Issue #1-4)
+- ✅ Angular workspace + Material + routing baseline (Issue #1-6)
+- ✅ Frontend route shell and page scaffolds ready for feature integration
 
 **Key Learning:**
 We learned that **"going slow to go fast"** is real. The time invested in learning Go conventions and building proper infrastructure will pay dividends in Sprint 2 and beyond. We did not accumulate technical debt by rushing.
 
 **Sprint 2 Focus:**
-Complete the authentication story (login, logout, session management) and deliver the first end-to-end user journey. We will apply our Sprint 1 learnings to plan more realistically and deliver a working, demonstrable feature.
+Complete the authentication story (login, logout, session management) and connect the existing frontend scaffolds to backend APIs to deliver the first end-to-end user journey.
 
 **Team Morale:**
 Despite not hitting our original targets, the team should be proud. We built something **right**, not just **fast**. The codebase is clean, secure, and ready to scale. Sprint 2 will move faster because the foundation is solid.
@@ -589,6 +727,38 @@ backend/
     └── suite_test.go                   🟡 Root test suite
 ```
 
+### Frontend Code Delivered
+
+```
+frontend/
+├── angular.json                         ✅ Angular build/serve config + Material theme wiring
+├── package.json                         ✅ Angular/Material dependencies and scripts
+├── proxy.conf.json                      ✅ `/api` proxy to backend (`localhost:8080`)
+├── src/
+│   ├── styles.scss                      ✅ Global styles + Material surface defaults
+│   └── app/
+│       ├── app.config.ts                ✅ Router + animations providers
+│       ├── app.routes.ts                ✅ Public/protected route scaffolding
+│       ├── app.html                     ✅ Root toolbar + router outlet shell
+│       ├── layouts/
+│       │   └── protected-shell/         ✅ Nested layout for protected pages
+│       └── pages/
+│           ├── login/                   ✅ Material-based login page scaffold
+│           ├── register/                ✅ Registration page scaffold
+│           ├── dashboard/               ✅ Dashboard placeholder scaffold
+│           ├── lobby/                   ✅ Lobby placeholder scaffold
+│           └── table/                   ✅ Table placeholder scaffold (`/table/:id`)
+```
+
+### Frontend Test Infrastructure
+
+```
+frontend/
+└── src/
+    └── app/
+        └── app.spec.ts                 🟡 Base app tests (app creation + router outlet)
+```
+
 **Legend:**
 - ✅ Complete and production-ready
 - 🟡 Infrastructure exists but incomplete coverage
@@ -596,6 +766,6 @@ backend/
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** February 18, 2026  
+**Document Version:** 1.1  
+**Last Updated:** February 19, 2026  
 **Next Review:** Sprint 2 Planning Meeting
