@@ -61,15 +61,19 @@ var _ = Describe("Auth API", func() {
 				var user models.User
 				err := json.Unmarshal(recorder.Body.Bytes(), &user)
 				Expect(err).NotTo(HaveOccurred())
+
 				Expect(user.Username).To(Equal("testuser"))
 				Expect(user.ID).NotTo(BeZero())
+				Expect(user.PasswordHash).To(BeEmpty())
 			})
 		})
 
 		Context("with an existing username", func() {
 			BeforeEach(func() {
 				// Pre-create a user
-				database, _ := db.GetDB()
+				database, err := db.GetDB()
+				Expect(err).NotTo(HaveOccurred())
+
 				database.Create(&models.User{Username: "existinguser", PasswordHash: "somehash"})
 			})
 
@@ -87,9 +91,8 @@ var _ = Describe("Auth API", func() {
 
 				var errResp api.ErrorResponse
 				err := json.Unmarshal(recorder.Body.Bytes(), &errResp)
-				if err != nil {
-					return
-				}
+				Expect(err).NotTo(HaveOccurred())
+
 				Expect(errResp.Error).To(Equal("Conflict"))
 			})
 		})

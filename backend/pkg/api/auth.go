@@ -74,6 +74,11 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := database.Create(&newUser).Error; err != nil {
+		// Handle unique constraint violations (e.g., concurrent registration with same username)
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			sendError(w, "Conflict", "Username already exists", http.StatusConflict)
+			return
+		}
 		log.Printf("Failed to create user: %v", err)
 		sendError(w, "Internal Server Error", "Failed to create user", http.StatusInternalServerError)
 		return
