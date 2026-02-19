@@ -16,7 +16,10 @@ Sprint 1 established the foundational architecture for our Poker platform's back
 - Configured production-grade security middleware (CORS & CSRF)
 - Delivered first functional API endpoint (User Registration)
 
-**Completion Rate:** ~40% of original sprint plan (Backend: 5/7 planned issues completed)
+**Completion Rate:** 
+Backend: 5/6 planned issues completed + 1 new issue
+Frontend: 1/6 planned issues completed + 2 new issues
+
 
 ---
 
@@ -53,7 +56,7 @@ With our understanding of Go best practices established, we initialized the proj
   - `pkg/middleware/` - Cross-cutting concerns
   - `pkg/db/` - Database connection management
 - Integrated `gorilla/mux` router for robust HTTP request handling
-- Implemented health check endpoint (`GET /health`) returning JSON `{"status": "alive"}`
+- Implemented health check endpoint (`GET /health`) returning JSON `{"status": "alive", "database": "connected"}`
 - Created custom 404 handler returning structured JSON errors (not plain text)
 - Configured `http.Server` with production-ready timeouts:
   - `ReadTimeout: 15s` - Prevents slow-read attacks
@@ -86,7 +89,7 @@ With the HTTP layer functional, we established our data persistence foundation.
 - Enabled SQLite foreign keys enforcement (`PRAGMA foreign_keys = ON`)
 - Implemented connection pooling with reasonable defaults
 - Added graceful database shutdown hooks
-- Database file: `poker.db` created in project root
+- Database file: `poker.db` created in project backend directory
 
 **Key Technical Decisions:**
 - **SQLite Choice:** Ideal for our MVP phase - zero configuration, serverless, perfect for development and testing
@@ -466,21 +469,18 @@ The original sprint plan included 6 frontend issues:
 
 ### Sprint 1 Statistics
 
-| Metric | Value |
-|--------|-------|
-| **Planned Issues** | 12 (7 backend, 5 frontend) |
-| **Completed Issues** | 5 (5 backend, 0 frontend) |
-| **Completion Rate** | 42% overall, 71% backend |
-| **Lines of Code** | ~1,200 (backend) |
-| **Test Coverage** | ~30% (estimated, incomplete) |
-| **API Endpoints** | 3 (`/health`, `/api/register`, `/api/csrf`) |
-| **Database Models** | 1 (`User`) |
+| Metric | Value                                                       |
+|--------|-------------------------------------------------------------|
+| **Planned Issues** | 12 (7 backend, 5 frontend) + 3 New (1 backend + 2 frontend) |
+| **Completed Issues** | 8 (5 backend, 3 frontend)                                   |
+| **API Endpoints** | 3 (`/api/health`, `/api/register`, `/api/csrf`)             |
+| **Database Models** | 1 (`User`)                                                  |
 
 ### Velocity Calculation for Sprint 2
 
-**Sprint 1 Completed:** 5 issues across ~14 days  
-**Adjusted Velocity:** ~0.35 issues/day or ~3 issues/week  
-**Sprint 2 Capacity:** 14 days × 0.35 = ~5 issues at current pace  
+**Sprint 1 Completed:** 8 issues across ~14 days  
+**Adjusted Velocity:** ~0.57 issues/day or ~4 issues/week  
+**Sprint 2 Capacity:** 14 days × 0.57 = ~8 issues at current pace  
 **With Learning:** Account for Angular learning curve → realistic target: 7-8 issues (including smaller frontend tasks)
 
 ---
@@ -490,7 +490,7 @@ The original sprint plan included 6 frontend issues:
 ### Immediate (Must Address in Sprint 2)
 
 1. **Test Coverage Gaps**
-   - **Debt:** Test files exist but coverage is ~30%
+   - **Debt:** Test files exist but coverage is not complete
    - **Impact:** Cannot refactor safely; bugs may slip through
    - **Remediation:** Write tests for all handlers and database operations
 
