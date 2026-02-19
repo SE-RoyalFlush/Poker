@@ -102,7 +102,6 @@ var _ = Describe("Auth API", func() {
 			Expect(rec.Code).To(Equal(http.StatusNoContent))
 		})
 	})
-
 	Describe("RegisterHandler", func() {
 		Context("with valid registration data", func() {
 			It("should return 201 Created and the user object", func() {
