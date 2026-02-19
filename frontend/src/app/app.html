@@ -1,1 +1,15 @@
-<router-outlet />
+<mat-toolbar color="primary">
+  <span>{{ title }}</span>
+</mat-toolbar>
+
+<div class="content-container">
+  <button mat-raised-button color="primary" style="margin-right: 10px;">
+    Primary
+  </button>
+
+  <button mat-raised-button color="accent">
+    Accent
+  </button>
+</div>
+
+<router-outlet></router-outlet>
