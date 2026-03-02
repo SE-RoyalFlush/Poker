@@ -60,3 +60,37 @@ npm run build
 npm start
 ```
 
+## Running Tests
+
+### Run all tests
+```bash
+npm test
+```
+
+### Run tests in watch mode
+```bash
+npm test -- --watch
+```
+
+### Run tests with code coverage report
+```bash
+npm test -- --coverage
+```
+
+### Run tests with verbose output
+```bash
+npm test -- --verbose
+```
+
+### Run tests for a specific file
+```bash
+npm test -- auth.interceptor.spec.ts
+```
+
+### Run tests without coverage (faster)
+```bash
+npm test -- --no-coverage
+```
+
+> **Note:** These tests are automatically run on every pull request via the GitHub Actions workflow (`.github/workflows/pull_request_test.yaml`). The workflow ensures all frontend unit tests pass before merging.
+
