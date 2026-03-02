@@ -75,11 +75,6 @@ jobs:
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps
 
-      - name: Install Chrome (for testing)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
-
       - name: Run linter (if available)
         working-directory: ./frontend
         run: npm run lint --if-present || true
@@ -88,9 +83,6 @@ jobs:
         working-directory: ./frontend
         run: npm test -- --watch=false --browsers=ChromeHeadless
 
-      - name: Run tests with coverage
-        working-directory: ./frontend
-        run: npm test -- --coverage --watch=false --browsers=ChromeHeadless
 
       - name: Test summary
         if: always()
