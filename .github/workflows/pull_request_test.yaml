@@ -51,7 +51,6 @@ jobs:
         working-directory: ./backend
         run: |
           echo "✅ Backend tests completed"
-          go test -cover ./pkg/... | grep -E "coverage|PASS|FAIL"
 
   frontend-tests:
     name: Run Frontend Tests

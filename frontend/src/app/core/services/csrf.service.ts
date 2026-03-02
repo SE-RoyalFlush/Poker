@@ -15,12 +15,10 @@ export class CsrfService {
   constructor(private http: HttpClient) {}
 
   fetchToken(): Observable<CsrfResponse> {
-    console.log('fetchToken called, hitting:', this.csrfUrl);
     return this.http.get<CsrfResponse>(this.csrfUrl, {
       withCredentials: true
     }).pipe(
       tap(response => {
-        console.log('token stored:', response.csrfToken);
         this.token = response.csrfToken;
       })
     );
