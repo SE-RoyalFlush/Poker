@@ -1,19 +1,21 @@
-name: Backend Tests
+name: Tests
 
 on:
   pull_request:
     branches: [main, develop]
     paths:
       - 'backend/**'
-      - '.github/workflows/pull_request_test.yml'
+      - 'frontend/**'
+      - '.github/workflows/pull_request_test.yaml'
   push:
     branches: [main, develop]
     paths:
       - 'backend/**'
-      - '.github/workflows/pull_request_test.yml'
+      - 'frontend/**'
+      - '.github/workflows/pull_request_test.yaml'
 
 jobs:
-  test:
+  backend-tests:
     name: Run Backend Tests
     runs-on: ubuntu-latest
     
@@ -49,4 +51,40 @@ jobs:
         working-directory: ./backend
         run: |
           echo "✅ Backend tests completed"
-          go test -cover ./pkg/... | grep -E "coverage|PASS|FAIL"
+
+  frontend-tests:
+    name: Run Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify Node installation
+        run: node --version && npm --version
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Run linter (if available)
+        working-directory: ./frontend
+        run: npm run lint --if-present || true
+
+      - name: Run tests
+        working-directory: ./frontend
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+
+      - name: Test summary
+        if: always()
+        working-directory: ./frontend
+        run: |
+          echo "✅ Frontend tests completed"

@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Secure HTTP Client with AuthInterceptor](https://github.com/SE-RoyalFlush/Poker/pull/41)
+    - Implemented AuthInterceptor in `src/app/core/interceptors/auth.interceptor.ts` for secure HTTP communication
+    - Configured interceptor to automatically attach `withCredentials: true` to all HTTP requests for cookie-based authentication
+    - Implemented X-CSRF-Token extraction from cookies and automatic injection into request headers
+    - Added global error handling in interceptor with automatic redirect to login on 401 (Unauthorized) responses
+    - Registered HTTP interceptor in application configuration for all outgoing requests
+    - Added comprehensive unit tests for interceptor functionality and error handling
 - [Backend: User Model & Registration API](https://github.com/SE-RoyalFlush/Poker/issues/6)
     - Defined User data model using GORM with secure password hashing (bcrypt)
     - Implemented registration endpoint `POST /api/register` with validation
