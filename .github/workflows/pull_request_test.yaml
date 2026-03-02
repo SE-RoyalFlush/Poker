@@ -1,19 +1,21 @@
-name: Backend Tests
+name: Tests
 
 on:
   pull_request:
     branches: [main, develop]
     paths:
       - 'backend/**'
-      - '.github/workflows/pull_request_test.yml'
+      - 'frontend/**'
+      - '.github/workflows/pull_request_test.yaml'
   push:
     branches: [main, develop]
     paths:
       - 'backend/**'
-      - '.github/workflows/pull_request_test.yml'
+      - 'frontend/**'
+      - '.github/workflows/pull_request_test.yaml'
 
 jobs:
-  test:
+  backend-tests:
     name: Run Backend Tests
     runs-on: ubuntu-latest
     
@@ -50,3 +52,43 @@ jobs:
         run: |
           echo "✅ Backend tests completed"
           go test -cover ./pkg/... | grep -E "coverage|PASS|FAIL"
+
+  frontend-tests:
+    name: Run Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify Node installation
+        run: node --version && npm --version
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run linter (if available)
+        working-directory: ./frontend
+        run: npm run lint --if-present || true
+
+      - name: Run tests
+        working-directory: ./frontend
+        run: npm test -- --no-coverage --watch=false
+
+      - name: Run tests with coverage
+        working-directory: ./frontend
+        run: npm test -- --coverage --watch=false
+
+      - name: Test summary
+        if: always()
+        working-directory: ./frontend
+        run: |
+          echo "✅ Frontend tests completed"
