@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Claims represents JWT claims for a user session
@@ -18,9 +18,9 @@ type Claims struct {
 }
 
 var (
-	ErrInvalidToken   = errors.New("invalid token")
-	ErrExpiredToken   = errors.New("token has expired")
-	ErrMissingSecret  = errors.New("JWT_SECRET not set in environment")
+	ErrInvalidToken  = errors.New("invalid token")
+	ErrExpiredToken  = errors.New("token has expired")
+	ErrMissingSecret = errors.New("JWT_SECRET not set in environment")
 )
 
 // GetJWTSecret retrieves the JWT secret from environment

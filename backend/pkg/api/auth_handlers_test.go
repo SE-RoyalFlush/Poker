@@ -37,9 +37,9 @@ var _ = Describe("Authentication Handlers", func() {
 
 		// Initialize a fresh in-memory database for each test
 		dbCfg := &db.Config{
-			DatabasePath:    ":memory:",
-			MaxOpenConns:    25,
-			MaxIdleConns:    5,
+			DatabasePath: ":memory:",
+			MaxOpenConns: 25,
+			MaxIdleConns: 5,
 		}
 
 		database, err := db.Connect(dbCfg)
