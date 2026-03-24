@@ -10,6 +10,7 @@ import (
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/migrations"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -40,6 +41,15 @@ func main() {
 		log.Fatalf("Database ping failed: %v", err)
 	}
 
+	// Run migrations
+	database, err := db.GetDB()
+	if err != nil {
+		log.Fatalf("Failed to get database: %v", err)
+	}
+	if err := migrations.RunMigrations(database); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Printf("Error during database shutdown: %v", err)
@@ -51,6 +61,11 @@ func main() {
 
 	router.HandleFunc("/health", api.HealthHandler).Methods("GET")
 	router.HandleFunc("/api/csrf", api.CSRFTokenHandler).Methods("GET")
+
+	// Authentication routes
+	router.HandleFunc("/api/login", api.LoginHandler).Methods("POST")
+	router.HandleFunc("/api/logout", api.LogoutHandler).Methods("POST")
+	router.HandleFunc("/api/me", api.MeHandler).Methods("GET")
 
 	router.NotFoundHandler = http.HandlerFunc(api.NotFoundHandler)
 
