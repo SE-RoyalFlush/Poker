@@ -3,6 +3,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { AuthInterceptor } from './core/interceptors';
 import { AuthService } from './core/services';
 
@@ -14,7 +15,7 @@ import { routes } from './app.routes';
  * restoring the user session if they have a valid session cookie.
  */
 export function initializeAuth(authService: AuthService) {
-  return () => authService.checkSession().toPromise();
+  return () => firstValueFrom(authService.checkSession());
 }
 
 export const appConfig: ApplicationConfig = {

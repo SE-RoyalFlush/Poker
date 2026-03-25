@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - Added synchronous helper methods `isAuthenticated()` and `getCurrentUser()` for route guards
     - Comprehensive unit tests (29 tests, 100% passing) using `HttpClientTestingModule`
     - Updated frontend README with authentication architecture, usage examples, and API reference
-    - Created detailed implementation documentation in `AUTHENTICATION_IMPLEMENTATION.md` and `BACKEND_STORY_AUTH_ENDPOINTS.md`
+    - Added detailed authentication and backend auth endpoint documentation to existing project docs
     - **Note**: Backend endpoints `/api/login`, `/api/logout`, and `/api/me` are required but not yet implemented
 - [Frontend: Secure HTTP Client with AuthInterceptor](https://github.com/SE-RoyalFlush/Poker/pull/41)
     - Implemented AuthInterceptor in `src/app/core/interceptors/auth.interceptor.ts` for secure HTTP communication

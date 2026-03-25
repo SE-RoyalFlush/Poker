@@ -3,7 +3,7 @@
  * Import services from this barrel export rather than individual files.
  *
  * Example:
- * import { AuthService, CsrfService } from '@app/core/services';
+ * import { AuthService, CsrfService } from './core/services';
  */
 
 export * from './auth.service';

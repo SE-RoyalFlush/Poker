@@ -158,7 +158,7 @@ User-related interfaces defined in `src/app/core/models/user.model.ts`:
 
 ### Further Documentation
 
-See `AUTHENTICATION_IMPLEMENTATION.md` for detailed architecture explanation, RxJS patterns, and design decisions.
+Authentication architecture, RxJS patterns, and design decisions are documented in this README and related in-code comments.
 
 ## Setup and verification
 

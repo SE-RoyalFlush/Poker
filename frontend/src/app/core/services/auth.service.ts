@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, of, switchMap, throwError, finalize } from 'rxjs';
 import { User, LoginCredentials, RegisterData } from '../models';
 
 /**
@@ -34,7 +34,7 @@ export class AuthService {
 
   /**
    * Check if user has an active session on app initialization.
-   * Called from app.ts ngOnInit to restore user state.
+    * Typically invoked during app startup via APP_INITIALIZER in app.config.ts to restore user state.
    *
    * Flow:
    * 1. Calls GET /api/me (backend validates session cookie)
@@ -52,14 +52,15 @@ export class AuthService {
     }).pipe(
       tap(user => {
         this.currentUserSubject.next(user);
-        this.isLoadingSubject.next(false);
       }),
       catchError(error => {
         // 401 or any error means user is not authenticated
         console.error('Session check failed:', error);
         this.currentUserSubject.next(null);
-        this.isLoadingSubject.next(false);
         return of(null); // Return null instead of throwing error
+      }),
+      finalize(() => {
+        this.isLoadingSubject.next(false);
       })
     );
   }
@@ -92,7 +93,7 @@ export class AuthService {
       catchError(error => {
         console.error('Login failed:', error);
         this.isLoadingSubject.next(false);
-        throw error;
+        return throwError(() => error);
       })
     );
   }
@@ -122,7 +123,7 @@ export class AuthService {
       catchError(error => {
         console.error('Registration failed:', error);
         this.isLoadingSubject.next(false);
-        throw error;
+        return throwError(() => error);
       })
     );
   }
@@ -138,20 +139,23 @@ export class AuthService {
    * @returns Observable that completes when logout is done
    */
   logout(): Observable<void> {
+    this.isLoadingSubject.next(true);
+
     return this.http.post<void>(`${this.apiUrl}/logout`, {}, {
       withCredentials: true
     }).pipe(
       tap(() => {
         // Clear local user state
         this.currentUserSubject.next(null);
-        this.isLoadingSubject.next(false);
       }),
       catchError(error => {
         console.error('Logout failed:', error);
         // Even if logout fails on backend, clear local state
         this.currentUserSubject.next(null);
-        this.isLoadingSubject.next(false);
         return of(void 0); // Don't throw, just clean up locally
+      }),
+      finalize(() => {
+        this.isLoadingSubject.next(false);
       })
     );
   }

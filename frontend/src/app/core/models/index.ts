@@ -3,7 +3,7 @@
  * Import types from this barrel export rather than individual files.
  *
  * Example:
- * import { User, LoginCredentials } from '@app/core/models';
+ * import { User, LoginCredentials } from './core/models';
  */
 
 export * from './user.model';

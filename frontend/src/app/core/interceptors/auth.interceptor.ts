@@ -22,6 +22,7 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
     const csrfToken = this.csrfService.getToken();
+    const isSessionCheckRequest = /\/api\/me(?:\?|$)/.test(req.url);
 
     const modifiedReq = req.clone({
       withCredentials: true,
@@ -34,7 +35,9 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
           this.csrfService.clearToken();
-          this.router.navigate(['/login']);
+          if (!isSessionCheckRequest) {
+            this.router.navigate(['/login']);
+          }
         }
         return throwError(() => error);
       })
