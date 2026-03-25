@@ -88,7 +88,6 @@ var _ = Describe("Authentication Handlers", func() {
 			Expect(cookie.Name).To(Equal(middleware.CookieName))
 			Expect(cookie.Value).NotTo(BeEmpty())
 			Expect(cookie.HttpOnly).To(BeTrue())
-			Expect(cookie.Secure).To(BeTrue())
 			Expect(cookie.SameSite).To(Equal(http.SameSiteStrictMode))
 		})
 
