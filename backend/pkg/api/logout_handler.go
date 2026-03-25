@@ -21,7 +21,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   r.TLS != nil,
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, cookie)
