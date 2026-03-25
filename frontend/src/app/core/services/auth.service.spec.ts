@@ -149,6 +149,28 @@ describe('AuthService', () => {
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
     });
 
+    it('should throw error when /me fails with non-401 after successful login', (done) => {
+      const credentials = { username: 'testuser', password: 'password123' };
+
+      service.login(credentials).subscribe(
+        () => {
+          fail('should have thrown error');
+        },
+        (error) => {
+          expect(error).toBeTruthy();
+          done();
+        }
+      );
+
+      const loginReq = httpMock.expectOne(`${apiUrl}/login`);
+      expect(loginReq.request.method).toBe('POST');
+      loginReq.flush(null);
+
+      const meReq = httpMock.expectOne(`${apiUrl}/me`);
+      expect(meReq.request.method).toBe('GET');
+      meReq.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+    });
+
     it('should NOT look for token in response body', (done) => {
       const credentials = { username: 'testuser', password: 'password123' };
 
@@ -209,6 +231,31 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${apiUrl}/register`);
       req.flush('Username already exists', { status: 409, statusText: 'Conflict' });
+    });
+
+    it('should set isLoading$ to true during register and false on success', (done) => {
+      const loadingStates: boolean[] = [];
+
+      service.isLoading$.subscribe(isLoading => {
+        loadingStates.push(isLoading);
+      });
+
+      const registerData = {
+        username: 'newuser',
+        password: 'password123',
+        confirmPassword: 'password123'
+      };
+
+      service.register(registerData).subscribe(() => {
+        setTimeout(() => {
+          expect(loadingStates).toContain(true);
+          expect(loadingStates[loadingStates.length - 1]).toBe(false);
+          done();
+        }, 0);
+      });
+
+      const registerReq = httpMock.expectOne(`${apiUrl}/register`);
+      registerReq.flush(mockBackendUser);
     });
   });
 

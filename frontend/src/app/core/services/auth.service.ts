@@ -61,6 +61,10 @@ export class AuthService {
    * @returns Observable of the current user (or null if not authenticated)
    */
   checkSession(): Observable<User | null> {
+    return this.checkSessionInternal(false);
+  }
+
+  private checkSessionInternal(propagateNonAuthErrors: boolean): Observable<User | null> {
     this.isLoadingSubject.next(true);
 
     return this.http.get<BackendUser>(`${this.apiUrl}/me`, {
@@ -78,6 +82,10 @@ export class AuthService {
         if (error.status === 401) {
           this.currentUserSubject.next(null);
           return of(null);
+        }
+
+        if (propagateNonAuthErrors) {
+          return throwError(() => error);
         }
 
         return of(this.currentUserSubject.value);
@@ -111,7 +119,15 @@ export class AuthService {
     }).pipe(
       switchMap(() => {
         // After successful login, fetch user profile
-        return this.checkSession();
+        return this.checkSessionInternal(true);
+      }),
+      switchMap(user => {
+        // Login is only successful once a user profile is restored.
+        if (user) {
+          return of(user);
+        }
+
+        return throwError(() => new Error('Login completed but no authenticated user session was found.'));
       }),
       catchError(error => {
         console.error('Login failed:', error);
@@ -145,8 +161,10 @@ export class AuthService {
       }),
       catchError(error => {
         console.error('Registration failed:', error);
-        this.isLoadingSubject.next(false);
         return throwError(() => error);
+      }),
+      finalize(() => {
+        this.isLoadingSubject.next(false);
       })
     );
   }
