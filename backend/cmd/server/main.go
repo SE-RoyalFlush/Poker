@@ -54,6 +54,9 @@ func main() {
 	apiRouter.HandleFunc("/health", api.HealthHandler).Methods("GET")
 	apiRouter.HandleFunc("/register", api.RegisterHandler).Methods("POST")
 	apiRouter.HandleFunc("/csrf", api.CSRFTokenHandler).Methods("GET")
+	apiRouter.HandleFunc("/me", api.MeHandler).Methods("GET")
+	apiRouter.HandleFunc("/admin/users", api.AdminListUsersHandler).Methods("GET")
+	apiRouter.HandleFunc("/admin/users/{id:[0-9]+}", api.AdminDeleteUserHandler).Methods("DELETE")
 
 	router.NotFoundHandler = http.HandlerFunc(api.NotFoundHandler)
 

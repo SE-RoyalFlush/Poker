@@ -13,6 +13,52 @@ import (
 	"gorm.io/gorm"
 )
 
+// MeHandler handles GET /api/me requests to return the current authenticated user.
+// Returns 204 No Content if not authenticated (instead of 401) to allow frontend silent session check.
+func MeHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	username, password, ok := r.BasicAuth()
+	if !ok || username == "" || password == "" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	database, err := db.GetDB()
+	if err != nil {
+		sendError(w, "Internal Server Error", "Database not initialized", http.StatusInternalServerError)
+		return
+	}
+
+	var user models.User
+	if err := database.Where("username = ?", username).First(&user).Error; err != nil {
+		// If credentials provided but user not found, return 401
+		sendError(w, "Unauthorized", "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	// Check password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		sendError(w, "Unauthorized", "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	// Return user info (password hash is omitted by JSON tag)
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		log.Printf("Failed to encode user response: %v", err)
+	}
+}
+
+func isUniqueConstraintError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// SQLite duplicate key errors are usually surfaced as raw messages.
+	return strings.Contains(strings.ToLower(err.Error()), "unique constraint failed")
+}
+
 // RegisterRequest defines the input for the registration endpoint.
 type RegisterRequest struct {
 	Username string `json:"username"`
@@ -75,7 +121,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := database.Create(&newUser).Error; err != nil {
 		// Handle unique constraint violations (e.g., concurrent registration with same username)
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
+		if errors.Is(err, gorm.ErrDuplicatedKey) || isUniqueConstraintError(err) {
 			sendError(w, "Conflict", "Username already exists", http.StatusConflict)
 			return
 		}

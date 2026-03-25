@@ -5,15 +5,19 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
+	"github.com/gorilla/mux"
 )
 
 var _ = Describe("Auth API", func() {
@@ -42,6 +46,54 @@ var _ = Describe("Auth API", func() {
 		if err != nil {
 			return
 		}
+	})
+
+	Describe("MeHandler", func() {
+		var user models.User
+		BeforeEach(func() {
+			// Create a user in the DB
+			user = models.User{Username: "meuser", PasswordHash: ""}
+			hash, _ := bcrypt.GenerateFromPassword([]byte("mepass"), bcrypt.DefaultCost)
+			user.PasswordHash = string(hash)
+			dbInstance, _ := db.GetDB()
+			dbInstance.Create(&user)
+		})
+
+		It("should return 200 and user info for valid credentials", func() {
+			req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+			req.SetBasicAuth("meuser", "mepass")
+			rec := httptest.NewRecorder()
+			api.MeHandler(rec, req)
+			Expect(rec.Code).To(Equal(http.StatusOK))
+			var resp models.User
+			err := json.Unmarshal(rec.Body.Bytes(), &resp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Username).To(Equal("meuser"))
+			Expect(resp.PasswordHash).To(BeEmpty()) // Should not be present in JSON
+		})
+
+		It("should return 204 for missing credentials", func() {
+			req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+			rec := httptest.NewRecorder()
+			api.MeHandler(rec, req)
+			Expect(rec.Code).To(Equal(http.StatusNoContent))
+		})
+
+		It("should return 401 for invalid password", func() {
+			req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+			req.SetBasicAuth("meuser", "wrongpass")
+			rec := httptest.NewRecorder()
+			api.MeHandler(rec, req)
+			Expect(rec.Code).To(Equal(http.StatusUnauthorized))
+		})
+
+		It("should return 401 for non-existent user", func() {
+			req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+			req.SetBasicAuth("nouser", "nopass")
+			rec := httptest.NewRecorder()
+			api.MeHandler(rec, req)
+			Expect(rec.Code).To(Equal(http.StatusUnauthorized))
+		})
 	})
 
 	Describe("RegisterHandler", func() {
@@ -136,6 +188,75 @@ var _ = Describe("Auth API", func() {
 
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
 			})
+		})
+	})
+
+	Describe("Admin user management", func() {
+		var database = func() *gorm.DB {
+			dbClient, err := db.GetDB()
+			Expect(err).NotTo(HaveOccurred())
+			return dbClient
+		}
+
+		BeforeEach(func() {
+			Expect(database().Create(&models.User{Username: "alice", PasswordHash: "hash-a"}).Error).NotTo(HaveOccurred())
+			Expect(database().Create(&models.User{Username: "bob", PasswordHash: "hash-b"}).Error).NotTo(HaveOccurred())
+		})
+
+		It("should reject list requests without admin credentials", func() {
+			req := httptest.NewRequest(http.MethodGet, "/api/admin/users", nil)
+
+			api.AdminListUsersHandler(recorder, req)
+
+			Expect(recorder.Code).To(Equal(http.StatusUnauthorized))
+		})
+
+		It("should return usernames for authenticated admin", func() {
+			req := httptest.NewRequest(http.MethodGet, "/api/admin/users", nil)
+			req.SetBasicAuth("admin", "admin")
+
+			api.AdminListUsersHandler(recorder, req)
+
+			Expect(recorder.Code).To(Equal(http.StatusOK))
+
+			var response []map[string]any
+			err := json.Unmarshal(recorder.Body.Bytes(), &response)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(response).To(HaveLen(2))
+			Expect(response[0]["username"]).To(Equal("alice"))
+			Expect(response[1]["username"]).To(Equal("bob"))
+		})
+
+		It("should delete existing user for authenticated admin", func() {
+			var user models.User
+			Expect(database().Where("username = ?", "alice").First(&user).Error).NotTo(HaveOccurred())
+
+			router := mux.NewRouter()
+			router.HandleFunc("/api/admin/users/{id:[0-9]+}", api.AdminDeleteUserHandler).Methods(http.MethodDelete)
+
+			req := httptest.NewRequest(http.MethodDelete, "/api/admin/users/"+strconv.FormatUint(uint64(user.ID), 10), nil)
+			req.SetBasicAuth("admin", "admin")
+			deleteRecorder := httptest.NewRecorder()
+
+			router.ServeHTTP(deleteRecorder, req)
+
+			Expect(deleteRecorder.Code).To(Equal(http.StatusNoContent))
+
+			err := database().First(&models.User{}, user.ID).Error
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return 404 when deleting non-existing user", func() {
+			router := mux.NewRouter()
+			router.HandleFunc("/api/admin/users/{id:[0-9]+}", api.AdminDeleteUserHandler).Methods(http.MethodDelete)
+
+			req := httptest.NewRequest(http.MethodDelete, "/api/admin/users/99999", nil)
+			req.SetBasicAuth("admin", "admin")
+			deleteRecorder := httptest.NewRecorder()
+
+			router.ServeHTTP(deleteRecorder, req)
+
+			Expect(deleteRecorder.Code).To(Equal(http.StatusNotFound))
 		})
 	})
 })

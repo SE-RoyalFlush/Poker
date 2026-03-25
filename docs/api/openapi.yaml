@@ -1,3 +1,37 @@
+  /me:
+    get:
+      tags: [Authentication]
+      summary: Get current authenticated user
+      description: >
+        Returns the currently authenticated user. Requires valid credentials (Basic Auth for demo; session/cookie in production).
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: Authenticated user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized (not logged in or invalid credentials)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Unauthorized
+                message: Missing or invalid credentials
+                status: 401
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Internal Server Error
+                message: Database not initialized
+                status: 500
 openapi: 3.0.3
 info:
   title: Poker Backend API

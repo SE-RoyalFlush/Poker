@@ -1,0 +1,266 @@
+<div class="rf-landing">
+
+  <!-- ── NAV ── -->
+  <nav class="rf-nav" role="navigation" aria-label="Main navigation">
+    <a class="rf-nav__logo" routerLink="/" aria-label="Royal Flush home">
+      <span class="rf-nav__logo-badge" aria-hidden="true">RF</span>
+      <span class="rf-nav__logo-text">Royal Flush</span>
+    </a>
+    <div class="rf-nav__actions">
+      <a mat-stroked-button color="primary" class="rf-nav__btn" routerLink="/admin" aria-label="Open admin page">
+        Admin
+      </a>
+      <button mat-stroked-button color="primary" class="rf-nav__btn" (click)="openLogin()" aria-label="Log in to your account">
+        Log In
+      </button>
+      <button mat-flat-button color="primary" class="rf-nav__btn" (click)="openRegister()" aria-label="Create a new account">
+        Register
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <main class="rf-hero" role="main">
+    <div class="rf-hero__content">
+      <p class="rf-hero__eyebrow" aria-hidden="true">Premium Online Poker</p>
+
+      <h1 class="rf-hero__heading">
+        Where Legends<br>
+        <span class="rf-hero__heading--accent">Go All In.</span>
+      </h1>
+
+      <p class="rf-hero__sub">
+        Real competition, live tables, and tournament glory —<br class="rf-hero__br"> all from your browser.
+      </p>
+
+      <div class="rf-hero__actions" role="group" aria-label="Get started">
+        <button mat-flat-button color="primary" class="rf-hero__btn rf-hero__btn--primary"
+                (click)="openRegister()" aria-label="Create a free account">
+          <span class="rf-hero__btn-icon" aria-hidden="true">♠</span>
+          Start Playing Free
+        </button>
+
+        <button mat-stroked-button class="rf-hero__btn rf-hero__btn--ghost"
+                (click)="scrollToJoin()" aria-label="Jump to join room section">
+          Join a Room →
+        </button>
+      </div>
+    </div>
+
+    <div class="rf-hero__cards" aria-hidden="true">
+      <div class="rf-card rf-card--1"><span class="rf-card__rank">10</span><span class="rf-card__suit">♠</span></div>
+      <div class="rf-card rf-card--2"><span class="rf-card__rank">J</span><span class="rf-card__suit rf-card__suit--red">♥</span></div>
+      <div class="rf-card rf-card--3"><span class="rf-card__rank">Q</span><span class="rf-card__suit rf-card__suit--red">♦</span></div>
+      <div class="rf-card rf-card--4"><span class="rf-card__rank">K</span><span class="rf-card__suit">♣</span></div>
+      <div class="rf-card rf-card--5"><span class="rf-card__rank">A</span><span class="rf-card__suit">♠</span></div>
+    </div>
+  </main>
+
+  <!-- ── JOIN ROOM SECTION ── -->
+  <section class="rf-join" id="join-room" aria-labelledby="join-heading">
+    <div class="rf-join__inner">
+
+      <!-- Join with code -->
+      <mat-card class="rf-join__card" appearance="outlined">
+        <mat-card-content>
+          <h2 id="join-heading" class="rf-join__title">Join a Room</h2>
+          <p class="rf-join__desc">Enter a room code shared by the host.</p>
+
+          <form [formGroup]="joinForm" (ngSubmit)="onJoinRoom()" class="rf-join__form" novalidate>
+            <mat-form-field appearance="outline" class="rf-join__field">
+              <mat-label>Room Code</mat-label>
+              <input matInput
+                     formControlName="roomCode"
+                     placeholder="e.g. RF-7742"
+                     autocomplete="off"
+                     aria-describedby="roomCode-error"
+                     [attr.aria-invalid]="joinForm.get('roomCode')?.invalid && joinForm.get('roomCode')?.touched">
+              <mat-error id="roomCode-error" role="alert">
+                <ng-container *ngIf="joinForm.get('roomCode')?.errors as errors">
+                  <span *ngIf="errors['required']">Room code is required.</span>
+                  <span *ngIf="errors['pattern']">Enter a valid code (e.g. RF-7742).</span>
+                  <span *ngIf="errors['serverError']">{{ errors['serverError'] }}</span>
+                </ng-container>
+              </mat-error>
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" type="submit"
+                    class="rf-join__submit"
+                    [disabled]="joinLoading"
+                    aria-label="Join the room with this code">
+              <mat-spinner *ngIf="joinLoading" diameter="18" class="rf-spinner" aria-label="Joining room…"></mat-spinner>
+              <span *ngIf="!joinLoading">Join Room</span>
+            </button>
+
+            <div *ngIf="joinError" class="rf-form__error" role="alert" aria-live="polite">
+              {{ joinError }}
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Auth card -->
+      <mat-card class="rf-join__card rf-join__card--auth" appearance="outlined">
+        <mat-card-content>
+          <h2 class="rf-join__title">New Here?</h2>
+          <p class="rf-join__desc">Create a free account to start playing, build your rank, and host private tables.</p>
+
+          <div class="rf-auth-actions">
+            <button mat-flat-button color="primary" class="rf-auth__btn"
+                    (click)="openRegister()" aria-label="Register a new account">
+              Create Free Account
+            </button>
+            <p class="rf-auth__divider" aria-hidden="true">Already a member?</p>
+            <button mat-stroked-button color="primary" class="rf-auth__btn"
+                    (click)="openLogin()" aria-label="Log in to existing account">
+              Log In
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+  </section>
+
+  <!-- ── LOGIN DIALOG (inline panel, toggled) ── -->
+  <section *ngIf="activePanel === 'login'" class="rf-dialog-overlay" role="dialog"
+           aria-modal="true" aria-labelledby="login-title"
+           (click)="closePanel($event)">
+    <mat-card class="rf-dialog" (click)="$event.stopPropagation()">
+      <mat-card-content>
+        <button class="rf-dialog__close" mat-icon-button (click)="closePanel()" aria-label="Close login form">✕</button>
+
+        <div class="rf-dialog__logo" aria-hidden="true">RF</div>
+        <h2 id="login-title" class="rf-dialog__title">Welcome Back</h2>
+        <p class="rf-dialog__sub">Log in to your Royal Flush account.</p>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" novalidate class="rf-dialog__form">
+
+          <mat-form-field appearance="outline" class="rf-dialog__field">
+            <mat-label>Username</mat-label>
+            <input matInput type="text" formControlName="username"
+                   autocomplete="username"
+                   [attr.aria-invalid]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
+            <mat-error role="alert">
+              <ng-container *ngIf="loginForm.get('username')?.errors as e">
+                <span *ngIf="e['required']">Username is required.</span>
+                <span *ngIf="e['minlength']">At least 3 characters required.</span>
+                <span *ngIf="e['maxlength']">Maximum 20 characters.</span>
+                <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
+              </ng-container>
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="rf-dialog__field">
+            <mat-label>Password</mat-label>
+            <input matInput [type]="showLoginPassword ? 'text' : 'password'"
+                   formControlName="password"
+                   autocomplete="current-password"
+                   [attr.aria-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            <button mat-icon-button matSuffix type="button"
+                    (click)="showLoginPassword = !showLoginPassword"
+                    [attr.aria-label]="showLoginPassword ? 'Hide password' : 'Show password'">
+              {{ showLoginPassword ? '🙈' : '👁' }}
+            </button>
+            <mat-error role="alert">
+              <ng-container *ngIf="loginForm.get('password')?.errors as e">
+                <span *ngIf="e['required']">Password is required.</span>
+                <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
+              </ng-container>
+            </mat-error>
+          </mat-form-field>
+
+          <div *ngIf="loginError" class="rf-form__error" role="alert" aria-live="polite">
+            {{ loginError }}
+          </div>
+
+          <button mat-flat-button color="primary" type="submit"
+                  class="rf-dialog__submit" [disabled]="loginLoading">
+            <mat-spinner *ngIf="loginLoading" diameter="18" class="rf-spinner" aria-label="Logging in…"></mat-spinner>
+            <span *ngIf="!loginLoading">Log In</span>
+          </button>
+
+          <p class="rf-dialog__switch">
+            Don't have an account?
+            <button type="button" mat-button color="primary" (click)="openRegister()">Register</button>
+          </p>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <!-- ── REGISTER DIALOG ── -->
+  <section *ngIf="activePanel === 'register'" class="rf-dialog-overlay" role="dialog"
+           aria-modal="true" aria-labelledby="register-title"
+           (click)="closePanel($event)">
+    <mat-card class="rf-dialog" (click)="$event.stopPropagation()">
+      <mat-card-content>
+        <button class="rf-dialog__close" mat-icon-button (click)="closePanel()" aria-label="Close registration form">✕</button>
+
+        <div class="rf-dialog__logo" aria-hidden="true">RF</div>
+        <h2 id="register-title" class="rf-dialog__title">Create Account</h2>
+        <p class="rf-dialog__sub">Join Royal Flush — it's free.</p>
+
+        <form [formGroup]="registerForm" (ngSubmit)="onRegister()" novalidate class="rf-dialog__form">
+
+          <mat-form-field appearance="outline" class="rf-dialog__field">
+            <mat-label>Username</mat-label>
+            <input matInput formControlName="username"
+                   autocomplete="username"
+                   [attr.aria-invalid]="registerForm.get('username')?.invalid && registerForm.get('username')?.touched">
+            <mat-error role="alert">
+              <ng-container *ngIf="registerForm.get('username')?.errors as e">
+                <span *ngIf="e['required']">Username is required.</span>
+                <span *ngIf="e['minlength']">At least 3 characters required.</span>
+                <span *ngIf="e['maxlength']">Maximum 20 characters.</span>
+                <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
+              </ng-container>
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="rf-dialog__field">
+            <mat-label>Password</mat-label>
+            <input matInput [type]="showRegisterPassword ? 'text' : 'password'"
+                   formControlName="password"
+                   autocomplete="new-password"
+                   [attr.aria-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+            <button mat-icon-button matSuffix type="button"
+                    (click)="showRegisterPassword = !showRegisterPassword"
+                    [attr.aria-label]="showRegisterPassword ? 'Hide password' : 'Show password'">
+              {{ showRegisterPassword ? '🙈' : '👁' }}
+            </button>
+            <mat-error role="alert">
+              <ng-container *ngIf="registerForm.get('password')?.errors as e">
+                <span *ngIf="e['required']">Password is required.</span>
+                <span *ngIf="e['minlength']">At least 8 characters required.</span>
+                <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
+              </ng-container>
+            </mat-error>
+          </mat-form-field>
+
+          <div *ngIf="registerError" class="rf-form__error" role="alert" aria-live="polite">
+            {{ registerError }}
+          </div>
+
+          <button mat-flat-button color="primary" type="submit"
+                  class="rf-dialog__submit" [disabled]="registerLoading">
+            <mat-spinner *ngIf="registerLoading" diameter="18" class="rf-spinner" aria-label="Creating account…"></mat-spinner>
+            <span *ngIf="!registerLoading">Create Account</span>
+          </button>
+
+          <p class="rf-dialog__switch">
+            Already have an account?
+            <button type="button" mat-button color="primary" (click)="openLogin()">Log In</button>
+          </p>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="rf-footer" role="contentinfo">
+    <span class="rf-footer__copy">© 2025 Royal Flush · Play responsibly · 18+</span>
+    <span class="rf-footer__suits" aria-hidden="true">♥ ♠ ♦ ♣</span>
+  </footer>
+
+</div>

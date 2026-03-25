@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Registration UI Story (Issue #1-11)](https://github.com/SE-RoyalFlush/Poker)
+    - Implemented registration UI with Angular Material + Reactive Forms in `frontend/src/app/features/auth/register/`
+    - Added validation UX (required/min-length, submit-disabled-until-valid, password match) and `409 -> Username taken` error mapping
+    - Redirects successful registration to `/login`
+    - Added focused register component unit tests for validation, API call trigger, conflict handling, and redirect success
+    - Added `RoomService` unit tests and frontend-backend registration integration smoke test script
+    - Added npm script `test:integration:backend` and documented how to run integration checks with backend alive
+    - Consolidated frontend auth/room usage to core services + core auth guard for a single maintainable structure
 - [Frontend: Authentication Service Implementation](https://github.com/SE-RoyalFlush/Poker/pull/42)
     - Implemented `AuthService` in `src/app/core/services/auth.service.ts` as single source of truth for user authentication state
     - Created User model interfaces (`User`, `LoginCredentials`, `RegisterData`) in `src/app/core/models/user.model.ts`
