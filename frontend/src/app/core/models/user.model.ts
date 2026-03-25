@@ -1,6 +1,6 @@
 /**
  * User model interface representing the user data returned from backend API.
- * Matches the backend User model structure.
+ * Uses frontend camelCase fields mapped from backend User JSON fields.
  */
 export interface User {
   id: number;

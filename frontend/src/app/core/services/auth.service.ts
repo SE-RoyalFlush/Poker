@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of, switchMap, throwError, finalize } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, Observable, tap, catchError, of, switchMap, throwError, finalize, map } from 'rxjs';
 import { User, LoginCredentials, RegisterData } from '../models';
+
+interface BackendUser {
+  ID: number;
+  username: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+}
 
 /**
  * AuthService handles all authentication-related operations.
@@ -32,6 +39,15 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
+  private mapBackendUser(user: BackendUser): User {
+    return {
+      id: user.ID,
+      username: user.username,
+      createdAt: user.CreatedAt,
+      updatedAt: user.UpdatedAt
+    };
+  }
+
   /**
    * Check if user has an active session on app initialization.
     * Typically invoked during app startup via APP_INITIALIZER in app.config.ts to restore user state.
@@ -47,17 +63,24 @@ export class AuthService {
   checkSession(): Observable<User | null> {
     this.isLoadingSubject.next(true);
 
-    return this.http.get<User>(`${this.apiUrl}/me`, {
+    return this.http.get<BackendUser>(`${this.apiUrl}/me`, {
       withCredentials: true
     }).pipe(
+      map(backendUser => this.mapBackendUser(backendUser)),
       tap(user => {
         this.currentUserSubject.next(user);
       }),
-      catchError(error => {
-        // 401 or any error means user is not authenticated
+      catchError((error: HttpErrorResponse) => {
+        // Only 401 means user is unauthenticated.
+        // For transient server/network failures, preserve current local state.
         console.error('Session check failed:', error);
-        this.currentUserSubject.next(null);
-        return of(null); // Return null instead of throwing error
+
+        if (error.status === 401) {
+          this.currentUserSubject.next(null);
+          return of(null);
+        }
+
+        return of(this.currentUserSubject.value);
       }),
       finalize(() => {
         this.isLoadingSubject.next(false);
@@ -104,21 +127,21 @@ export class AuthService {
    * Flow:
    * 1. POST registration data to /api/register
    * 2. Backend validates and creates new user
-   * 3. On success: automatically logs in the user and calls checkSession()
+   * 3. On success: returns the created user
    * 4. On failure: error is thrown
    *
    * @param data - username, password, and confirmPassword
-   * @returns Observable of newly registered and logged-in user
+   * @returns Observable of newly created user
    */
-  register(data: RegisterData): Observable<User | null> {
+  register(data: RegisterData): Observable<User> {
     this.isLoadingSubject.next(true);
 
-    return this.http.post<void>(`${this.apiUrl}/register`, data, {
+    return this.http.post<BackendUser>(`${this.apiUrl}/register`, data, {
       withCredentials: true
     }).pipe(
-      switchMap(() => {
-        // After successful registration, fetch user profile
-        return this.checkSession();
+      switchMap(backendUser => {
+        const user = this.mapBackendUser(backendUser);
+        return of(user);
       }),
       catchError(error => {
         console.error('Registration failed:', error);

@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - Created User model interfaces (`User`, `LoginCredentials`, `RegisterData`) in `src/app/core/models/user.model.ts`
     - Implemented RxJS BehaviorSubject pattern for state management with `currentUser$` observable for components
     - Implemented `login(credentials)` method - POSTs to `/api/login`, chains to `checkSession()` for user profile fetch
-    - Implemented `register(data)` method - POSTs to `/api/register`, auto-fetches user profile after registration
+    - Implemented `register(data)` method - POSTs to `/api/register` and returns the created user payload
     - Implemented `logout()` method - POSTs to `/api/logout`, clears user state locally
     - Implemented `checkSession()` method - Calls `GET /api/me` to validate session and restore user state on app initialization
     - Configured `APP_INITIALIZER` to restore user session automatically on app startup

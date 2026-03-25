@@ -8,6 +8,13 @@ describe('AuthService', () => {
   let httpMock: HttpTestingController;
   const apiUrl = 'http://localhost:8080/api';
 
+  const mockBackendUser = {
+    ID: 1,
+    username: 'testuser',
+    CreatedAt: '2026-03-02T00:00:00Z',
+    UpdatedAt: '2026-03-02T00:00:00Z'
+  };
+
   const mockUser: User = {
     id: 1,
     username: 'testuser',
@@ -40,7 +47,7 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${apiUrl}/me`);
       expect(req.request.method).toBe('GET');
       expect(req.request.withCredentials).toBe(true);
-      req.flush(mockUser);
+      req.flush(mockBackendUser);
 
       // Verify currentUser$ observable was updated
       service.currentUser$.subscribe(user => {
@@ -80,7 +87,23 @@ describe('AuthService', () => {
       });
 
       const req = httpMock.expectOne(`${apiUrl}/me`);
-      req.flush(mockUser);
+      req.flush(mockBackendUser);
+    });
+
+    it('should preserve current user on non-401 session check error', (done) => {
+      service['currentUserSubject'].next(mockUser);
+
+      service.checkSession().subscribe(user => {
+        expect(user).toEqual(mockUser);
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/me`);
+      req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+
+      service.currentUser$.subscribe(user => {
+        expect(user).toEqual(mockUser);
+        done();
+      });
     });
   });
 
@@ -106,7 +129,7 @@ describe('AuthService', () => {
       // Second request: GET to /me (from checkSession)
       const meReq = httpMock.expectOne(`${apiUrl}/me`);
       expect(meReq.request.method).toBe('GET');
-      meReq.flush(mockUser);
+      meReq.flush(mockBackendUser);
     });
 
     it('should throw error on failed login', (done) => {
@@ -136,7 +159,7 @@ describe('AuthService', () => {
       loginReq.flush(null);
 
       const meReq = httpMock.expectOne(`${apiUrl}/me`);
-      meReq.flush(mockUser);
+      meReq.flush(mockBackendUser);
 
       // Verify no token extraction attempt
       service.currentUser$.subscribe(user => {
@@ -148,7 +171,7 @@ describe('AuthService', () => {
   });
 
   describe('register()', () => {
-    it('should post registration data and fetch user profile on success', (done) => {
+    it('should post registration data and return created user on success', (done) => {
       const registerData = {
         username: 'newuser',
         password: 'password123',
@@ -160,15 +183,11 @@ describe('AuthService', () => {
         done();
       });
 
-      // First request: POST to /register
+      // Request: POST to /register
       const registerReq = httpMock.expectOne(`${apiUrl}/register`);
       expect(registerReq.request.method).toBe('POST');
       expect(registerReq.request.body).toEqual(registerData);
-      registerReq.flush(null);
-
-      // Second request: GET to /me (from checkSession)
-      const meReq = httpMock.expectOne(`${apiUrl}/me`);
-      meReq.flush(mockUser);
+      registerReq.flush(mockBackendUser);
     });
 
     it('should throw error on failed registration', (done) => {

@@ -71,8 +71,8 @@ authService.checkSession(): Observable<User | null>
 // Login user (POST /api/login, then fetches user profile)
 authService.login(credentials): Observable<User | null>
 
-// Register new user (POST /api/register, then fetches user profile)
-authService.register(data): Observable<User | null>
+// Register new user (POST /api/register, returns created user)
+authService.register(data): Observable<User>
 
 // Logout user (POST /api/logout, clears local state)
 authService.logout(): Observable<void>
@@ -117,8 +117,8 @@ login(username: string, password: string) {
 
 3. **Register**
    - POST registration data to /api/register
-   - Backend creates user and sets session cookie
-   - Automatically fetches user profile (auto-login)
+  - Backend creates user and returns created user payload
+  - Does not assume an authenticated session is created
 
 4. **Logout**
    - POST to /api/logout (backend clears cookie)
@@ -153,12 +153,31 @@ All 29 tests pass ✅
 
 User-related interfaces defined in `src/app/core/models/user.model.ts`:
 - `User` - Authenticated user data (id, username, createdAt, updatedAt)
+  - Mapped from backend fields (ID, CreatedAt, UpdatedAt)
 - `LoginCredentials` - Login form data (username, password)
 - `RegisterData` - Registration form data (username, password, confirmPassword)
 
 ### Further Documentation
 
 Authentication architecture, RxJS patterns, and design decisions are documented in this README and related in-code comments.
+
+### Backend/Frontend Contract Test Matrix
+
+Use this checklist whenever auth service behavior or backend auth endpoints change.
+
+| Contract Area | Source of Truth | Expected Behavior | Frontend Verification |
+| --- | --- | --- | --- |
+| User JSON shape from backend | `backend/pkg/models/user.go`, `docs/api/openapi.yaml` | Backend returns `ID`, `CreatedAt`, `UpdatedAt`, `username` | `AuthService` maps to frontend `User` (`id`, `createdAt`, `updatedAt`) in `src/app/core/services/auth.service.ts` |
+| Session restore (`GET /api/me`) | Backend `/api/me` handler + OpenAPI | `401`: unauthenticated guest; non-`401`: do not force logout on transient failures | `checkSession()` tests in `src/app/core/services/auth.service.spec.ts` |
+| Login flow | Backend `/api/login` + `/api/me` | Login sets session, then `/me` resolves current user | `login()` tests in `src/app/core/services/auth.service.spec.ts` |
+| Register flow | `backend/pkg/api/auth.go` `RegisterHandler` | Register creates user payload; does not imply authenticated session | `register()` tests in `src/app/core/services/auth.service.spec.ts` (no implicit `/me`) |
+| Logout flow | Backend `/api/logout` | Logout clears backend session; frontend clears local user state even if backend call fails | `logout()` tests in `src/app/core/services/auth.service.spec.ts` |
+
+Quick contract regression run:
+
+```bash
+npm test -- --watch=false --browsers=ChromeHeadless --include='**/auth.service.spec.ts'
+```
 
 ## Setup and verification
 
