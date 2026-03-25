@@ -41,7 +41,7 @@ var _ = Describe("Authentication Handlers", func() {
 		Expect(database).NotTo(BeNil())
 
 		// Run migrations
-		database.AutoMigrate(&models.User{})
+		Expect(database.AutoMigrate(&models.User{})).To(Succeed())
 
 		// Create test user
 		hashedPassword, err := auth.HashPassword("password123")
