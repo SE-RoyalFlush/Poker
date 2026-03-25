@@ -106,6 +106,13 @@ var _ = Describe("Authentication Handlers", func() {
 			api.LoginHandler(w, req)
 
 			Expect(w.Code).To(Equal(http.StatusUnauthorized))
+			Expect(w.Header().Get("Content-Type")).To(Equal("application/json"))
+
+			var response api.ErrorResponse
+			Expect(json.Unmarshal(w.Body.Bytes(), &response)).To(Succeed())
+			Expect(response.Error).To(Equal("Unauthorized"))
+			Expect(response.Message).To(Equal("Invalid credentials"))
+			Expect(response.Status).To(Equal(http.StatusUnauthorized))
 		})
 
 		It("should return 401 with non-existent user", func() {
@@ -137,6 +144,13 @@ var _ = Describe("Authentication Handlers", func() {
 			api.LoginHandler(w, req)
 
 			Expect(w.Code).To(Equal(http.StatusBadRequest))
+			Expect(w.Header().Get("Content-Type")).To(Equal("application/json"))
+
+			var response api.ErrorResponse
+			Expect(json.Unmarshal(w.Body.Bytes(), &response)).To(Succeed())
+			Expect(response.Error).To(Equal("Bad Request"))
+			Expect(response.Message).To(Equal("Username and password required"))
+			Expect(response.Status).To(Equal(http.StatusBadRequest))
 		})
 
 		It("should return 405 for non-POST request", func() {
@@ -146,6 +160,13 @@ var _ = Describe("Authentication Handlers", func() {
 			api.LoginHandler(w, req)
 
 			Expect(w.Code).To(Equal(http.StatusMethodNotAllowed))
+			Expect(w.Header().Get("Content-Type")).To(Equal("application/json"))
+
+			var response api.ErrorResponse
+			Expect(json.Unmarshal(w.Body.Bytes(), &response)).To(Succeed())
+			Expect(response.Error).To(Equal("Method Not Allowed"))
+			Expect(response.Message).To(Equal("Only POST method is allowed"))
+			Expect(response.Status).To(Equal(http.StatusMethodNotAllowed))
 		})
 
 		It("should NOT return token in response body", func() {

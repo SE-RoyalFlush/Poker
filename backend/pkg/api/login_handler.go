@@ -18,47 +18,49 @@ type LoginRequest struct {
 
 // LoginHandler handles user login and sets JWT in HttpOnly cookie
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	if r.Method != http.MethodPost {
-		http.Error(w, `{"error": "method not allowed"}`, http.StatusMethodNotAllowed)
+		sendError(w, "Method Not Allowed", "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error": "invalid request body"}`, http.StatusBadRequest)
+		sendError(w, "Bad Request", "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	if req.Username == "" || req.Password == "" {
-		http.Error(w, `{"error": "username and password required"}`, http.StatusBadRequest)
+		sendError(w, "Bad Request", "Username and password required", http.StatusBadRequest)
 		return
 	}
 
 	// Fetch user from database
 	database, err := db.GetDB()
 	if err != nil {
-		http.Error(w, `{"error": "database error"}`, http.StatusInternalServerError)
+		sendError(w, "Internal Server Error", "Database error", http.StatusInternalServerError)
 		return
 	}
 
 	var user models.User
 	if err := database.Where("username = ?", req.Username).First(&user).Error; err != nil {
 		// Invalid credentials - don't reveal if user exists
-		http.Error(w, `{"error": "invalid credentials"}`, http.StatusUnauthorized)
+		sendError(w, "Unauthorized", "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	// Verify password
 	if err := auth.VerifyPassword(user.PasswordHash, req.Password); err != nil {
 		// Invalid credentials
-		http.Error(w, `{"error": "invalid credentials"}`, http.StatusUnauthorized)
+		sendError(w, "Unauthorized", "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	// Generate JWT token
 	token, err := auth.GenerateToken(&user, 24)
 	if err != nil {
-		http.Error(w, `{"error": "token generation failed"}`, http.StatusInternalServerError)
+		sendError(w, "Internal Server Error", "Token generation failed", http.StatusInternalServerError)
 		return
 	}
 
@@ -78,7 +80,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookie)
 
 	// Return user info (NOT the token)
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "login successful",
