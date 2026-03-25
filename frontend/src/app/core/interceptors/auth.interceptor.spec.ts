@@ -102,6 +102,16 @@ describe('AuthInterceptor', () => {
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
   });
 
+  it('should NOT redirect on 401 from session check endpoint /api/me', () => {
+    const clearSpy = spyOn(csrfService, 'clearToken');
+    httpClient.get('http://localhost:8080/api/me').subscribe({ error: () => {} });
+    const req = httpMock.expectOne('http://localhost:8080/api/me');
+    req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(clearSpy).toHaveBeenCalled();
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
   it('should NOT redirect on non-401 errors', () => {
     httpClient.get(testUrl).subscribe({ error: () => {} });
     const req = httpMock.expectOne(testUrl);
