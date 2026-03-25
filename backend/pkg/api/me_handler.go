@@ -10,8 +10,8 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 )
 
-// MeHandler returns the current authenticated user's info
-// This endpoint requires authentication via the AuthMiddleware
+// MeHandler authenticates the user via the JWT cookie and returns the current user's info.
+// Authentication is performed within this handler using the token from the HttpOnly cookie.
 func MeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, `{"error": "method not allowed"}`, http.StatusMethodNotAllowed)
