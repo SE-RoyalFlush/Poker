@@ -62,14 +62,17 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set HttpOnly, Secure, SameSite cookie
+	// Determine whether to set the Secure flag based on TLS.
+	secureCookie := r.TLS != nil
+
+	// Set HttpOnly, SameSite cookie with conditional Secure flag
 	cookie := &http.Cookie{
 		Name:     middleware.CookieName,
 		Value:    token,
 		Path:     "/",
 		MaxAge:   24 * 60 * 60, // 24 hours
 		HttpOnly: true,
-		Secure:   true, // Only sent over HTTPS
+		Secure:   secureCookie, // Only sent over HTTPS when TLS is enabled
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, cookie)
