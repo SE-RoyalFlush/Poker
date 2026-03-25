@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,11 +16,6 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/middleware"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 )
-
-func TestAuthHandlers(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Auth Handlers Suite")
-}
 
 var _ = Describe("Authentication Handlers", func() {
 	var (
@@ -54,9 +48,8 @@ var _ = Describe("Authentication Handlers", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		testUser = models.User{
-			Username: "testuser",
-			Email:    "test@example.com",
-			Password: hashedPassword,
+			Username:     "testuser",
+			PasswordHash: hashedPassword,
 		}
 
 		// Create test user
@@ -254,7 +247,6 @@ var _ = Describe("Authentication Handlers", func() {
 			Expect(json.Unmarshal(w.Body.Bytes(), &response)).To(Succeed())
 			Expect(response.ID).To(Equal(testUser.ID))
 			Expect(response.Username).To(Equal(testUser.Username))
-			Expect(response.Email).To(Equal(testUser.Email))
 		})
 
 		It("should return 405 for non-GET request", func() {

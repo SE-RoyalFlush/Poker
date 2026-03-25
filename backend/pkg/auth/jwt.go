@@ -13,7 +13,6 @@ import (
 type Claims struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
-	Email    string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -48,7 +47,6 @@ func GenerateToken(user *models.User, expirationHours int) (string, error) {
 	claims := &Claims{
 		UserID:   user.ID,
 		Username: user.Username,
-		Email:    user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

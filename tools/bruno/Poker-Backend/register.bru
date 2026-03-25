@@ -1,0 +1,43 @@
+meta {
+  name: register
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/register
+  body: json
+  auth: inherit
+}
+
+headers {
+  ~X-CSRF-Token: 5tdkRzG91w/SDZJHgpwrU+jm0nI3liW2UR3iJr4C1L8KlU1b4hO3qFCQ6xMrcUnvbdHgZtGWzYtIWYno/ImwmQ==
+}
+
+body:json {
+  {
+    "username": "testuser",
+    "password": "password123"
+  }
+}
+
+tests {
+  test("status is 201", function () {
+    expect(res.status).to.equal(201);
+  });
+  
+  test("user object is returned", function () {
+    expect(res.body.username).to.equal("testuser");
+    expect(res.body.ID).to.be.a("number");
+  });
+  
+  test("password_hash is not returned", function () {
+    expect(res.body.password_hash).to.be.undefined;
+    expect(res.body.PasswordHash).to.be.undefined;
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

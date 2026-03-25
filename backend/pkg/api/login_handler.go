@@ -49,7 +49,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify password
-	if err := auth.VerifyPassword(user.Password, req.Password); err != nil {
+	if err := auth.VerifyPassword(user.PasswordHash, req.Password); err != nil {
 		// Invalid credentials
 		http.Error(w, `{"error": "invalid credentials"}`, http.StatusUnauthorized)
 		return

@@ -59,8 +59,11 @@ func main() {
 	// Initialize router
 	router := mux.NewRouter()
 
-	router.HandleFunc("/health", api.HealthHandler).Methods("GET")
-	router.HandleFunc("/api/csrf", api.CSRFTokenHandler).Methods("GET")
+	// API Routes
+	apiRouter := router.PathPrefix("/api").Subrouter()
+	apiRouter.HandleFunc("/health", api.HealthHandler).Methods("GET")
+	apiRouter.HandleFunc("/register", api.RegisterHandler).Methods("POST")
+	apiRouter.HandleFunc("/csrf", api.CSRFTokenHandler).Methods("GET")
 
 	// Authentication routes
 	router.HandleFunc("/api/login", api.LoginHandler).Methods("POST")
