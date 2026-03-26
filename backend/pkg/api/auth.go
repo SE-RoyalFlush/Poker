@@ -92,6 +92,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Username == "" || req.Password == "" {
+		sendError(w, "Bad Request", "Username and password required", http.StatusBadRequest)
+		return
+	}
+
 	database, err := db.GetDB()
 	if err != nil {
 		sendError(w, "Internal Server Error", "Database not initialized", http.StatusInternalServerError)
