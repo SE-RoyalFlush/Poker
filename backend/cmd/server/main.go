@@ -10,6 +10,7 @@ import (
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -31,9 +32,13 @@ func main() {
 	// Initialize database connection
 	dbCfg := db.DefaultConfig()
 
-	_, err := db.Connect(dbCfg)
+	database, err := db.Connect(dbCfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
+	if err := database.AutoMigrate(&models.User{}, &models.Room{}); err != nil {
+		log.Fatalf("Failed to run database migrations: %v", err)
 	}
 
 	if err := db.Ping(); err != nil {
