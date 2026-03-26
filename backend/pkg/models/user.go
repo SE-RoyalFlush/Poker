@@ -31,8 +31,3 @@ func (u *User) ToResponse() UserResponse {
 		UpdatedAt: u.UpdatedAt,
 	}
 }
-
-// User is the minimal account model required for relational ownership.
-type User struct {
-	gorm.Model
-}
