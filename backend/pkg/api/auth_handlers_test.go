@@ -330,9 +330,11 @@ var _ = Describe("Authentication Handlers", func() {
 			createdAt, ok := response["CreatedAt"].(string)
 			Expect(ok).To(BeTrue())
 
+			Expect(createdAt).To(Equal(testUser.CreatedAt.Format(time.RFC3339Nano)))
+
 			parsed, err := time.Parse(time.RFC3339Nano, createdAt)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(parsed).To(Equal(testUser.CreatedAt))
+			Expect(parsed.Equal(testUser.CreatedAt)).To(BeTrue())
 		})
 	})
 
