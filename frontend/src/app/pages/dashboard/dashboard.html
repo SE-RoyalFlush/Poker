@@ -1,275 +1,288 @@
-<div class="rf-dash">
-
-  <!-- ── NAV ── -->
-  <nav class="rf-nav" role="navigation" aria-label="App navigation">
-    <a class="rf-nav__logo" routerLink="/dashboard" aria-label="Royal Flush dashboard">
-      <span class="rf-nav__logo-badge" aria-hidden="true">RF</span>
-      <span class="rf-nav__logo-text">Royal Flush</span>
+<section class="dashboard-shell">
+  <header class="dashboard-topbar">
+    <a class="dashboard-brand" routerLink="/home" aria-label="Royal Flush home">
+      <span class="dashboard-brand__mark">RF</span>
+      <span class="dashboard-brand__text">Royal Flush</span>
     </a>
 
-    <div class="rf-nav__user" *ngIf="currentUser">
-      <span class="rf-nav__username" aria-label="Logged in as {{ currentUser.username }}">
-        {{ currentUser.username }}
-      </span>
-      <div class="rf-nav__avatar" aria-hidden="true">
-        {{ currentUser.username[0].toUpperCase() }}
-      </div>
-      <button mat-stroked-button class="rf-nav__logout"
-              (click)="onLogout()" aria-label="Log out">
+    <div class="dashboard-topbar__actions">
+      @if (currentUser; as user) {
+        <div class="dashboard-user" aria-label="Logged in user">
+          <div class="dashboard-user__meta">
+            <span class="dashboard-user__label">Signed in as</span>
+            <strong class="dashboard-user__name">{{ user.username }}</strong>
+          </div>
+          <div class="dashboard-user__avatar" aria-hidden="true">
+            {{ user.username.charAt(0).toUpperCase() }}
+          </div>
+        </div>
+      }
+
+      <button mat-stroked-button type="button" class="dashboard-logout" (click)="onLogout()">
         Log Out
       </button>
     </div>
-  </nav>
+  </header>
 
-  <!-- ── MAIN ── -->
-  <main class="rf-dash__main" role="main">
+  <main class="dashboard-main">
+    <section class="dashboard-hero">
+      <div class="dashboard-hero__copy">
+        <p class="dashboard-eyebrow">Player Hub</p>
+        <h1>
+          Welcome back,
+          <span>{{ currentUser?.username ?? 'Player' }}</span>
+        </h1>
+        <p class="dashboard-hero__text">
+          Spin up a private table, jump into an open room, or scan the live list for action.
+        </p>
+      </div>
 
-    <!-- Page header -->
-    <header class="rf-dash__header">
-      <h1 class="rf-dash__greeting">
-        Good game,
-        <span class="rf-dash__greeting--accent">{{ currentUser?.username ?? 'Player' }}</span>.
-      </h1>
-      <p class="rf-dash__sub">Create a private room or jump into an existing one.</p>
-    </header>
+      <mat-card class="dashboard-profile" appearance="outlined">
+        <mat-card-content>
+          <p class="dashboard-profile__label">Current Session</p>
+          <div class="dashboard-profile__row">
+            <span>Username</span>
+            <strong>{{ currentUser?.username ?? 'Unavailable' }}</strong>
+          </div>
+          <div class="dashboard-profile__row">
+            <span>Player ID</span>
+            <strong>#{{ currentUser?.id ?? 'N/A' }}</strong>
+          </div>
+          <div class="dashboard-profile__row">
+            <span>Joined</span>
+            <strong>{{ currentUser?.createdAt ? (currentUser?.createdAt | date: 'mediumDate') : 'N/A' }}</strong>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </section>
 
-    <!-- ── TWO CARDS ── -->
-    <div class="rf-dash__cards">
+    <section class="dashboard-grid">
+      <mat-card class="dashboard-card" appearance="outlined">
+        <mat-card-content class="dashboard-card__content">
+          <div class="dashboard-card__header">
+            <p class="dashboard-card__eyebrow">Host Table</p>
+            <h2>Create Room</h2>
+            <p>Choose stakes, player count, and optional privacy settings for your next game.</p>
+          </div>
 
-      <!-- CREATE ROOM ──────────────────────────── -->
-      <mat-card class="rf-room-card" appearance="outlined" aria-labelledby="create-heading">
-        <mat-card-content class="rf-room-card__content">
-
-          <div class="rf-room-card__icon" aria-hidden="true">♠</div>
-          <h2 id="create-heading" class="rf-room-card__title">Create a Room</h2>
-          <p class="rf-room-card__desc">
-            Set up a private table, choose your game type, blinds, and max players.
-          </p>
-
-          <form [formGroup]="createForm" (ngSubmit)="onCreateRoom()" novalidate class="rf-room-card__form">
-
-            <mat-form-field appearance="outline" class="rf-room-card__field">
+          <form [formGroup]="createForm" (ngSubmit)="onCreateRoom()" class="dashboard-form" novalidate>
+            <mat-form-field appearance="outline">
               <mat-label>Room Name</mat-label>
-              <input matInput formControlName="roomName"
-                     placeholder="e.g. Friday Night Hustle"
-                     autocomplete="off"
-                     [attr.aria-invalid]="createForm.get('roomName')?.invalid && createForm.get('roomName')?.touched">
-              <mat-error role="alert">
-                <ng-container *ngIf="createForm.get('roomName')?.errors as e">
-                  <span *ngIf="e['required']">Room name is required.</span>
-                  <span *ngIf="e['maxlength']">Maximum 40 characters.</span>
-                  <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
-                </ng-container>
+              <input matInput formControlName="roomName" autocomplete="off" />
+              <mat-error>
+                @if (createForm.get('roomName')?.errors?.['required']) {
+                  <span>Room name is required.</span>
+                }
+                @if (createForm.get('roomName')?.errors?.['maxlength']) {
+                  <span>Maximum 40 characters.</span>
+                }
+                @if (createForm.get('roomName')?.errors?.['serverError']) {
+                  <span>{{ createForm.get('roomName')?.errors?.['serverError'] }}</span>
+                }
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="rf-room-card__field">
-              <mat-label>Max Players</mat-label>
-              <input matInput type="number" formControlName="maxPlayers"
-                     min="2" max="9"
-                     [attr.aria-invalid]="createForm.get('maxPlayers')?.invalid && createForm.get('maxPlayers')?.touched">
-              <mat-error role="alert">
-                <ng-container *ngIf="createForm.get('maxPlayers')?.errors as e">
-                  <span *ngIf="e['required']">Max players is required.</span>
-                  <span *ngIf="e['min'] || e['max']">Must be between 2 and 9.</span>
-                </ng-container>
-              </mat-error>
-            </mat-form-field>
-
-            <div class="rf-room-card__row">
-              <mat-form-field appearance="outline" class="rf-room-card__field">
-                <mat-label>Small Blind ($)</mat-label>
-                <input matInput type="number" formControlName="smallBlind"
-                       min="0.25" step="0.25">
-                <mat-error role="alert">
-                  <ng-container *ngIf="createForm.get('smallBlind')?.errors as e">
-                    <span *ngIf="e['required']">Required.</span>
-                    <span *ngIf="e['min']">Min $0.25.</span>
-                  </ng-container>
+            <div class="dashboard-form__row">
+              <mat-form-field appearance="outline">
+                <mat-label>Max Players</mat-label>
+                <input matInput type="number" formControlName="maxPlayers" min="2" max="9" />
+                <mat-error>
+                  @if (createForm.get('maxPlayers')?.errors?.['required']) {
+                    <span>Max players is required.</span>
+                  }
+                  @if (createForm.get('maxPlayers')?.errors?.['min'] || createForm.get('maxPlayers')?.errors?.['max']) {
+                    <span>Must be between 2 and 9.</span>
+                  }
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="rf-room-card__field">
-                <mat-label>Big Blind ($)</mat-label>
-                <input matInput type="number" formControlName="bigBlind"
-                       min="0.50" step="0.50">
-                <mat-error role="alert">
-                  <ng-container *ngIf="createForm.get('bigBlind')?.errors as e">
-                    <span *ngIf="e['required']">Required.</span>
-                    <span *ngIf="e['min']">Min $0.50.</span>
-                  </ng-container>
+              <mat-form-field appearance="outline">
+                <mat-label>Small Blind</mat-label>
+                <input matInput type="number" formControlName="smallBlind" min="0.25" step="0.25" />
+                <mat-error>
+                  @if (createForm.get('smallBlind')?.errors?.['required']) {
+                    <span>Required.</span>
+                  }
+                  @if (createForm.get('smallBlind')?.errors?.['min']) {
+                    <span>Minimum is $0.25.</span>
+                  }
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Big Blind</mat-label>
+                <input matInput type="number" formControlName="bigBlind" min="0.5" step="0.5" />
+                <mat-error>
+                  @if (createForm.get('bigBlind')?.errors?.['required']) {
+                    <span>Required.</span>
+                  }
+                  @if (createForm.get('bigBlind')?.errors?.['min']) {
+                    <span>Minimum is $0.50.</span>
+                  }
                 </mat-error>
               </mat-form-field>
             </div>
 
-            <label class="rf-toggle" [class.rf-toggle--active]="createForm.get('isPrivate')?.value">
-              <input type="checkbox" formControlName="isPrivate"
-                     class="rf-toggle__input"
-                     role="switch"
-                     [attr.aria-checked]="createForm.get('isPrivate')?.value"
-                     aria-label="Make room private with a password">
-              <span class="rf-toggle__track" aria-hidden="true"></span>
-              <span class="rf-toggle__label">Private room (password protected)</span>
+            <label class="dashboard-toggle" [class.dashboard-toggle--active]="createForm.get('isPrivate')?.value">
+              <input type="checkbox" formControlName="isPrivate" />
+              <span class="dashboard-toggle__track"></span>
+              <span class="dashboard-toggle__text">Private room with password</span>
             </label>
 
-            <mat-form-field *ngIf="createForm.get('isPrivate')?.value"
-                            appearance="outline" class="rf-room-card__field">
-              <mat-label>Room Password</mat-label>
-              <input matInput formControlName="roomPassword"
-                     autocomplete="new-password"
-                     [attr.aria-invalid]="createForm.get('roomPassword')?.invalid && createForm.get('roomPassword')?.touched">
-              <mat-error role="alert">
-                <ng-container *ngIf="createForm.get('roomPassword')?.errors as e">
-                  <span *ngIf="e['required']">Password is required for private rooms.</span>
-                  <span *ngIf="e['minlength']">At least 4 characters.</span>
-                </ng-container>
-              </mat-error>
-            </mat-form-field>
+            @if (createForm.get('isPrivate')?.value) {
+              <mat-form-field appearance="outline">
+                <mat-label>Room Password</mat-label>
+                <input matInput formControlName="roomPassword" autocomplete="new-password" />
+                <mat-error>
+                  @if (createForm.get('roomPassword')?.errors?.['required']) {
+                    <span>Password is required for private rooms.</span>
+                  }
+                  @if (createForm.get('roomPassword')?.errors?.['minlength']) {
+                    <span>Minimum 4 characters.</span>
+                  }
+                </mat-error>
+              </mat-form-field>
+            }
 
-            <div *ngIf="createError" class="rf-form__error" role="alert" aria-live="polite">
-              {{ createError }}
-            </div>
+            @if (createError) {
+              <div class="dashboard-feedback dashboard-feedback--error" role="alert">
+                {{ createError }}
+              </div>
+            }
 
-            <!-- Success: show room code -->
-            <div *ngIf="createdRoomCode" class="rf-room-code" role="status" aria-live="polite">
-              <span class="rf-room-code__label">Room created! Share this code:</span>
-              <span class="rf-room-code__code">{{ createdRoomCode }}</span>
-              <button mat-icon-button type="button"
-                      (click)="copyRoomCode()" aria-label="Copy room code">
-                <span aria-hidden="true">📋</span>
-              </button>
-            </div>
+            @if (createdRoomCode) {
+              <div class="dashboard-code" role="status">
+                <div>
+                  <span class="dashboard-code__label">Room created</span>
+                  <strong class="dashboard-code__value">{{ createdRoomCode }}</strong>
+                </div>
+                <button mat-icon-button type="button" (click)="copyRoomCode()" aria-label="Copy room code">
+                  <mat-icon>content_copy</mat-icon>
+                </button>
+              </div>
+            }
 
-            <button mat-flat-button color="primary" type="submit"
-                    class="rf-room-card__submit" [disabled]="createLoading">
-              <mat-spinner *ngIf="createLoading" diameter="18" class="rf-spinner" aria-label="Creating room…"></mat-spinner>
-              <span *ngIf="!createLoading">♠ Create Room</span>
+            <button mat-flat-button color="primary" type="submit" class="dashboard-submit" [disabled]="createLoading">
+              @if (createLoading) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                <span>Create Room</span>
+              }
             </button>
           </form>
-
         </mat-card-content>
       </mat-card>
 
-      <!-- JOIN ROOM ────────────────────────────── -->
-      <mat-card class="rf-room-card rf-room-card--join" appearance="outlined" aria-labelledby="join-heading">
-        <mat-card-content class="rf-room-card__content">
+      <mat-card class="dashboard-card dashboard-card--accent" appearance="outlined">
+        <mat-card-content class="dashboard-card__content">
+          <div class="dashboard-card__header">
+            <p class="dashboard-card__eyebrow">Take Seat</p>
+            <h2>Join Room</h2>
+            <p>Enter a room code from a host or pick an open table from the live list below.</p>
+          </div>
 
-          <div class="rf-room-card__icon rf-room-card__icon--red" aria-hidden="true">♥</div>
-          <h2 id="join-heading" class="rf-room-card__title">Join a Room</h2>
-          <p class="rf-room-card__desc">
-            Enter the room code shared by the host to take your seat at the table.
-          </p>
-
-          <form [formGroup]="joinForm" (ngSubmit)="onJoinRoom()" novalidate class="rf-room-card__form">
-
-            <mat-form-field appearance="outline" class="rf-room-card__field">
+          <form [formGroup]="joinForm" (ngSubmit)="onJoinRoom()" class="dashboard-form" novalidate>
+            <mat-form-field appearance="outline">
               <mat-label>Room Code</mat-label>
-              <input matInput formControlName="roomCode"
-                     placeholder="e.g. RF-7742"
-                     autocomplete="off"
-                     style="text-transform: uppercase;"
-                     [attr.aria-invalid]="joinForm.get('roomCode')?.invalid && joinForm.get('roomCode')?.touched">
-              <mat-error role="alert">
-                <ng-container *ngIf="joinForm.get('roomCode')?.errors as e">
-                  <span *ngIf="e['required']">Room code is required.</span>
-                  <span *ngIf="e['pattern']">Enter a valid code (e.g. RF-7742).</span>
-                  <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
-                </ng-container>
+              <input matInput formControlName="roomCode" placeholder="RF-7742" autocomplete="off" />
+              <mat-error>
+                @if (joinForm.get('roomCode')?.errors?.['required']) {
+                  <span>Room code is required.</span>
+                }
+                @if (joinForm.get('roomCode')?.errors?.['pattern']) {
+                  <span>Enter a valid code like RF-7742.</span>
+                }
+                @if (joinForm.get('roomCode')?.errors?.['serverError']) {
+                  <span>{{ joinForm.get('roomCode')?.errors?.['serverError'] }}</span>
+                }
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field *ngIf="showJoinPassword" appearance="outline" class="rf-room-card__field">
-              <mat-label>Room Password</mat-label>
-              <input matInput [type]="showJoinPasswordText ? 'text' : 'password'"
-                     formControlName="joinPassword"
-                     autocomplete="off"
-                     [attr.aria-invalid]="joinForm.get('joinPassword')?.invalid && joinForm.get('joinPassword')?.touched">
-              <button mat-icon-button matSuffix type="button"
-                      (click)="showJoinPasswordText = !showJoinPasswordText"
-                      [attr.aria-label]="showJoinPasswordText ? 'Hide password' : 'Show password'">
-                {{ showJoinPasswordText ? '🙈' : '👁' }}
-              </button>
-              <mat-error role="alert">
-                <ng-container *ngIf="joinForm.get('joinPassword')?.errors as e">
-                  <span *ngIf="e['required']">Password is required for this room.</span>
-                  <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
-                </ng-container>
-              </mat-error>
-            </mat-form-field>
+            @if (showJoinPassword) {
+              <mat-form-field appearance="outline">
+                <mat-label>Room Password</mat-label>
+                <input
+                  matInput
+                  [type]="showJoinPasswordText ? 'text' : 'password'"
+                  formControlName="joinPassword"
+                  autocomplete="off"
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="showJoinPasswordText = !showJoinPasswordText"
+                  [attr.aria-label]="showJoinPasswordText ? 'Hide password' : 'Show password'"
+                >
+                  <mat-icon>{{ showJoinPasswordText ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <mat-error>
+                  @if (joinForm.get('joinPassword')?.errors?.['required']) {
+                    <span>Password is required for this room.</span>
+                  }
+                  @if (joinForm.get('joinPassword')?.errors?.['serverError']) {
+                    <span>{{ joinForm.get('joinPassword')?.errors?.['serverError'] }}</span>
+                  }
+                </mat-error>
+              </mat-form-field>
+            }
 
-            <div *ngIf="joinError" class="rf-form__error" role="alert" aria-live="polite">
-              {{ joinError }}
-            </div>
+            @if (joinError) {
+              <div class="dashboard-feedback dashboard-feedback--error" role="alert">
+                {{ joinError }}
+              </div>
+            }
 
-            <button mat-flat-button color="primary" type="submit"
-                    class="rf-room-card__submit" [disabled]="joinLoading">
-              <mat-spinner *ngIf="joinLoading" diameter="18" class="rf-spinner" aria-label="Joining room…"></mat-spinner>
-              <span *ngIf="!joinLoading">♥ Join Room</span>
+            <button mat-flat-button color="primary" type="submit" class="dashboard-submit" [disabled]="joinLoading">
+              @if (joinLoading) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                <span>Join Room</span>
+              }
             </button>
           </form>
 
-          <!-- Divider -->
-          <div class="rf-divider" aria-hidden="true">
-            <span class="rf-divider__line"></span>
-            <span class="rf-divider__text">or browse open tables</span>
-            <span class="rf-divider__line"></span>
-          </div>
-
-          <!-- Live rooms list -->
-          <div class="rf-live" aria-label="Live open rooms">
-            <div class="rf-live__header">
-              <span class="rf-live__indicator" role="status" aria-label="Live">
-                <span class="rf-live__dot" aria-hidden="true"></span>
-                Live Tables
-              </span>
-              <button mat-button class="rf-live__refresh"
-                      (click)="loadLiveRooms()" [disabled]="liveRoomsLoading"
-                      aria-label="Refresh live rooms">
+          <div class="dashboard-live">
+            <div class="dashboard-live__header">
+              <div>
+                <p class="dashboard-live__eyebrow">Open Tables</p>
+                <h3>Live Rooms</h3>
+              </div>
+              <button mat-button type="button" (click)="loadLiveRooms()" [disabled]="liveRoomsLoading">
                 Refresh
               </button>
             </div>
 
-            <mat-spinner *ngIf="liveRoomsLoading" diameter="28"
-                         class="rf-live__spinner" aria-label="Loading rooms…"></mat-spinner>
-
-            <div *ngIf="!liveRoomsLoading && liveRooms.length === 0"
-                 class="rf-live__empty" role="status">
-              No open tables right now.
-            </div>
-
-            <ul *ngIf="!liveRoomsLoading && liveRooms.length > 0"
-                class="rf-live__list" role="list">
-              <li *ngFor="let room of liveRooms"
-                  class="rf-live__row"
-                  role="listitem"
-                  (click)="quickJoin(room)"
-                  (keydown.enter)="quickJoin(room)"
-                  tabindex="0"
-                  [attr.aria-label]="room.name + ', ' + room.seats + ' seats open'">
-                <div class="rf-live__info">
-                  <span class="rf-live__name">{{ room.name }}</span>
-                  <span class="rf-live__meta">{{ room.gameType }} · ${{ room.smallBlind }}/${{ room.bigBlind }} · {{ room.currentPlayers }}/{{ room.maxPlayers }} seats</span>
-                </div>
-                <span class="rf-live__badge"
-                      [class.rf-live__badge--open]="!room.isFull"
-                      [class.rf-live__badge--full]="room.isFull"
-                      [attr.aria-label]="room.isFull ? 'Full' : 'Open'">
-                  {{ room.isFull ? 'Full' : 'Open' }}
-                </span>
-              </li>
-            </ul>
+            @if (liveRoomsLoading) {
+              <div class="dashboard-live__loading">
+                <mat-spinner diameter="28"></mat-spinner>
+              </div>
+            } @else if (liveRooms.length === 0) {
+              <div class="dashboard-live__empty">No open tables right now.</div>
+            } @else {
+              <ul class="dashboard-live__list">
+                @for (room of liveRooms; track room.id) {
+                  <li class="dashboard-live__item">
+                    <button type="button" class="dashboard-live__button" (click)="quickJoin(room)">
+                      <span class="dashboard-live__name">{{ room.name }}</span>
+                      <span class="dashboard-live__meta">
+                        {{ room.gameType }} · ${{ room.smallBlind }}/${{ room.bigBlind }} ·
+                        {{ room.currentPlayers }}/{{ room.maxPlayers }} players
+                      </span>
+                      <span class="dashboard-live__tail">
+                        <span class="dashboard-live__code">{{ room.code }}</span>
+                        <span class="dashboard-live__status" [class.dashboard-live__status--full]="room.isFull">
+                          {{ room.isFull ? 'Full' : room.isPrivate ? 'Private' : 'Open' }}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
           </div>
-
         </mat-card-content>
       </mat-card>
-
-    </div><!-- /.rf-dash__cards -->
+    </section>
   </main>
-
-  <!-- ── FOOTER ── -->
-  <footer class="rf-footer" role="contentinfo">
-    <span class="rf-footer__copy">© 2025 Royal Flush · Play responsibly · 18+</span>
-    <span class="rf-footer__suits" aria-hidden="true">♥ ♠ ♦ ♣</span>
-  </footer>
-
-</div>
+</section>

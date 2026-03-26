@@ -1,16 +1,13 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-// Angular Material
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
 import { AuthService, CreateRoomPayload, Room, RoomService, User } from '../../core/services';
 
 @Component({
@@ -20,86 +17,62 @@ import { AuthService, CreateRoomPayload, Room, RoomService, User } from '../../c
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
+    MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
     MatIconModule,
+    MatInputModule,
     MatProgressSpinnerModule,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class DashboardComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly roomService = inject(RoomService);
+  private readonly router = inject(Router);
 
-  // ── Auth ───────────────────────────────────────────────────────
   currentUser: User | null = null;
 
-  // ── Create Room ────────────────────────────────────────────────
-  createForm!:      FormGroup;
-  createLoading   = false;
-  createError     = '';
-  createdRoomCode = '';          // shown after successful creation
+  readonly createForm = this.fb.group({
+    roomName: ['', [Validators.required, Validators.maxLength(40)]],
+    maxPlayers: [6, [Validators.required, Validators.min(2), Validators.max(9)]],
+    smallBlind: [1, [Validators.required, Validators.min(0.25)]],
+    bigBlind: [2, [Validators.required, Validators.min(0.5)]],
+    isPrivate: [false],
+    roomPassword: [''],
+  });
 
-  // ── Join Room ──────────────────────────────────────────────────
-  joinForm!:            FormGroup;
-  joinLoading         = false;
-  joinError           = '';
-  showJoinPassword    = false;   // revealed when backend returns 403 requiring password
+  readonly joinForm = this.fb.group({
+    roomCode: ['', [Validators.required, Validators.pattern(/^RF-[A-Z0-9]{4}$/i)]],
+    joinPassword: [''],
+  });
+
+  createLoading = false;
+  createError = '';
+  createdRoomCode = '';
+
+  joinLoading = false;
+  joinError = '';
+  showJoinPassword = false;
   showJoinPasswordText = false;
 
-  // ── Live Rooms ─────────────────────────────────────────────────
-  liveRooms:       Room[] = [];
+  liveRooms: Room[] = [];
   liveRoomsLoading = false;
-
-  constructor(
-    private fb:          FormBuilder,
-    private authService: AuthService,
-    private roomService: RoomService,
-    private router:      Router,
-  ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.buildForms();
+    this.bindPrivateRoomValidation();
     this.loadLiveRooms();
   }
 
-  // ── Form builders ──────────────────────────────────────────────
-  private buildForms(): void {
-    this.createForm = this.fb.group({
-      roomName:     ['', [Validators.required, Validators.maxLength(40)]],
-      maxPlayers:   [9,  [Validators.required, Validators.min(2), Validators.max(9)]],
-      smallBlind:   [1,  [Validators.required, Validators.min(0.25)]],
-      bigBlind:     [2,  [Validators.required, Validators.min(0.50)]],
-      isPrivate:    [false],
-      roomPassword: [''],
-    });
-
-    // Dynamically add/remove password validation when isPrivate toggles
-    this.createForm.get('isPrivate')?.valueChanges.subscribe((isPrivate: boolean) => {
-      const pwCtrl = this.createForm.get('roomPassword')!;
-      if (isPrivate) {
-        pwCtrl.setValidators([Validators.required, Validators.minLength(4)]);
-      } else {
-        pwCtrl.clearValidators();
-        pwCtrl.setValue('');
-      }
-      pwCtrl.updateValueAndValidity();
-    });
-
-    this.joinForm = this.fb.group({
-      roomCode:     ['', [Validators.required, Validators.pattern(/^RF-[A-Z0-9]{4}$/i)]],
-      joinPassword: [''],
-    });
-  }
-
-  // ── Live rooms ─────────────────────────────────────────────────
   loadLiveRooms(): void {
     this.liveRoomsLoading = true;
     this.roomService.getLiveRooms().subscribe({
       next: (rooms) => {
-        this.liveRooms        = rooms;
+        this.liveRooms = rooms;
         this.liveRoomsLoading = false;
       },
       error: () => {
@@ -108,9 +81,8 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // ── Create Room ────────────────────────────────────────────────
   onCreateRoom(): void {
-    this.createError     = '';
+    this.createError = '';
     this.createdRoomCode = '';
 
     if (this.createForm.invalid) {
@@ -119,32 +91,27 @@ export class DashboardComponent implements OnInit {
     }
 
     this.createLoading = true;
-    const payload: CreateRoomPayload = this.createForm.value;
+    const payload = this.createForm.getRawValue() as CreateRoomPayload;
 
     this.roomService.createRoom(payload).subscribe({
       next: (room) => {
-        this.createLoading   = false;
+        this.createLoading = false;
         this.createdRoomCode = room.code;
-        this.loadLiveRooms(); // refresh list
+        this.loadLiveRooms();
       },
       error: (err) => {
         this.createLoading = false;
-        const apiError     = err?.error;
-
+        const apiError = err?.error;
         if (apiError?.field) {
           this.createForm.get(apiError.field)?.setErrors({ serverError: apiError.message });
-        } else {
-          this.createError = apiError?.message ?? 'Could not create room. Please try again.';
+          return;
         }
+
+        this.createError = apiError?.message ?? 'Could not create room. Please try again.';
       },
     });
   }
 
-  copyRoomCode(): void {
-    navigator.clipboard.writeText(this.createdRoomCode).catch(() => {});
-  }
-
-  // ── Join Room ──────────────────────────────────────────────────
   onJoinRoom(): void {
     this.joinError = '';
 
@@ -153,51 +120,88 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    const { roomCode, joinPassword } = this.joinForm.value;
-    this.joinLoading = true;
+    const roomCode = this.joinForm.get('roomCode')?.value?.toUpperCase() ?? '';
+    const joinPassword = this.joinForm.get('joinPassword')?.value || undefined;
 
-    this.roomService.joinRoom(roomCode.toUpperCase(), joinPassword || undefined).subscribe({
+    this.joinLoading = true;
+    this.roomService.joinRoom(roomCode, joinPassword).subscribe({
       next: (room) => {
         this.joinLoading = false;
-        this.router.navigate(['/room', room.id]);
+        this.router.navigate(['/table', room.id]);
       },
       error: (err) => {
         this.joinLoading = false;
-        const apiError   = err?.error;
+        const apiError = err?.error;
 
-        // 403 = room requires a password
         if (err?.status === 403 && !this.showJoinPassword) {
           this.showJoinPassword = true;
-          this.joinForm.get('joinPassword')?.setValidators([Validators.required]);
-          this.joinForm.get('joinPassword')?.updateValueAndValidity();
+          const joinPasswordControl = this.joinForm.get('joinPassword');
+          joinPasswordControl?.setValidators([Validators.required]);
+          joinPasswordControl?.updateValueAndValidity();
           this.joinError = 'This room is password-protected. Enter the password to join.';
           return;
         }
 
-        if (apiError?.field === 'roomCode') {
-          this.joinForm.get('roomCode')?.setErrors({ serverError: apiError.message });
-        } else if (apiError?.field === 'joinPassword') {
-          this.joinForm.get('joinPassword')?.setErrors({ serverError: apiError.message });
-        } else {
-          this.joinError = apiError?.message ?? 'Could not join room. Check your code and try again.';
+        if (apiError?.field) {
+          this.joinForm.get(apiError.field)?.setErrors({ serverError: apiError.message });
+          return;
         }
+
+        this.joinError = apiError?.message ?? 'Could not join room. Check your code and try again.';
       },
     });
   }
 
-  // Click on a live room row → pre-fill code and attempt join
   quickJoin(room: Room): void {
     this.joinForm.patchValue({ roomCode: room.code });
     if (room.isPrivate) {
       this.showJoinPassword = true;
-    } else {
-      this.onJoinRoom();
+      const joinPasswordControl = this.joinForm.get('joinPassword');
+      joinPasswordControl?.setValidators([Validators.required]);
+      joinPasswordControl?.updateValueAndValidity();
+      return;
     }
+
+    this.onJoinRoom();
   }
 
-  // ── Logout ─────────────────────────────────────────────────────
+  copyRoomCode(): void {
+    if (!this.createdRoomCode) {
+      return;
+    }
+
+    navigator.clipboard.writeText(this.createdRoomCode).catch(() => {});
+  }
+
   onLogout(): void {
-    this.authService.logout();
+    const result = this.authService.logout();
+    if (result && typeof result.subscribe === 'function') {
+      result.subscribe({
+        complete: () => {
+          this.router.navigate(['/']);
+        },
+      });
+      return;
+    }
+
     this.router.navigate(['/']);
+  }
+
+  private bindPrivateRoomValidation(): void {
+    this.createForm.get('isPrivate')?.valueChanges.subscribe((isPrivate) => {
+      const passwordControl = this.createForm.get('roomPassword');
+      if (!passwordControl) {
+        return;
+      }
+
+      if (isPrivate) {
+        passwordControl.setValidators([Validators.required, Validators.minLength(4)]);
+      } else {
+        passwordControl.clearValidators();
+        passwordControl.setValue('');
+      }
+
+      passwordControl.updateValueAndValidity();
+    });
   }
 }
