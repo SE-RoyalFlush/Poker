@@ -69,9 +69,9 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return user info (password hash is omitted by JSON tag)
+	// Return the public user payload expected by the frontend.
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(user); err != nil {
+	if err := json.NewEncoder(w).Encode(user.ToResponse()); err != nil {
 		log.Printf("Failed to encode user response: %v", err)
 	}
 }
