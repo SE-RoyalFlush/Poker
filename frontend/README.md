@@ -51,6 +51,52 @@ before any `npm` command.
 - No authentication logic
 - No feature logic
 
+## Testing
+
+### Unit Tests
+
+Run unit tests with Karma:
+
+```bash
+npm run test:unit
+```
+
+### E2E Tests (Cypress)
+
+End-to-end tests are configured with Cypress for testing user workflows.
+
+#### Running Cypress Tests
+
+**Interactive mode** (recommended for development):
+```bash
+npm run e2e
+```
+This opens the Cypress UI where you can see tests running in real-time.
+
+**Headless mode** (recommended for CI/CD):
+```bash
+npm run e2e:headless
+```
+
+#### Available Tests
+
+- **Register Form Test** (`cypress/e2e/register.cy.ts`):
+  - Navigates to `/register`
+  - Fills in username: `newuser14`
+  - Fills in password: `TestPassword123` (8+ characters as required)
+  - Confirms password
+  - Submits the form
+  - Verifies successful submission by checking URL change
+
+#### Before Running E2E Tests
+
+Ensure the Angular development server is running:
+```bash
+npm run start
+```
+
+The test suite expects the app to be available at `http://localhost:4200`.
+
 ## Authentication Service
 
 The authentication system manages user login, registration, session state, and provides observables for components.
