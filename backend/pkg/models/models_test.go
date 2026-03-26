@@ -13,5 +13,10 @@ var _ = Describe("Models", func() {
 			allModels := models.AllModels()
 			Expect(allModels).To(ContainElement(&models.User{}))
 		})
+
+		It("should contain the Room model", func() {
+			allModels := models.AllModels()
+			Expect(allModels).To(ContainElement(&models.Room{}))
+		})
 	})
 })

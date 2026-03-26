@@ -11,9 +11,9 @@ import (
 func RunMigrations(database *gorm.DB) error {
 	log.Println("Running database migrations...")
 
-	// Auto-migrate the User model
-	if err := database.AutoMigrate(&models.User{}); err != nil {
-		log.Printf("Error migrating User model: %v", err)
+	// Auto-migrate all persisted models.
+	if err := database.AutoMigrate(models.AllModels()...); err != nil {
+		log.Printf("Error migrating database models: %v", err)
 		return err
 	}
 

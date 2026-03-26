@@ -47,10 +47,6 @@ func main() {
 	}
 
 	// Run migrations
-	database, err = db.GetDB()
-	if err != nil {
-		log.Fatalf("Failed to get database: %v", err)
-	}
 	if err := migrations.RunMigrations(database); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
