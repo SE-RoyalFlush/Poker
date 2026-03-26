@@ -11,8 +11,10 @@ import (
 
 // Claims represents JWT claims for a user session
 type Claims struct {
-	UserID   uint   `json:"user_id"`
-	Username string `json:"username"`
+	UserID    uint      `json:"user_id"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	jwt.RegisteredClaims
 }
 
@@ -45,8 +47,10 @@ func GenerateToken(user *models.User, expirationHours int) (string, error) {
 	expirationTime := time.Now().Add(time.Duration(expirationHours) * time.Hour)
 
 	claims := &Claims{
-		UserID:   user.ID,
-		Username: user.Username,
+		UserID:    user.ID,
+		Username:  user.Username,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -262,11 +263,15 @@ var _ = Describe("Authentication Handlers", func() {
 
 			Expect(w.Code).To(Equal(http.StatusOK))
 
-			// Verify response contains user info
-			var response models.UserResponse
+			// Verify the exact dashboard profile contract.
+			var response map[string]interface{}
 			Expect(json.Unmarshal(w.Body.Bytes(), &response)).To(Succeed())
-			Expect(response.ID).To(Equal(testUser.ID))
-			Expect(response.Username).To(Equal(testUser.Username))
+			Expect(response).To(Equal(map[string]interface{}{
+				"ID":        float64(testUser.ID),
+				"username":  testUser.Username,
+				"CreatedAt": testUser.CreatedAt.Format(time.RFC3339Nano),
+				"UpdatedAt": testUser.UpdatedAt.Format(time.RFC3339Nano),
+			}))
 		})
 
 		It("should return 405 for non-GET request", func() {
@@ -284,7 +289,7 @@ var _ = Describe("Authentication Handlers", func() {
 			Expect(w.Code).To(Equal(http.StatusMethodNotAllowed))
 		})
 
-		It("should NOT expose password in response", func() {
+		It("should NOT expose password hash in response", func() {
 			token, _ := auth.GenerateToken(&testUser, 24)
 
 			req := httptest.NewRequest("GET", "/api/me", nil)
@@ -297,9 +302,37 @@ var _ = Describe("Authentication Handlers", func() {
 			api.MeHandler(w, req)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			Expect(json.Unmarshal(w.Body.Bytes(), &response)).To(Succeed())
 
+			Expect(response["passwordHash"]).To(BeNil())
+			Expect(response["PasswordHash"]).To(BeNil())
 			Expect(response["password"]).To(BeNil())
+		})
+
+		It("should serialize CreatedAt in ISO 8601 / RFC3339 format", func() {
+			token, err := auth.GenerateToken(&testUser, 24)
+			Expect(err).NotTo(HaveOccurred())
+
+			req := httptest.NewRequest("GET", "/api/me", nil)
+			req.AddCookie(&http.Cookie{
+				Name:  middleware.CookieName,
+				Value: token,
+			})
+			w := httptest.NewRecorder()
+
+			api.MeHandler(w, req)
+
+			Expect(w.Code).To(Equal(http.StatusOK))
+
+			var response map[string]interface{}
+			Expect(json.Unmarshal(w.Body.Bytes(), &response)).To(Succeed())
+
+			createdAt, ok := response["CreatedAt"].(string)
+			Expect(ok).To(BeTrue())
+
+			parsed, err := time.Parse(time.RFC3339Nano, createdAt)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parsed).To(Equal(testUser.CreatedAt))
 		})
 	})
 

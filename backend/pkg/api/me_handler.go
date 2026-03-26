@@ -36,20 +36,32 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch user from database to get latest info
-	database, err := db.GetDB()
-	if err != nil {
-		http.Error(w, `{"error": "database error"}`, http.StatusInternalServerError)
-		return
+	response := models.UserResponse{
+		ID:        claims.UserID,
+		Username:  claims.Username,
+		CreatedAt: claims.CreatedAt,
+		UpdatedAt: claims.UpdatedAt,
 	}
 
-	var user models.User
-	if err := database.First(&user, claims.UserID).Error; err != nil {
-		http.Error(w, `{"error": "user not found"}`, http.StatusNotFound)
-		return
+	// Support older tokens that do not yet include the full profile payload.
+	// New tokens avoid this database round-trip entirely.
+	if response.Username == "" || response.CreatedAt.IsZero() || response.UpdatedAt.IsZero() {
+		database, err := db.GetDB()
+		if err != nil {
+			http.Error(w, `{"error": "database error"}`, http.StatusInternalServerError)
+			return
+		}
+
+		var user models.User
+		if err := database.First(&user, claims.UserID).Error; err != nil {
+			http.Error(w, `{"error": "user not found"}`, http.StatusNotFound)
+			return
+		}
+
+		response = user.ToResponse()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user.ToResponse())
+	json.NewEncoder(w).Encode(response)
 }
