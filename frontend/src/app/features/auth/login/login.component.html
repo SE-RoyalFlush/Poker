@@ -1,0 +1,56 @@
+<div class="login-page">
+  <mat-card class="login-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Welcome back</mat-card-title>
+      <mat-card-subtitle>Sign in to your account to continue.</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Username</mat-label>
+          <input matInput type="text" formControlName="username" autocomplete="username" />
+          <mat-error *ngIf="usernameControl.touched && usernameControl.hasError('required')">
+            Username is required.
+          </mat-error>
+          <mat-error *ngIf="usernameControl.touched && usernameControl.hasError('minlength')">
+            Username must be at least 3 characters.
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            (keydown.enter)="onSubmit()"
+          />
+          <mat-error *ngIf="passwordControl.touched && passwordControl.hasError('required')">
+            Password is required.
+          </mat-error>
+          <mat-error *ngIf="passwordControl.touched && passwordControl.hasError('minlength')">
+            Password must be at least 8 characters.
+          </mat-error>
+        </mat-form-field>
+
+        <p class="submit-error" *ngIf="submitError" role="alert">{{ submitError }}</p>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="loginForm.invalid || isSubmitting"
+        >
+          <mat-spinner *ngIf="isSubmitting" diameter="18"></mat-spinner>
+          <span>{{ isSubmitting ? 'Signing in...' : 'Sign in' }}</span>
+        </button>
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <a mat-button color="primary" routerLink="/register">Don't have an account? Register</a>
+    </mat-card-actions>
+  </mat-card>
+</div>

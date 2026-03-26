@@ -56,4 +56,28 @@ describe('CsrfService', () => {
     service.clearToken();
     expect(service.getToken()).toBeNull();
   });
+
+  it('ensureToken() returns existing token without extra request', () => {
+    service.fetchToken().subscribe();
+    httpMock.expectOne('http://localhost:8080/api/csrf')
+      .flush({ csrfToken: 'some-token' });
+
+    service.ensureToken().subscribe(token => {
+      expect(token).toBe('some-token');
+    });
+
+    httpMock.expectNone('http://localhost:8080/api/csrf');
+  });
+
+  it('ensureToken() fetches token if none exists', () => {
+    service.ensureToken().subscribe(token => {
+      expect(token).toBe('fetched-token');
+    });
+
+    const req = httpMock.expectOne('http://localhost:8080/api/csrf');
+    expect(req.request.method).toBe('GET');
+    req.flush({ csrfToken: 'fetched-token' });
+
+    expect(service.getToken()).toBe('fetched-token');
+  });
 });

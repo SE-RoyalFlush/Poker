@@ -7,6 +7,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 import { AuthInterceptor } from './auth.interceptor';
 import { CsrfService } from '../services/csrf.service';
 
@@ -66,12 +67,16 @@ describe('AuthInterceptor', () => {
     req.flush({});
   });
 
-  it('should NOT attach X-CSRF-Token on POST if token is null', () => {
+  it('should fetch CSRF token when missing and attach X-CSRF-Token on POST', () => {
     spyOn(csrfService, 'getToken').and.returnValue(null);
+    spyOn(csrfService, 'ensureToken').and.returnValue(of('fetched-token'));
+
     httpClient.post(testUrl, {}).subscribe();
     const req = httpMock.expectOne(testUrl);
-    expect(req.request.headers.has('X-CSRF-Token')).toBeFalse();
+    expect(req.request.headers.get('X-CSRF-Token')).toBe('fetched-token');
     req.flush({});
+
+    expect(csrfService.ensureToken).toHaveBeenCalled();
   });
 
   it('should attach X-CSRF-Token on PUT, PATCH, DELETE', () => {
