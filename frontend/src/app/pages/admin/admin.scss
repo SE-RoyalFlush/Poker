@@ -1,0 +1,111 @@
+.admin-page {
+  min-height: 100vh;
+  padding: 2.5rem 1rem;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(201, 168, 76, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 92% 86%, rgba(65, 96, 196, 0.2) 0%, transparent 44%),
+    linear-gradient(180deg, #060b1b 0%, #0a1430 100%);
+}
+
+.admin-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: rgba(8, 18, 44, 0.92);
+  border: 1px solid rgba(201, 168, 76, 0.28) !important;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.48);
+  color: #eef4ff;
+}
+
+.admin-card mat-card-title {
+  color: #f7fbff;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.admin-card mat-card-subtitle {
+  color: #d5def7;
+  font-size: 1rem;
+}
+
+.admin-credentials {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.admin-users {
+  margin-top: 2rem;
+}
+
+.admin-users__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-users__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-users__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(201, 168, 76, 0.24);
+  border-radius: 10px;
+  background: rgba(13, 27, 61, 0.94);
+  color: #e9efff;
+}
+
+.admin-error {
+  color: #ffb4b4;
+  margin: 0.5rem 0 0;
+}
+
+.admin-empty {
+  margin-top: 1rem;
+  color: #d9e3ff;
+}
+
+// Material internals require deep selectors for consistent contrast in dark card surfaces.
+:host ::ng-deep .admin-page .mat-mdc-form-field {
+  --mdc-filled-text-field-container-color: rgba(12, 26, 60, 0.88);
+  --mdc-outlined-text-field-container-color: rgba(12, 26, 60, 0.88);
+  --mdc-outlined-text-field-outline-color: rgba(201, 168, 76, 0.45);
+  --mdc-outlined-text-field-focus-outline-color: #e8c97a;
+  --mdc-outlined-text-field-hover-outline-color: rgba(232, 201, 122, 0.72);
+  --mdc-outlined-text-field-label-text-color: #cfd8f7;
+  --mdc-outlined-text-field-input-text-color: #f4f8ff;
+  --mat-form-field-container-text-size: 1.1rem;
+}
+
+:host ::ng-deep .admin-page .mat-mdc-form-field .mat-mdc-input-element {
+  color: #f4f8ff !important;
+  -webkit-text-fill-color: #f4f8ff !important;
+  caret-color: #e8c97a !important;
+}
+
+:host ::ng-deep .admin-page .mdc-floating-label,
+:host ::ng-deep .admin-page .mat-mdc-form-field-hint,
+:host ::ng-deep .admin-page .mat-mdc-form-field-error {
+  color: #d5def7 !important;
+}
+
+:host ::ng-deep .admin-page .mat-mdc-raised-button.mat-primary {
+  --mdc-filled-button-container-color: #c9a84c;
+  --mdc-filled-button-label-text-color: #0a0f1f;
+}
+
+:host ::ng-deep .admin-page .mat-mdc-outlined-button {
+  --mdc-outlined-button-outline-color: rgba(201, 168, 76, 0.5);
+  --mdc-outlined-button-label-text-color: #e6cd88;
+}

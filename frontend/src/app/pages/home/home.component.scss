@@ -1,0 +1,644 @@
+// ── Royal Flush Design Tokens ──────────────────────────────────
+:host {
+  display: block;
+  --rf-gold:         #C9A84C;
+  --rf-gold-light:   #E8C97A;
+  --rf-gold-dim:     #8A6D2F;
+  --rf-bg:           #0A0A0F;
+  --rf-bg-card:      #12121A;
+  --rf-bg-surface:   #1A1A26;
+  --rf-bg-hover:     #1F1F30;
+  --rf-text:         #F0EDE6;
+  --rf-text-muted:   #9A9385;
+  --rf-text-hint:    #5A5550;
+  --rf-red:          #C0392B;
+  --rf-border:       rgba(201, 168, 76, 0.15);
+  --rf-border-em:    rgba(201, 168, 76, 0.35);
+  --rf-radius:       12px;
+  --rf-radius-sm:    8px;
+}
+
+// ── Host ────────────────────────────────────────────────────────
+.rf-landing {
+  min-height: 100vh;
+  background: var(--rf-bg);
+  color: var(--rf-text);
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+
+  // Ambient background
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 5% 85%, rgba(192,57,43,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+// ── NAV ─────────────────────────────────────────────────────────
+.rf-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 48px;
+  background: rgba(10, 10, 15, 0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 0.5px solid var(--rf-border);
+  z-index: 200;
+
+  @media (max-width: 600px) { padding: 14px 20px; }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  &__logo-badge {
+    width: 34px; height: 34px;
+    background: var(--rf-gold);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--rf-bg);
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+
+  &__logo-text {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--rf-gold);
+    letter-spacing: 0.03em;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  &__btn {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.03em !important;
+  }
+}
+
+// ── HERO ────────────────────────────────────────────────────────
+.rf-hero {
+  position: relative;
+  z-index: 1;
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+  text-align: center;
+  padding: 110px 48px 80px;
+  gap: 0;
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 16px;
+    border: 0.5px solid var(--rf-border-em);
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--rf-gold);
+    margin-bottom: 28px;
+    background: rgba(201,168,76,0.05);
+  }
+
+  &__heading {
+    font-size: clamp(52px, 8vw, 88px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    margin: 0 0 8px;
+    color: var(--rf-text);
+
+    &--accent { color: var(--rf-gold); }
+  }
+
+  &__sub {
+    font-size: clamp(14px, 2vw, 17px);
+    font-weight: 300;
+    color: var(--rf-text-muted);
+    max-width: 440px;
+    line-height: 1.7;
+    margin: 20px auto 44px;
+  }
+
+  &__br {
+    @media (max-width: 480px) { display: none; }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  &__btn {
+    font-size: 15px !important;
+    padding: 12px 28px !important;
+    border-radius: var(--rf-radius) !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.03em !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+
+    &--primary {
+      .rf-hero__btn-icon { margin-right: 6px; }
+    }
+
+    &--ghost {
+      border-color: var(--rf-border-em) !important;
+      color: var(--rf-text) !important;
+
+      &:hover { background: rgba(255,255,255,0.04) !important; }
+    }
+  }
+
+  // Card fan
+  &__cards {
+    position: relative;
+    margin-top: 56px;
+    width: 300px;
+    height: 160px;
+
+    @media (max-width: 480px) { display: none; }
+  }
+}
+
+// ── PLAYING CARDS ───────────────────────────────────────────────
+.rf-card {
+  position: absolute;
+  width: 74px; height: 104px;
+  border-radius: 9px;
+  background: #fff;
+  border: 0.5px solid #ddd;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 10px;
+  user-select: none;
+
+  &__rank {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+
+  &__suit {
+    font-size: 28px;
+    margin-top: 4px;
+    color: #1a1a1a;
+    line-height: 1;
+
+    &--red { color: var(--rf-red); }
+  }
+
+  &--1 { left: 10px;  top: 22px; transform: rotate(-18deg); z-index: 1; }
+  &--2 { left: 56px;  top: 12px; transform: rotate(-9deg);  z-index: 2; }
+  &--3 { left: 113px; top: 8px;  transform: rotate(0deg);   z-index: 3; }
+  &--4 { left: 170px; top: 12px; transform: rotate(9deg);   z-index: 2; }
+  &--5 { left: 216px; top: 22px; transform: rotate(18deg);  z-index: 1; }
+}
+
+// ── JOIN SECTION ─────────────────────────────────────────────────
+.rf-join {
+  position: relative;
+  z-index: 1;
+  padding: 80px 48px 100px;
+
+  @media (max-width: 600px) { padding: 60px 20px 80px; }
+
+  &__inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+
+    @media (max-width: 700px) { grid-template-columns: 1fr; }
+  }
+
+  &__card {
+    background: var(--rf-bg-card) !important;
+    border: 0.5px solid var(--rf-border) !important;
+    border-radius: var(--rf-radius) !important;
+
+    &--auth {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .mat-mdc-card-content { padding: 32px !important; }
+  }
+
+  &__title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--rf-text);
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+
+  &__desc {
+    font-size: 14px;
+    color: var(--rf-text-muted);
+    font-weight: 300;
+    margin: 0 0 24px;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__field {
+    width: 100%;
+  }
+
+  &__submit {
+    width: 100%;
+    height: 46px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.04em !important;
+    border-radius: var(--rf-radius-sm) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+}
+
+// ── AUTH CARD ACTIONS ────────────────────────────────────────────
+.rf-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rf-auth {
+  &__btn {
+    width: 100%;
+    height: 46px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    border-radius: var(--rf-radius-sm) !important;
+  }
+
+  &__divider {
+    text-align: center;
+    font-size: 13px;
+    color: var(--rf-text-hint);
+    margin: 0;
+  }
+}
+
+// ── DIALOG/OVERLAY ──────────────────────────────────────────────
+.rf-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 14, 0.9);
+  backdrop-filter: blur(3px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.rf-dialog {
+  width: 100%;
+  max-width: 420px;
+  background: #0f1220 !important;
+  border: 0.5px solid var(--rf-border-em) !important;
+  border-radius: 16px !important;
+  position: relative;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+
+  --mdc-outlined-text-field-input-text-color: #f0ede6;
+  --mdc-outlined-text-field-label-text-color: rgba(240, 237, 230, 0.72);
+  --mdc-outlined-text-field-focus-label-text-color: #e8c97a;
+  --mdc-outlined-text-field-outline-color: rgba(201, 168, 76, 0.28);
+  --mdc-outlined-text-field-hover-outline-color: rgba(201, 168, 76, 0.5);
+  --mdc-outlined-text-field-focus-outline-color: #e8c97a;
+
+  .mat-mdc-card-content { padding: 40px !important; }
+
+  .mdc-text-field {
+    background: #12162a !important;
+  }
+
+  .mat-mdc-input-element,
+  .mdc-text-field__input,
+  input.mat-mdc-input-element {
+    color: #f0ede6 !important;
+    -webkit-text-fill-color: #f0ede6 !important;
+    opacity: 1 !important;
+  }
+
+  .mat-mdc-form-field .mat-mdc-floating-label {
+    color: rgba(240, 237, 230, 0.78) !important;
+  }
+
+  .mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
+    color: #e8c97a !important;
+  }
+
+  .mat-mdc-form-field .mdc-floating-label {
+    color: rgba(240, 237, 230, 0.78) !important;
+  }
+
+  .mat-mdc-form-field input::placeholder {
+    color: rgba(240, 237, 230, 0.45) !important;
+  }
+
+  .mat-mdc-form-field .mdc-notched-outline__leading,
+  .mat-mdc-form-field .mdc-notched-outline__notch,
+  .mat-mdc-form-field .mdc-notched-outline__trailing {
+    border-color: rgba(201, 168, 76, 0.44) !important;
+    border-width: 1px !important;
+  }
+
+  .mat-mdc-form-field:hover .mdc-notched-outline__leading,
+  .mat-mdc-form-field:hover .mdc-notched-outline__notch,
+  .mat-mdc-form-field:hover .mdc-notched-outline__trailing {
+    border-color: rgba(232, 201, 122, 0.72) !important;
+  }
+
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+    border-color: #e8c97a !important;
+    border-width: 1.5px !important;
+  }
+
+  .mat-mdc-form-field .mat-mdc-input-element,
+  .mat-mdc-form-field .mdc-text-field__input {
+    font-weight: 500;
+  }
+
+  &__close {
+    position: absolute !important;
+    top: 12px;
+    right: 12px;
+    color: var(--rf-text-muted) !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: unset !important;
+    padding: 0 !important;
+
+    &:hover { color: var(--rf-text) !important; }
+  }
+
+  &__logo {
+    width: 44px; height: 44px;
+    background: var(--rf-gold);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--rf-bg);
+    margin: 0 auto 20px;
+  }
+
+  &__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--rf-text);
+    text-align: center;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+
+  &__sub {
+    font-size: 14px;
+    color: var(--rf-text-muted);
+    text-align: center;
+    font-weight: 300;
+    margin: 0 0 28px;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__field {
+    width: 100%;
+  }
+
+  &__submit {
+    width: 100%;
+    height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    border-radius: var(--rf-radius-sm) !important;
+    margin-top: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+
+  &__switch {
+    text-align: center;
+    font-size: 13px;
+    color: var(--rf-text-muted);
+    margin: 12px 0 0;
+
+    button {
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      padding: 0 4px !important;
+    }
+  }
+}
+
+// ── SHARED FORM ELEMENTS ─────────────────────────────────────────
+.rf-form__error {
+  font-size: 13px;
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.08);
+  border: 0.5px solid rgba(244, 67, 54, 0.25);
+  border-radius: var(--rf-radius-sm);
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.rf-spinner {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+// ── FOOTER ──────────────────────────────────────────────────────
+.rf-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 0.5px solid var(--rf-border);
+  padding: 28px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  &__copy {
+    font-size: 13px;
+    color: var(--rf-text-hint);
+  }
+
+  &__suits {
+    font-size: 16px;
+    letter-spacing: 8px;
+    color: var(--rf-text-hint);
+  }
+}
+
+/* Material internals live in child component views; use ng-deep so dialog field styles actually apply. */
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-text-field {
+  background: #12162a !important;
+}
+
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mat-mdc-input-element,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-text-field__input {
+  color: #f0ede6 !important;
+  -webkit-text-fill-color: #f0ede6 !important;
+  opacity: 1 !important;
+}
+
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-floating-label,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mat-mdc-floating-label {
+  color: rgba(240, 237, 230, 0.78) !important;
+}
+
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-floating-label,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
+  color: #e8c97a !important;
+}
+
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field input::placeholder {
+  color: rgba(240, 237, 230, 0.5) !important;
+}
+
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-notched-outline__leading,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-notched-outline__notch,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-notched-outline__trailing {
+  border-color: rgba(201, 168, 76, 0.44) !important;
+  border-width: 1px !important;
+}
+
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field:hover .mdc-notched-outline__leading,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field:hover .mdc-notched-outline__notch,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field:hover .mdc-notched-outline__trailing {
+  border-color: rgba(232, 201, 122, 0.72) !important;
+}
+
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: #e8c97a !important;
+  border-width: 1.5px !important;
+}
+
+// ── Angular Material theme overrides ────────────────────────────
+// Input colors on dark bg
+.rf-landing, .rf-dialog-overlay {
+  .mat-mdc-form-field {
+    .mdc-text-field {
+      background: var(--rf-bg-surface) !important;
+      border-radius: var(--rf-radius-sm) !important;
+    }
+
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      border-color: var(--rf-border) !important;
+    }
+
+    &:hover {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--rf-border-em) !important;
+      }
+    }
+
+    &.mat-focused {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--rf-gold) !important;
+        border-width: 1px !important;
+      }
+    }
+
+    .mat-mdc-input-element {
+      color: var(--rf-text) !important;
+      caret-color: var(--rf-gold) !important;
+    }
+
+    .mat-mdc-floating-label { color: var(--rf-text-muted) !important; }
+    &.mat-focused .mat-mdc-floating-label { color: var(--rf-gold) !important; }
+  }
+
+  // Primary button = gold
+  .mat-mdc-unelevated-button.mat-primary {
+    background: var(--rf-gold) !important;
+    color: var(--rf-bg) !important;
+    font-weight: 600 !important;
+
+    &:hover { background: var(--rf-gold-light) !important; }
+    &:disabled { opacity: 0.5 !important; }
+  }
+
+  // Stroked button
+  .mat-mdc-outlined-button.mat-primary {
+    border-color: var(--rf-border-em) !important;
+    color: var(--rf-gold) !important;
+
+    &:hover { background: rgba(201,168,76,0.07) !important; }
+  }
+}

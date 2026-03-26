@@ -1,7 +1,31 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, of, switchMap, throwError, finalize, map } from 'rxjs';
-import { User, LoginCredentials, RegisterData } from '../models';
+
+export interface User {
+  id: number | string;
+  username: string;
+  email?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoginPayload {
+  username?: string;
+  email?: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  username: string;
+  email?: string;
+  password: string;
+  confirmPassword?: string;
+}
+
+// Backward-compatible aliases for existing consumers.
+export type LoginCredentials = LoginPayload;
+export type RegisterData = RegisterPayload;
 
 interface BackendUser {
   ID: number;
@@ -70,7 +94,10 @@ export class AuthService {
     return this.http.get<BackendUser>(`${this.apiUrl}/me`, {
       withCredentials: true
     }).pipe(
-      map(backendUser => this.mapBackendUser(backendUser)),
+      map(backendUser => {
+        if (!backendUser) return null;
+        return this.mapBackendUser(backendUser);
+      }),
       tap(user => {
         this.currentUserSubject.next(user);
       }),
@@ -79,7 +106,7 @@ export class AuthService {
         // For transient server/network failures, preserve current local state.
         console.error('Session check failed:', error);
 
-        if (error.status === 401) {
+        if (error.status === 401 || error.status === 204) {
           this.currentUserSubject.next(null);
           return of(null);
         }
@@ -111,10 +138,21 @@ export class AuthService {
    * @param credentials - username and password
    * @returns Observable of the logged-in user
    */
-  login(credentials: LoginCredentials): Observable<User | null> {
+  login(credentials: LoginPayload): Observable<User | null> {
     this.isLoadingSubject.next(true);
 
-    return this.http.post<void>(`${this.apiUrl}/login`, credentials, {
+    const normalizedUsername = credentials.username ?? credentials.email;
+    if (!normalizedUsername) {
+      this.isLoadingSubject.next(false);
+      return throwError(() => new Error('Either username or email is required for login.'));
+    }
+
+    const payload = {
+      username: normalizedUsername,
+      password: credentials.password,
+    };
+
+    return this.http.post<void>(`${this.apiUrl}/login`, payload, {
       withCredentials: true
     }).pipe(
       switchMap(() => {
@@ -149,7 +187,7 @@ export class AuthService {
    * @param data - username, password, and confirmPassword
    * @returns Observable of newly created user
    */
-  register(data: RegisterData): Observable<User> {
+  register(data: RegisterPayload): Observable<User> {
     this.isLoadingSubject.next(true);
 
     return this.http.post<BackendUser>(`${this.apiUrl}/register`, data, {

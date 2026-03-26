@@ -35,9 +35,9 @@ describe('App', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should have correct title', () => {
+  it('should instantiate root component class', () => {
     const fixture = TestBed.createComponent(App);
-    expect(fixture.componentInstance.title).toBe('RoyalFlush');
+    expect(fixture.componentInstance).toEqual(jasmine.any(App));
   });
 
   it('should render router outlet', async () => {

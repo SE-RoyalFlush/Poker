@@ -10,3 +10,21 @@ body {
   background-color: var(--mat-sys-surface, #fafafa);
   color: var(--mat-sys-on-surface, rgba(0, 0, 0, 0.87));
 }
+
+.mat-mdc-snack-bar-container.rf-toast {
+  --mdc-snackbar-container-color: #0f1a3b;
+  --mdc-snackbar-supporting-text-color: #eef3ff;
+  --mat-snack-bar-button-color: #e8c97a;
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  border-radius: 12px;
+}
+
+.mat-mdc-snack-bar-container.rf-toast--success {
+  --mdc-snackbar-container-color: #102747;
+  border-color: rgba(84, 201, 141, 0.55);
+}
+
+.mat-mdc-snack-bar-container.rf-toast--error {
+  --mdc-snackbar-container-color: #311722;
+  border-color: rgba(241, 108, 122, 0.6);
+}
