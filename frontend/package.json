@@ -8,7 +8,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:watch": "ng test --watch",
-    "test:unit": "ng test --watch=false --browsers=ChromeHeadless"
+    "test:unit": "ng test --watch=false --browsers=ChromeHeadless",
+    "e2e": "cypress open",
+    "e2e:headless": "cypress run"
   },
   "prettier": {
     "printWidth": 100,
@@ -50,6 +52,7 @@
     "@angular/compiler-cli": "21.1.4",
     "@types/jasmine": "^6.0.0",
     "@types/lodash": "^4.17.23",
+    "cypress": "^14.5.4",
     "jasmine-core": "^6.1.0",
     "karma": "^6.4.4",
     "karma-chrome-launcher": "^3.2.0",

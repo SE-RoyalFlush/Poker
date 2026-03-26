@@ -61,6 +61,18 @@ cd frontend
 npm run test:unit
 ```
 
+Run frontend E2E tests (requires running dev server):
+
+```bash
+# terminal 1
+cd frontend
+npm run start
+
+# terminal 2 (in another terminal)
+cd frontend
+npm run e2e:headless
+```
+
 Run backend unit/API tests:
 
 ```bash
