@@ -1,0 +1,64 @@
+<div class="admin-page">
+  <mat-card class="admin-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Admin Panel</mat-card-title>
+      <mat-card-subtitle>Manage registered users.</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form class="admin-credentials" [formGroup]="credentialsForm" (ngSubmit)="onAdminLogin()" autocomplete="off">
+        <mat-form-field appearance="outline">
+          <mat-label>Admin Username</mat-label>
+          <input matInput type="text" formControlName="username" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Admin Password</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="new-password" />
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="isAuthenticating">
+          <mat-spinner *ngIf="isAuthenticating" diameter="18"></mat-spinner>
+          <span *ngIf="!isAuthenticating">Load Users</span>
+        </button>
+
+        <p *ngIf="loginError" class="admin-error" role="alert">{{ loginError }}</p>
+      </form>
+
+      <div class="admin-users" *ngIf="hasLoadedUsers">
+        <div class="admin-users__header">
+          <h3>Registered Users</h3>
+          <button mat-stroked-button color="primary" type="button" (click)="refreshUsers()" [disabled]="isLoadingUsers">
+            {{ isLoadingUsers ? 'Refreshing...' : 'Refresh' }}
+          </button>
+        </div>
+
+        <p *ngIf="loadError" class="admin-error" role="alert">{{ loadError }}</p>
+        <p *ngIf="deleteError" class="admin-error" role="alert">{{ deleteError }}</p>
+
+        <ul class="admin-users__list">
+          <li class="admin-users__item" *ngFor="let user of users">
+            <span>{{ user.username }}</span>
+            <button
+              mat-flat-button
+              color="warn"
+              type="button"
+              (click)="deleteUser(user.id)"
+              [disabled]="isDeleting(user.id)"
+            >
+              {{ isDeleting(user.id) ? 'Deleting...' : 'Delete' }}
+            </button>
+          </li>
+        </ul>
+
+        <p class="admin-empty" *ngIf="users.length === 0">
+          No users found.
+        </p>
+      </div>
+
+      <p class="admin-empty" *ngIf="!isAuthenticating && !hasLoadedUsers && !loginError">
+        Enter admin credentials and click "Load Users".
+      </p>
+    </mat-card-content>
+  </mat-card>
+</div>
