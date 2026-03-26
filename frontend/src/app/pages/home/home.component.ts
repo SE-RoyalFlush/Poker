@@ -182,7 +182,9 @@ export class HomeComponent implements OnInit {
       },
       error: (err) => {
         if (err instanceof TimeoutError) {
-          this.registerError = 'Request timed out. Please try again.';
+          setTimeout(() => {
+            this.registerError = 'Request timed out. Please try again.';
+          });
           this.snackBar.open('Request timed out. Please try again.', 'Dismiss', {
             duration: 3500,
             panelClass: ['rf-toast', 'rf-toast--error'],
@@ -197,7 +199,9 @@ export class HomeComponent implements OnInit {
         if (apiError?.field === 'username') {
           this.registerForm.get('username')?.setErrors({ serverError: apiError.message });
         } else if (err?.status === 409) {
-          this.registerError = 'Username taken';
+          setTimeout(() => {
+            this.registerError = 'Username taken';
+          });
           this.snackBar.open('Username already exists.', 'Dismiss', {
             duration: 3500,
             panelClass: ['rf-toast', 'rf-toast--error'],
@@ -205,8 +209,11 @@ export class HomeComponent implements OnInit {
             verticalPosition: 'top',
           });
         } else {
-          this.registerError = apiError?.message ?? 'Registration failed. Please try again.';
-          this.snackBar.open(this.registerError, 'Dismiss', {
+          const message = apiError?.message ?? 'Registration failed. Please try again.';
+          setTimeout(() => {
+            this.registerError = message;
+          });
+          this.snackBar.open(message, 'Dismiss', {
             duration: 3500,
             panelClass: ['rf-toast', 'rf-toast--error'],
             horizontalPosition: 'right',
