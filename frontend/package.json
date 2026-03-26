@@ -8,8 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:watch": "ng test --watch",
-    "test:unit": "ng test --watch=false --browsers=ChromeHeadless",
-    "test:integration:backend": "bash ./scripts/test-backend-integration.sh"
+    "test:unit": "ng test --watch=false --browsers=ChromeHeadless"
   },
   "prettier": {
     "printWidth": 100,

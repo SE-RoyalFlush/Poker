@@ -53,6 +53,8 @@ func main() {
 	apiRouter := router.PathPrefix("/api").Subrouter()
 	apiRouter.HandleFunc("/health", api.HealthHandler).Methods("GET")
 	apiRouter.HandleFunc("/register", api.RegisterHandler).Methods("POST")
+	apiRouter.HandleFunc("/login", api.LoginHandler).Methods("POST")
+	apiRouter.HandleFunc("/logout", api.LogoutHandler).Methods("POST")
 	apiRouter.HandleFunc("/csrf", api.CSRFTokenHandler).Methods("GET")
 	apiRouter.HandleFunc("/me", api.MeHandler).Methods("GET")
 	apiRouter.HandleFunc("/admin/users", api.AdminListUsersHandler).Methods("GET")

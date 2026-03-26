@@ -50,7 +50,7 @@ The application emphasizes low-latency communication and a responsive user exper
 - Registration UI is implemented with Angular Reactive Forms and Material components.
 - Validation behavior is implemented (required/min length, submit disabled until valid).
 - Backend `409` conflict is mapped to a user-facing `Username taken` message.
-- Successful registration redirects to `/login`.
+- Successful registration automatically logs the user in; on successful login, the user is navigated to `/dashboard`.
 
 ### Automated verification commands
 

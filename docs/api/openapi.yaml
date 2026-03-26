@@ -1,3 +1,22 @@
+openapi: 3.0.3
+info:
+  title: Poker Backend API
+  version: 0.2.0
+  description: >
+    OpenAPI spec for the Poker backend (Go + Gorilla Mux).
+    Currently includes health check with database status and standardized JSON error format.
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local server
+
+tags:
+  - name: System
+    description: System/health endpoints
+  - name: Authentication
+    description: User registration and login
+
+paths:
   /me:
     get:
       tags: [Authentication]
@@ -32,25 +51,6 @@
                 error: Internal Server Error
                 message: Database not initialized
                 status: 500
-openapi: 3.0.3
-info:
-  title: Poker Backend API
-  version: 0.2.0
-  description: >
-    OpenAPI spec for the Poker backend (Go + Gorilla Mux).
-    Currently includes health check with database status and standardized JSON error format.
-
-servers:
-  - url: http://localhost:8080/api
-    description: Local server
-
-tags:
-  - name: System
-    description: System/health endpoints
-  - name: Authentication
-    description: User registration and login
-
-paths:
   /health:
     get:
       tags: [System]

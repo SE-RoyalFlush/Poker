@@ -20,11 +20,20 @@ func adminCredentials() (string, string) {
 	username := os.Getenv("ADMIN_USERNAME")
 	password := os.Getenv("ADMIN_PASSWORD")
 
-	if username == "" {
-		username = "admin"
-	}
-	if password == "" {
-		password = "admin"
+	// Avoid default admin/admin in production-like environments
+	if username == "" || password == "" {
+		appEnv := os.Getenv("APP_ENV")
+		if appEnv == "development" || appEnv == "" {
+			if username == "" {
+				username = "admin"
+			}
+			if password == "" {
+				password = "admin"
+			}
+		} else {
+			// In production, require environment variables to be set
+			return "", ""
+		}
 	}
 
 	return username, password
@@ -32,6 +41,10 @@ func adminCredentials() (string, string) {
 
 func requireAdminAuth(w http.ResponseWriter, r *http.Request) bool {
 	expectedUser, expectedPassword := adminCredentials()
+	if expectedUser == "" || expectedPassword == "" {
+		sendError(w, "Forbidden", "Admin credentials not configured", http.StatusForbidden)
+		return false
+	}
 	username, password, ok := r.BasicAuth()
 	if !ok || username != expectedUser || password != expectedPassword {
 		w.Header().Set("WWW-Authenticate", `Basic realm="admin"`)

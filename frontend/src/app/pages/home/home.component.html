@@ -243,7 +243,7 @@
           </div>
 
           <button mat-flat-button color="primary" type="submit"
-                  class="rf-dialog__submit" [disabled]="registerLoading">
+                  class="rf-dialog__submit" [disabled]="registerLoading || registerForm.invalid">
             <mat-spinner *ngIf="registerLoading" diameter="18" class="rf-spinner" aria-label="Creating account…"></mat-spinner>
             <span *ngIf="!registerLoading">Create Account</span>
           </button>
