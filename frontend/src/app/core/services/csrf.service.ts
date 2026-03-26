@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, of, tap, map } from 'rxjs';
 
 interface CsrfResponse {
   csrfToken: string;
@@ -26,6 +26,16 @@ export class CsrfService {
 
   getToken(): string | null {
     return this.token;
+  }
+
+  ensureToken(): Observable<string> {
+    if (this.token) {
+      return of(this.token);
+    }
+
+    return this.fetchToken().pipe(
+      map(response => response.csrfToken)
+    );
   }
 
   clearToken(): void {

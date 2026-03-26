@@ -7,7 +7,7 @@ import {
   HttpErrorResponse
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { CsrfService } from '../services/csrf.service';
 
@@ -21,17 +21,19 @@ export class AuthInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    const isMutatingRequest = mutatingMethods.includes(req.method);
     const csrfToken = this.csrfService.getToken();
     const isSessionCheckRequest = /\/api\/me(?:\?|$)/.test(req.url);
 
-    const modifiedReq = req.clone({
-      withCredentials: true,
-      ...(mutatingMethods.includes(req.method) && csrfToken
-        ? { headers: req.headers.set('X-CSRF-Token', csrfToken) }
-        : {})
-    });
+    const createRequest = (token?: string | null): HttpRequest<any> => {
+      let cloned = req.clone({ withCredentials: true });
+      if (isMutatingRequest && token) {
+        cloned = cloned.clone({ headers: cloned.headers.set('X-CSRF-Token', token) });
+      }
+      return cloned;
+    };
 
-    return next.handle(modifiedReq).pipe(
+    const handle = (r: HttpRequest<any>) => next.handle(r).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
           this.csrfService.clearToken();
@@ -42,5 +44,13 @@ export class AuthInterceptor implements HttpInterceptor {
         return throwError(() => error);
       })
     );
+
+    if (isMutatingRequest && !csrfToken) {
+      return this.csrfService.ensureToken().pipe(
+        switchMap(token => handle(createRequest(token)))
+      );
+    }
+
+    return handle(createRequest(csrfToken));
   }
 }

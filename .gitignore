@@ -18,3 +18,4 @@
 *.env
 
 /updates/*
+.github/prompts/

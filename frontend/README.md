@@ -217,9 +217,28 @@ npm test -- --include='**/auth.interceptor.spec.ts'
 npm test -- --watch=false
 ```
 
+### Run unit tests independently
+```bash
+npm run test:unit
+```
+
 ### Run tests in headless Chrome (for CI/CD pipelines)
 ```bash
 npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+### Run frontend-backend integration smoke test (register flow)
+This test verifies frontend API contract behavior against a live backend using CSRF + cookies.
+
+1. Start backend server (from repo root):
+```bash
+cd backend
+GO_ENV=development go run ./cmd/server
+```
+2. In another terminal run:
+```bash
+cd frontend
+npm run test:integration:backend
 ```
 
 #### Testing Framework Details

@@ -44,3 +44,38 @@ The application emphasizes low-latency communication and a responsive user exper
 | **Frontend** | Sai Shravanth Reddy Madem<br>Devi Sanikommu<br>Himanshu Potham Shetty |
 
 ---
+
+## ✅ Current Story Status (Issue #1-11 Registration UI)
+
+- Registration UI is implemented with Angular Reactive Forms and Material components.
+- Validation behavior is implemented (required/min length, submit disabled until valid).
+- Backend `409` conflict is mapped to a user-facing `Username taken` message.
+- Successful registration automatically logs the user in; on successful login, the user is navigated to `/dashboard`.
+
+### Automated verification commands
+
+Run frontend unit tests:
+
+```bash
+cd frontend
+npm run test:unit
+```
+
+Run backend unit/API tests:
+
+```bash
+cd backend
+go test ./pkg/...
+```
+
+Run frontend-backend integration smoke test (requires backend running):
+
+```bash
+# terminal 1
+cd backend
+GO_ENV=development go run ./cmd/server
+
+# terminal 2
+cd frontend
+npm run test:integration:backend
+```
