@@ -8,7 +8,6 @@ import (
 
 // User represents the data model for a system user.
 type User struct {
-	// gorm.Model includes ID, CreatedAt, UpdatedAt, and DeletedAt fields.
 	gorm.Model
 
 	Username     string `gorm:"uniqueIndex;not null" json:"username"`
