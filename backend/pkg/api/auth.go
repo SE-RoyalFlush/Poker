@@ -5,67 +5,33 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/auth"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
-	"github.com/gorilla/securecookie"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
-
-var (
-	// Session cookie name
-	sessionCookieName = "session-id"
-
-	// sessionKey should be 32 or 64 bytes. In production, load this from an environment variable.
-	sessionKey = []byte(os.Getenv("SESSION_KEY"))
-
-	// secureCookie is used to sign and encrypt cookies.
-	secureCookie *securecookie.SecureCookie
-)
-
-func init() {
-	if len(sessionKey) == 0 {
-		// Fallback for development only
-		sessionKey = []byte("dev-only-32-byte-session-secret-")
-	}
-	secureCookie = securecookie.New(sessionKey, nil)
-}
 
 // MeHandler handles GET /api/me requests to return the current authenticated user.
 // Returns 204 No Content if not authenticated (instead of 401) to allow frontend silent session check.
 func MeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	cookie, err := r.Cookie(sessionCookieName)
+	user, err := auth.AuthenticatedUserFromRequest(r)
 	if err != nil {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
+		if errors.Is(err, auth.ErrMissingSession) || errors.Is(err, auth.ErrInvalidSession) || errors.Is(err, auth.ErrUnauthenticated) {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 
-	var username string
-	if err := secureCookie.Decode(sessionCookieName, cookie.Value, &username); err != nil {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
+		if errors.Is(err, db.ErrNotInitialized) {
+			sendError(w, "Internal Server Error", "Database not initialized", http.StatusInternalServerError)
+			return
+		}
 
-	if username == "" {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	database, err := db.GetDB()
-	if err != nil {
-		sendError(w, "Internal Server Error", "Database not initialized", http.StatusInternalServerError)
-		return
-	}
-
-	var user models.User
-	if err := database.Where("username = ?", username).First(&user).Error; err != nil {
-		// If credentials provided but user not found, return 401
-		sendError(w, "Unauthorized", "User not found", http.StatusUnauthorized)
+		sendError(w, "Internal Server Error", "Database error", http.StatusInternalServerError)
 		return
 	}
 
@@ -118,43 +84,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create session cookie
-	encoded, err := secureCookie.Encode(sessionCookieName, user.Username)
-	if err != nil {
-		log.Printf("Failed to encode session cookie: %v", err)
+	if err := auth.SetSessionCookie(w, user.Username); err != nil {
+		log.Printf("Failed to set session cookie: %v", err)
 		sendError(w, "Internal Server Error", "Failed to create session", http.StatusInternalServerError)
 		return
 	}
-
-	// Set cookie with appropriate security settings
-	appEnv := os.Getenv("APP_ENV")
-	goEnv := os.Getenv("GO_ENV")
-	secure := true
-	if appEnv == "development" || goEnv == "development" {
-		secure = false
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookieName,
-		Value:    encoded,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   secure,
-		SameSite: http.SameSiteLaxMode,
-	})
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // LogoutHandler handles POST /api/logout requests.
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookieName,
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   -1,
-	})
+	auth.ClearSessionCookie(w)
 	w.WriteHeader(http.StatusNoContent)
 }
 
