@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Lobby Component & State (Issue #21)](https://github.com/SE-RoyalFlush/Poker/issues/21)
+    - Implemented `LobbyComponent` at `frontend/src/app/pages/lobby/lobby.ts` — reads `roomCode` from `?code=` query param, connects via `WebSocketService`, sends `JOIN_ROOM` on open, handles `PLAYER_JOINED` (with `_.uniqBy` deduplication by id) and `PLAYER_LEFT` messages, sorts players host-first via `_.orderBy`
+    - Added `Player` interface (`{ id, username, isHost }`) at `frontend/src/app/core/models/player.model.ts` and exported from models barrel
+    - Added template at `frontend/src/app/pages/lobby/lobby.html` — room code heading, live player count, player list with avatar initials and "Host" badge
+    - Added BEM card-layout styles at `frontend/src/app/pages/lobby/lobby.scss` using `--rf-*` design tokens
+    - Added 12 unit tests in `frontend/src/app/pages/lobby/lobby.spec.ts` using `MockWebSocket` + `WS_FACTORY` token pattern (same pattern as WebSocketService spec)
+    - Added Cypress E2E tests in `frontend/cypress/e2e/lobby.cy.ts` covering initial render; WS message injection deferred — no native Cypress 14 WS intercept support; covered by unit tests instead
+    - First lodash usage in frontend: `uniqBy` and `orderBy` for player list management
 - [Frontend: Create & Join Room UI (Issue #20)](https://github.com/SE-RoyalFlush/Poker/issues/20)
     - Extracted `CreateRoomComponent` into `frontend/src/app/features/rooms/create-room/` — room name/players/blinds/privacy form; navigates to `/room/:code` on success
     - Extracted `JoinRoomComponent` into `frontend/src/app/features/rooms/join-room/` — 6-char alphanumeric code input with live rooms browser, 403 password reveal, and `quickJoin`; navigates to `/room/:code` on success
