@@ -1,0 +1,24 @@
+package models
+
+import "gorm.io/gorm"
+
+// RoomStatus represents the current lifecycle state of a poker room.
+type RoomStatus string
+
+const (
+	RoomStatusOpen   RoomStatus = "open"
+	RoomStatusClosed RoomStatus = "closed"
+	RoomStatusInGame RoomStatus = "in_game"
+)
+
+// Room represents a persisted poker room that can be created and looked up by invite code.
+type Room struct {
+	gorm.Model
+
+	Code       string     `gorm:"size:6;uniqueIndex;not null"`
+	HostUserID uint       `gorm:"not null;index"`
+	HostUser   User       `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:HostUserID"`
+	Status     RoomStatus `gorm:"type:text;not null;default:open;index"`
+	MaxPlayers int        `gorm:"not null;default:6"`
+	IsPrivate  bool       `gorm:"not null;default:false"`
+}

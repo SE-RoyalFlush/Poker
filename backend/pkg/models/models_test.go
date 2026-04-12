@@ -9,9 +9,10 @@ import (
 
 var _ = Describe("Models", func() {
 	Describe("AllModels", func() {
-		It("should contain the User model", func() {
+		It("should contain the registered database models", func() {
 			allModels := models.AllModels()
 			Expect(allModels).To(ContainElement(&models.User{}))
+			Expect(allModels).To(ContainElement(&models.Room{}))
 		})
 	})
 })
