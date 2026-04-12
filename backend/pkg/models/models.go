@@ -5,5 +5,6 @@ package models
 func AllModels() []any {
 	return []any{
 		&User{},
+		&Room{},
 	}
 }
