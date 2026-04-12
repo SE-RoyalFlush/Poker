@@ -1,6 +1,7 @@
 package room_test
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -79,6 +80,48 @@ func TestFindByCodeReturnsMatchingRoom(t *testing.T) {
 	}
 	if found.HostUser.ID != host.ID {
 		t.Fatalf("expected preloaded host ID %d, got %d", host.ID, found.HostUser.ID)
+	}
+}
+
+func TestCreateRejectsInvalidRoomCodes(t *testing.T) {
+	database := setupTestDB(t)
+	host := createHostUser(t, database, "host-invalid-create")
+
+	testCases := []struct {
+		name string
+		code string
+	}{
+		{name: "blank", code: "   "},
+		{name: "too short", code: "ABC12"},
+		{name: "too long", code: "ABC1234"},
+		{name: "invalid characters", code: "AB-12!"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			createdRoom, err := room.Create(database, room.CreateParams{
+				Code:       tc.code,
+				HostUserID: host.ID,
+			})
+			if !errors.Is(err, room.ErrInvalidRoomCode) {
+				t.Fatalf("expected ErrInvalidRoomCode, got %v", err)
+			}
+			if createdRoom != nil {
+				t.Fatalf("expected no room to be created, got %+v", createdRoom)
+			}
+		})
+	}
+}
+
+func TestFindByCodeRejectsInvalidRoomCodes(t *testing.T) {
+	database := setupTestDB(t)
+
+	found, err := room.FindByCode(database, " ")
+	if !errors.Is(err, room.ErrInvalidRoomCode) {
+		t.Fatalf("expected ErrInvalidRoomCode, got %v", err)
+	}
+	if found != nil {
+		t.Fatalf("expected no room result, got %+v", found)
 	}
 }
 

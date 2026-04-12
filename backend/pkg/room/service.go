@@ -1,6 +1,8 @@
 package room
 
 import (
+	"errors"
+	"regexp"
 	"strings"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
@@ -8,6 +10,11 @@ import (
 )
 
 const defaultMaxPlayers = 6
+
+var (
+	ErrInvalidRoomCode = errors.New("invalid room code")
+	roomCodePattern    = regexp.MustCompile(`^[A-Z0-9]{6}$`)
+)
 
 // CreateParams defines the persisted room attributes required for creation.
 type CreateParams struct {
@@ -20,8 +27,13 @@ type CreateParams struct {
 
 // Create inserts a room row and returns the persisted record.
 func Create(database *gorm.DB, params CreateParams) (*models.Room, error) {
+	code, err := validateAndNormalizeCode(params.Code)
+	if err != nil {
+		return nil, err
+	}
+
 	room := &models.Room{
-		Code:       normalizeCode(params.Code),
+		Code:       code,
 		HostUserID: params.HostUserID,
 		Status:     params.Status,
 		MaxPlayers: params.MaxPlayers,
@@ -44,8 +56,13 @@ func Create(database *gorm.DB, params CreateParams) (*models.Room, error) {
 
 // FindByCode retrieves a room by its invite code.
 func FindByCode(database *gorm.DB, code string) (*models.Room, error) {
+	normalizedCode, err := validateAndNormalizeCode(code)
+	if err != nil {
+		return nil, err
+	}
+
 	var room models.Room
-	if err := database.Preload("HostUser").Where("code = ?", normalizeCode(code)).First(&room).Error; err != nil {
+	if err := database.Preload("HostUser").Where("code = ?", normalizedCode).First(&room).Error; err != nil {
 		return nil, err
 	}
 
@@ -54,4 +71,13 @@ func FindByCode(database *gorm.DB, code string) (*models.Room, error) {
 
 func normalizeCode(code string) string {
 	return strings.ToUpper(strings.TrimSpace(code))
+}
+
+func validateAndNormalizeCode(code string) (string, error) {
+	normalized := normalizeCode(code)
+	if !roomCodePattern.MatchString(normalized) {
+		return "", ErrInvalidRoomCode
+	}
+
+	return normalized, nil
 }
