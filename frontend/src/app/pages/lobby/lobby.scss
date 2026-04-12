@@ -11,12 +11,14 @@
   --rf-border-em:  rgba(201,168,76,0.35);
   --rf-radius:     12px;
   --rf-radius-sm:  8px;
+  --rf-green:      #3DAA6E;
+  --rf-green-dim:  rgba(61,170,110,0.18);
 }
 
 // ── Layout ───────────────────────────────────────────────────────
 .rf-lobby {
   padding: 48px;
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
   color: var(--rf-text);
   font-family: 'DM Sans', 'Segoe UI', sans-serif;
@@ -75,6 +77,12 @@
     font-size: 14px;
     font-weight: 700;
     flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+
+    &--ready {
+      background: var(--rf-green-dim);
+      color: var(--rf-green);
+    }
   }
 
   &__username {
@@ -83,15 +91,139 @@
     font-weight: 500;
   }
 
-  // ── Host badge ────────────────────────────────────────────────
-  &__host-badge {
+  // ── Badges ────────────────────────────────────────────────────
+  &__host-badge,
+  &__ready-badge {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--rf-gold);
-    border: 1px solid var(--rf-border-em);
     border-radius: 20px;
     padding: 2px 8px;
+  }
+
+  &__host-badge {
+    color: var(--rf-gold);
+    border: 1px solid var(--rf-border-em);
+  }
+
+  &__ready-badge {
+    color: var(--rf-green);
+    border: 1px solid rgba(61,170,110,0.4);
+  }
+
+  // ── Actions ───────────────────────────────────────────────────
+  &__actions {
+    margin-top: 24px;
+  }
+
+  &__ready-btn {
+    padding: 10px 28px;
+    border-radius: var(--rf-radius-sm);
+    border: 2px solid var(--rf-text-muted);
+    background: transparent;
+    color: var(--rf-text-muted);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+
+    &:hover {
+      border-color: var(--rf-text);
+      color: var(--rf-text);
+    }
+
+    &--active {
+      border-color: var(--rf-green);
+      color: var(--rf-green);
+      background: var(--rf-green-dim);
+
+      &:hover {
+        background: rgba(61,170,110,0.28);
+      }
+    }
+  }
+
+  // ── Chat ──────────────────────────────────────────────────────
+  &__chat {
+    margin-top: 40px;
+  }
+
+  &__chat-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--rf-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 12px;
+  }
+
+  &__chat-messages {
+    height: 240px;
+    overflow-y: auto;
+    background: var(--rf-bg-card);
+    border: 1px solid var(--rf-border);
+    border-radius: var(--rf-radius);
+    padding: 4px 0;
+    scroll-behavior: smooth;
+
+    mat-list { padding: 0; }
+  }
+
+  &__chat-item {
+    padding: 4px 16px !important;
+    height: auto !important;
+  }
+
+  &__chat-author {
+    font-weight: 700;
+    color: var(--rf-gold);
+    font-size: 13px;
+  }
+
+  &__chat-text {
+    font-size: 14px;
+    color: var(--rf-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__chat-empty {
+    color: var(--rf-text-muted);
+    font-style: italic;
+    font-size: 13px;
+    padding: 8px 16px !important;
+    height: auto !important;
+  }
+
+  &__chat-input-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 12px;
+
+    mat-form-field { flex: 1; }
+  }
+
+  &__chat-send {
+    padding: 10px 20px;
+    border-radius: var(--rf-radius-sm);
+    border: 1px solid var(--rf-border-em);
+    background: transparent;
+    color: var(--rf-gold);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.2s;
+
+    &:hover:not(:disabled) {
+      background: rgba(201,168,76,0.12);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   }
 }

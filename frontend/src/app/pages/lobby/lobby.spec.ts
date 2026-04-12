@@ -1,16 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { convertToParamMap, ActivatedRoute, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 import { Lobby } from './lobby';
 import { WebSocketService, WS_FACTORY } from '../../core/services/websocket.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Player } from '../../core/models';
 import { MockWebSocket } from '../../../../test-utils/mock-websocket';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-const ALICE: Player = { id: 1, username: 'alice', isHost: true };
-const BOB: Player   = { id: 2, username: 'bob',   isHost: false };
+const ALICE: Player = { id: 1, username: 'alice', isHost: true,  isReady: false };
+const BOB: Player   = { id: 2, username: 'bob',   isHost: false, isReady: false };
+
+function mockAuthService(username = 'alice') {
+  return {
+    currentUser$: new BehaviorSubject({ id: 1, username }),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -30,6 +38,7 @@ describe('Lobby', () => {
       providers: [
         WebSocketService,
         { provide: Router, useValue: routerSpy },
+        { provide: AuthService, useValue: mockAuthService() },
         {
           provide: WS_FACTORY,
           useValue: (url: string) => {
@@ -108,7 +117,6 @@ describe('Lobby', () => {
   // --- sortedPlayers (host first) ---
   it('should sort host to the top via sortedPlayers', () => {
     mockSocket.simulateOpen();
-    // Add non-host first, then host
     mockSocket.simulateMessage({ type: 'PLAYER_JOINED', payload: BOB });
     mockSocket.simulateMessage({ type: 'PLAYER_JOINED', payload: ALICE });
 
@@ -160,6 +168,132 @@ describe('Lobby', () => {
     expect(badge).toBeTruthy();
     expect(badge.textContent?.trim()).toBe('Host');
   });
+
+  // --- Ready button: initial state ---
+  it('should initialize isReady to false', () => {
+    expect(component.isReady).toBeFalse();
+  });
+
+  it('should render ready button with "Not Ready" text initially', () => {
+    fixture.detectChanges();
+    const btn: HTMLElement = fixture.nativeElement.querySelector('.rf-lobby__ready-btn');
+    expect(btn.textContent?.trim()).toBe('Not Ready');
+  });
+
+  // --- Ready button: toggle ---
+  it('should toggle isReady on toggleReady()', () => {
+    component.toggleReady();
+    expect(component.isReady).toBeTrue();
+    component.toggleReady();
+    expect(component.isReady).toBeFalse();
+  });
+
+  it('should send TOGGLE_READY message on toggleReady()', () => {
+    mockSocket.simulateOpen();
+    component.toggleReady();
+
+    const calls = mockSocket.send.calls.all().map(c => JSON.parse(c.args[0] as string));
+    const toggleCall = calls.find(m => m.type === 'TOGGLE_READY');
+    expect(toggleCall).toBeTruthy();
+    expect(toggleCall.payload.isReady).toBeTrue();
+  });
+
+  it('should apply active class to ready button when isReady is true', () => {
+    component.isReady = true;
+    fixture.detectChanges();
+    const btn: HTMLElement = fixture.nativeElement.querySelector('.rf-lobby__ready-btn');
+    expect(btn.classList).toContain('rf-lobby__ready-btn--active');
+  });
+
+  // --- PLAYER_READY event ---
+  it('should update player isReady on PLAYER_READY event', () => {
+    mockSocket.simulateOpen();
+    mockSocket.simulateMessage({ type: 'PLAYER_JOINED', payload: BOB });
+    mockSocket.simulateMessage({ type: 'PLAYER_READY', payload: { id: BOB.id, isReady: true } });
+
+    expect(component.players[0].isReady).toBeTrue();
+  });
+
+  it('should render ready badge for a ready player', () => {
+    mockSocket.simulateOpen();
+    mockSocket.simulateMessage({ type: 'PLAYER_JOINED', payload: { ...BOB, isReady: true } });
+    fixture.detectChanges();
+
+    const badge: HTMLElement = fixture.nativeElement.querySelector('.rf-lobby__ready-badge');
+    expect(badge).toBeTruthy();
+  });
+
+  it('should apply avatar ready class for a ready player', () => {
+    mockSocket.simulateOpen();
+    mockSocket.simulateMessage({ type: 'PLAYER_JOINED', payload: { ...BOB, isReady: true } });
+    fixture.detectChanges();
+
+    const avatar: HTMLElement = fixture.nativeElement.querySelector('.rf-lobby__avatar');
+    expect(avatar.classList).toContain('rf-lobby__avatar--ready');
+  });
+
+  // --- Chat: initial state ---
+  it('should initialize chatMessages as empty array', () => {
+    expect(component.chatMessages.length).toBe(0);
+  });
+
+  // --- Chat: CHAT_MESSAGE event ---
+  it('should append a message on CHAT_MESSAGE event', () => {
+    mockSocket.simulateOpen();
+    mockSocket.simulateMessage({
+      type: 'CHAT_MESSAGE',
+      payload: { username: 'alice', text: 'Hello!' },
+    });
+
+    expect(component.chatMessages.length).toBe(1);
+    expect(component.chatMessages[0].text).toBe('Hello!');
+  });
+
+  it('should accumulate multiple chat messages', () => {
+    mockSocket.simulateOpen();
+    mockSocket.simulateMessage({ type: 'CHAT_MESSAGE', payload: { username: 'alice', text: 'Hi' } });
+    mockSocket.simulateMessage({ type: 'CHAT_MESSAGE', payload: { username: 'bob', text: 'Hey' } });
+
+    expect(component.chatMessages.length).toBe(2);
+  });
+
+  // --- Chat: sendChat ---
+  it('should send CHAT_MESSAGE and clear input on sendChat()', () => {
+    mockSocket.simulateOpen();
+    component.chatInput = 'Hello world';
+    component.sendChat();
+
+    const calls = mockSocket.send.calls.all().map(c => JSON.parse(c.args[0] as string));
+    const chatCall = calls.find(m => m.type === 'CHAT_MESSAGE');
+    expect(chatCall).toBeTruthy();
+    expect(chatCall.payload.text).toBe('Hello world');
+    expect(component.chatInput).toBe('');
+  });
+
+  it('should not send CHAT_MESSAGE when input is empty', () => {
+    mockSocket.simulateOpen();
+    component.chatInput = '   ';
+    component.sendChat();
+
+    const calls = mockSocket.send.calls.all().map(c => JSON.parse(c.args[0] as string));
+    const chatCall = calls.find(m => m.type === 'CHAT_MESSAGE');
+    expect(chatCall).toBeUndefined();
+  });
+
+  // --- Chat: Enter key ---
+  it('should call sendChat() when Enter key is pressed', () => {
+    spyOn(component, 'sendChat');
+    const event = new KeyboardEvent('keydown', { key: 'Enter' });
+    component.onChatKeydown(event);
+    expect(component.sendChat).toHaveBeenCalled();
+  });
+
+  it('should not call sendChat() when Shift+Enter is pressed', () => {
+    spyOn(component, 'sendChat');
+    const event = new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true });
+    component.onChatKeydown(event);
+    expect(component.sendChat).not.toHaveBeenCalled();
+  });
 });
 
 describe('Lobby (missing code param)', () => {
@@ -171,6 +305,7 @@ describe('Lobby (missing code param)', () => {
       providers: [
         WebSocketService,
         { provide: Router, useValue: routerSpy },
+        { provide: AuthService, useValue: mockAuthService() },
         {
           provide: WS_FACTORY,
           useValue: (url: string) => new MockWebSocket(url) as unknown as WebSocket,

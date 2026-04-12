@@ -6,11 +6,67 @@
 
   <ul class="rf-lobby__player-list" role="list">
     <li *ngFor="let player of sortedPlayers" class="rf-lobby__player-card">
-      <div class="rf-lobby__avatar" aria-hidden="true">
+      <div
+        class="rf-lobby__avatar"
+        [class.rf-lobby__avatar--ready]="player.isReady"
+        aria-hidden="true"
+      >
         {{ (player.username || '').slice(0, 1).toUpperCase() || '?' }}
       </div>
       <span class="rf-lobby__username">{{ player.username }}</span>
       <span *ngIf="player.isHost" class="rf-lobby__host-badge">Host</span>
+      <span
+        *ngIf="player.isReady"
+        class="rf-lobby__ready-badge"
+        aria-label="Ready"
+      >Ready</span>
     </li>
   </ul>
+
+  <div class="rf-lobby__actions">
+    <button
+      class="rf-lobby__ready-btn"
+      [class.rf-lobby__ready-btn--active]="isReady"
+      (click)="toggleReady()"
+      aria-pressed="{{ isReady }}"
+    >
+      {{ isReady ? 'Ready' : 'Not Ready' }}
+    </button>
+  </div>
+
+  <section class="rf-lobby__chat" aria-label="Chat">
+    <h2 class="rf-lobby__chat-title">Chat</h2>
+
+    <div class="rf-lobby__chat-messages" #chatScroll role="log" aria-live="polite">
+      <mat-list>
+        <mat-list-item *ngFor="let msg of chatMessages" class="rf-lobby__chat-item">
+          <span matListItemTitle class="rf-lobby__chat-author">{{ msg.username }}</span>
+          <span matListItemLine class="rf-lobby__chat-text">{{ msg.text }}</span>
+        </mat-list-item>
+        <mat-list-item *ngIf="chatMessages.length === 0" class="rf-lobby__chat-empty">
+          <span matListItemTitle>No messages yet. Say hello!</span>
+        </mat-list-item>
+      </mat-list>
+    </div>
+
+    <div class="rf-lobby__chat-input-row">
+      <mat-form-field appearance="outline" class="rf-lobby__chat-field">
+        <mat-label>Message</mat-label>
+        <input
+          matInput
+          [(ngModel)]="chatInput"
+          (keydown)="onChatKeydown($event)"
+          placeholder="Type a message…"
+          aria-label="Chat message input"
+          autocomplete="off"
+        />
+      </mat-form-field>
+      <button
+        class="rf-lobby__chat-send"
+        (click)="sendChat()"
+        [disabled]="!chatInput.trim()"
+        aria-label="Send message"
+      >Send</button>
+    </div>
+  </section>
 </div>
