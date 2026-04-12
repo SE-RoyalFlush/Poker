@@ -91,6 +91,7 @@ describe('WebSocketService', () => {
     });
 
     it('should set connected$ to false on socket error', (done) => {
+      spyOn(console, 'error');
       service.connect();
       mockSocket.simulateOpen();
 
@@ -237,7 +238,11 @@ describe('WebSocketService', () => {
 
   // --- Auto-reconnect ---
   describe('auto-reconnect', () => {
-    beforeEach(() => jasmine.clock().install());
+    beforeEach(() => {
+      jasmine.clock().install();
+      spyOn(console, 'error');
+      spyOn(console, 'warn');
+    });
     afterEach(() => jasmine.clock().uninstall());
 
     it('should reconnect after an unclean close', () => {
