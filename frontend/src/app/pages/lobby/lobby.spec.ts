@@ -4,7 +4,7 @@ import { convertToParamMap, ActivatedRoute } from '@angular/router';
 import { Lobby } from './lobby';
 import { WebSocketService, WS_FACTORY } from '../../core/services/websocket.service';
 import { Player } from '../../core/models';
-import { MockWebSocket } from '../../../test-utils/mock-websocket';
+import { MockWebSocket } from '../../../../test-utils/mock-websocket';
 
 // ---------------------------------------------------------------------------
 // Helpers

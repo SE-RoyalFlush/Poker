@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { skip, take } from 'rxjs';
 import { WebSocketService, WS_FACTORY, WS_URL } from './websocket.service';
 import { WsMessage } from '../models';
-import { MockWebSocket } from '../../../test-utils/mock-websocket';
+import { MockWebSocket } from '../../../../test-utils/mock-websocket';
 
 // ---------------------------------------------------------------------------
 // Tests
