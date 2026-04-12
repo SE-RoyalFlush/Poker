@@ -10,7 +10,6 @@ import (
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/api"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
-	"github.com/SE-RoyalFlush/Poker/backend/pkg/migrations"
 	"github.com/gorilla/csrf"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
@@ -38,15 +37,6 @@ func main() {
 
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Database ping failed: %v", err)
-	}
-
-	// Run migrations
-	database, err := db.GetDB()
-	if err != nil {
-		log.Fatalf("Failed to get database: %v", err)
-	}
-	if err := migrations.RunMigrations(database); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
 	defer func() {

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gorm.io/gorm/logger"
@@ -63,6 +64,9 @@ var _ = Describe("Database Client", func() {
 		// Verify Ping works
 		err = db.Ping()
 		Expect(err).NotTo(HaveOccurred())
+
+		// Verify schema created for registered models
+		Expect(instance.Migrator().HasTable(&models.Room{})).To(BeTrue())
 
 		// Verify GetDB works
 		retrievedDB, err := db.GetDB()
