@@ -27,6 +27,16 @@
   position: relative;
   overflow-x: hidden;
 
+  // MDC design tokens — cascade into mat-form-field without ::ng-deep
+  --mdc-outlined-text-field-input-text-color:       #F0EDE6;
+  --mdc-outlined-text-field-label-text-color:       #9A9385;
+  --mdc-outlined-text-field-focus-label-text-color: #C9A84C;
+  --mdc-outlined-text-field-outline-color:          rgba(201, 168, 76, 0.15);
+  --mdc-outlined-text-field-hover-outline-color:    rgba(201, 168, 76, 0.35);
+  --mdc-outlined-text-field-focus-outline-color:    #C9A84C;
+  --mdc-outlined-text-field-caret-color:            #C9A84C;
+  --mdc-outlined-text-field-container-shape:        8px;
+
   // Ambient background
   &::before {
     content: '';
@@ -348,67 +358,15 @@
   position: relative;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
 
-  --mdc-outlined-text-field-input-text-color: #f0ede6;
-  --mdc-outlined-text-field-label-text-color: rgba(240, 237, 230, 0.72);
-  --mdc-outlined-text-field-focus-label-text-color: #e8c97a;
-  --mdc-outlined-text-field-outline-color: rgba(201, 168, 76, 0.28);
-  --mdc-outlined-text-field-hover-outline-color: rgba(201, 168, 76, 0.5);
-  --mdc-outlined-text-field-focus-outline-color: #e8c97a;
+  // MDC design tokens for dialog form fields (slightly more prominent than landing)
+  --mdc-outlined-text-field-input-text-color:       #F0EDE6;
+  --mdc-outlined-text-field-label-text-color:       rgba(240, 237, 230, 0.72);
+  --mdc-outlined-text-field-focus-label-text-color: #E8C97A;
+  --mdc-outlined-text-field-outline-color:          rgba(201, 168, 76, 0.28);
+  --mdc-outlined-text-field-hover-outline-color:    rgba(201, 168, 76, 0.5);
+  --mdc-outlined-text-field-focus-outline-color:    #E8C97A;
 
   .mat-mdc-card-content { padding: 40px !important; }
-
-  .mdc-text-field {
-    background: #12162a !important;
-  }
-
-  .mat-mdc-input-element,
-  .mdc-text-field__input,
-  input.mat-mdc-input-element {
-    color: #f0ede6 !important;
-    -webkit-text-fill-color: #f0ede6 !important;
-    opacity: 1 !important;
-  }
-
-  .mat-mdc-form-field .mat-mdc-floating-label {
-    color: rgba(240, 237, 230, 0.78) !important;
-  }
-
-  .mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
-    color: #e8c97a !important;
-  }
-
-  .mat-mdc-form-field .mdc-floating-label {
-    color: rgba(240, 237, 230, 0.78) !important;
-  }
-
-  .mat-mdc-form-field input::placeholder {
-    color: rgba(240, 237, 230, 0.45) !important;
-  }
-
-  .mat-mdc-form-field .mdc-notched-outline__leading,
-  .mat-mdc-form-field .mdc-notched-outline__notch,
-  .mat-mdc-form-field .mdc-notched-outline__trailing {
-    border-color: rgba(201, 168, 76, 0.44) !important;
-    border-width: 1px !important;
-  }
-
-  .mat-mdc-form-field:hover .mdc-notched-outline__leading,
-  .mat-mdc-form-field:hover .mdc-notched-outline__notch,
-  .mat-mdc-form-field:hover .mdc-notched-outline__trailing {
-    border-color: rgba(232, 201, 122, 0.72) !important;
-  }
-
-  .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
-  .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
-  .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
-    border-color: #e8c97a !important;
-    border-width: 1.5px !important;
-  }
-
-  .mat-mdc-form-field .mat-mdc-input-element,
-  .mat-mdc-form-field .mdc-text-field__input {
-    font-weight: 500;
-  }
 
   &__close {
     position: absolute !important;
@@ -537,93 +495,30 @@
   }
 }
 
-/* Material internals live in child component views; use ng-deep so dialog field styles actually apply. */
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-text-field {
-  background: #12162a !important;
-}
-
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mat-mdc-input-element,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-text-field__input {
-  color: #f0ede6 !important;
-  -webkit-text-fill-color: #f0ede6 !important;
-  opacity: 1 !important;
-}
-
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-floating-label,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mat-mdc-floating-label {
-  color: rgba(240, 237, 230, 0.78) !important;
-}
-
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-floating-label,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
-  color: #e8c97a !important;
-}
-
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field input::placeholder {
-  color: rgba(240, 237, 230, 0.5) !important;
-}
-
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-notched-outline__leading,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-notched-outline__notch,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field .mdc-notched-outline__trailing {
-  border-color: rgba(201, 168, 76, 0.44) !important;
-  border-width: 1px !important;
-}
-
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field:hover .mdc-notched-outline__leading,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field:hover .mdc-notched-outline__notch,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field:hover .mdc-notched-outline__trailing {
-  border-color: rgba(232, 201, 122, 0.72) !important;
-}
-
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
-:host ::ng-deep .rf-dialog-overlay .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
-  border-color: #e8c97a !important;
-  border-width: 1.5px !important;
-}
-
-// ── Angular Material theme overrides ────────────────────────────
-// Input colors on dark bg
-.rf-landing, .rf-dialog-overlay {
-  .mat-mdc-form-field {
-    .mdc-text-field {
-      background: var(--rf-bg-surface) !important;
-      border-radius: var(--rf-radius-sm) !important;
-    }
-
-    .mdc-notched-outline__leading,
-    .mdc-notched-outline__notch,
-    .mdc-notched-outline__trailing {
-      border-color: var(--rf-border) !important;
-    }
-
-    &:hover {
-      .mdc-notched-outline__leading,
-      .mdc-notched-outline__notch,
-      .mdc-notched-outline__trailing {
-        border-color: var(--rf-border-em) !important;
-      }
-    }
-
-    &.mat-focused {
-      .mdc-notched-outline__leading,
-      .mdc-notched-outline__notch,
-      .mdc-notched-outline__trailing {
-        border-color: var(--rf-gold) !important;
-        border-width: 1px !important;
-      }
-    }
-
-    .mat-mdc-input-element {
-      color: var(--rf-text) !important;
-      caret-color: var(--rf-gold) !important;
-    }
-
-    .mat-mdc-floating-label { color: var(--rf-text-muted) !important; }
-    &.mat-focused .mat-mdc-floating-label { color: var(--rf-gold) !important; }
+// ── Material internals: ::ng-deep for properties tokens can't reach ──
+// MDC CSS tokens handle colors/borders; ::ng-deep only needed for
+// background (no MDC token) and Safari -webkit-text-fill-color fix.
+:host ::ng-deep {
+  .rf-landing .mdc-text-field,
+  .rf-dialog-overlay .mdc-text-field {
+    background: var(--rf-bg-surface) !important;
+    border-radius: var(--rf-radius-sm) !important;
   }
 
+  // Dialog uses a slightly darker field background than the landing page
+  .rf-dialog-overlay .mdc-text-field { background: #12162a !important; }
+
+  // Safari requires -webkit-text-fill-color to show input text on dark bg
+  .rf-dialog-overlay .mat-mdc-input-element,
+  .rf-dialog-overlay .mdc-text-field__input {
+    -webkit-text-fill-color: #f0ede6 !important;
+    opacity: 1 !important;
+    font-weight: 500;
+  }
+}
+
+// ── Angular Material button overrides ────────────────────────────
+.rf-landing, .rf-dialog-overlay {
   // Primary button = gold
   .mat-mdc-unelevated-button.mat-primary {
     background: var(--rf-gold) !important;
