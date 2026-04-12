@@ -30,6 +30,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.DashboardComponent),
         canActivate: [authGuard],
       },
+      {
+        path: 'room/:code',
+        loadComponent: () => import('./pages/room/room').then((m) => m.RoomComponent),
+        canActivate: [authGuard],
+      },
     ],
   },
 
