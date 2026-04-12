@@ -1,38 +1,45 @@
 package middleware
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/auth"
 )
 
-const (
-	// CookieName is the name of the JWT cookie
-	CookieName = "session"
-)
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+	Status  int    `json:"status"`
+}
 
-// AuthMiddleware validates JWT token from HttpOnly cookie
+// AuthMiddleware validates the signed session cookie and resolves the authenticated user.
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Get the JWT token from HttpOnly cookie
-		cookie, err := r.Cookie(CookieName)
+		_, err := auth.AuthenticatedUserFromRequest(r)
 		if err != nil {
-			if err == http.ErrNoCookie {
-				http.Error(w, `{"error": "unauthorized"}`, http.StatusUnauthorized)
+			if errors.Is(err, auth.ErrMissingSession) || errors.Is(err, auth.ErrInvalidSession) || errors.Is(err, auth.ErrUnauthenticated) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				_ = json.NewEncoder(w).Encode(errorResponse{
+					Error:   "Unauthorized",
+					Message: "Authentication required",
+					Status:  http.StatusUnauthorized,
+				})
 				return
 			}
-			http.Error(w, `{"error": "unauthorized"}`, http.StatusUnauthorized)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(errorResponse{
+				Error:   "Internal Server Error",
+				Message: "Authentication failed",
+				Status:  http.StatusInternalServerError,
+			})
 			return
 		}
 
-		// Verify the token
-		_, err = auth.VerifyToken(cookie.Value)
-		if err != nil {
-			http.Error(w, `{"error": "unauthorized"}`, http.StatusUnauthorized)
-			return
-		}
-
-		// Token is valid, proceed to next handler
 		next.ServeHTTP(w, r)
 	})
 }

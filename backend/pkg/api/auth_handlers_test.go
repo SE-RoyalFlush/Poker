@@ -179,6 +179,12 @@ var _ = Describe("Authentication Handlers", func() {
 			cookie := cookies[0]
 			Expect(cookie.Name).To(Equal("session-id"))
 			Expect(cookie.MaxAge).To(Equal(-1))
+			Expect(cookie.Path).To(Equal("/"))
+			Expect(cookie.HttpOnly).To(BeTrue())
+			Expect(cookie.SameSite).To(Equal(http.SameSiteLaxMode))
+			Expect(cookie.Secure).To(BeTrue())
+			Expect(cookie.Expires.IsZero()).To(BeFalse())
+			Expect(cookie.Expires.Before(time.Now())).To(BeTrue())
 		})
 	})
 
