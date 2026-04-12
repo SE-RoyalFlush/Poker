@@ -29,7 +29,7 @@ export const WS_FACTORY = new InjectionToken<(url: string) => WebSocket>(
  * Usage:
  *   this.wsService.connect();
  *   this.wsService.messages$.subscribe(msg => { ... });
- *   this.wsService.sendMessage('JOIN_ROOM', { roomCode: 'RF-1234' });
+ *   this.wsService.sendMessage('JOIN_ROOM', { roomCode: 'AB12CD' });
  *   this.wsService.disconnect();
  */
 @Injectable({ providedIn: 'root' })

@@ -37,8 +37,8 @@ Implement standard HTTP endpoints to Create and Find rooms. While the game happe
 * `GET /api/rooms/{code}`: Checks if a room exists and is open.
 
 ### Test Outline
-* **Verify Creation:** Authenticated user calls `POST /api/rooms` -> gets 200 OK + `{"code": "XYZ123"}`. DB shows new row.
-* **Verify Lookup:** `GET /api/rooms/XYZ123` returns room details.
+* **Verify Creation:** Authenticated user calls `POST /api/rooms` -> gets 200 OK + `{"code": "AB12CD"}`. DB shows new row.
+* **Verify Lookup:** `GET /api/rooms/AB12CD` returns room details.
 * **Verify Invalid Code:** `GET /api/rooms/BADCODE` returns 404.
 
 ### Checklist

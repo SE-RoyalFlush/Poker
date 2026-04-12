@@ -2,17 +2,13 @@ package room
 
 import (
 	"errors"
-	"regexp"
-	"strings"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"gorm.io/gorm"
 )
 
 var (
-	ErrInvalidRoomCode   = errors.New("invalid room code")
 	ErrInvalidMaxPlayers = errors.New("invalid max players")
-	roomCodePattern      = regexp.MustCompile(`^[A-Z0-9]{6}$`)
 )
 
 // CreateParams defines the persisted room attributes required for creation.
@@ -26,17 +22,12 @@ type CreateParams struct {
 
 // Create inserts a room row and returns the persisted record.
 func Create(database *gorm.DB, params CreateParams) (*models.Room, error) {
-	code, err := validateAndNormalizeCode(params.Code)
-	if err != nil {
-		return nil, err
-	}
 	maxPlayers, err := validateMaxPlayers(params.MaxPlayers)
 	if err != nil {
 		return nil, err
 	}
 
 	room := &models.Room{
-		Code:       code,
 		HostUserID: params.HostUserID,
 		Status:     params.Status,
 		MaxPlayers: maxPlayers,
@@ -47,11 +38,21 @@ func Create(database *gorm.DB, params CreateParams) (*models.Room, error) {
 		room.Status = models.RoomStatusOpen
 	}
 
-	if err := database.Create(room).Error; err != nil {
-		return nil, err
+	if params.Code != "" {
+		code, err := validateAndNormalizeCode(params.Code)
+		if err != nil {
+			return nil, err
+		}
+		room.Code = code
+
+		if err := database.Create(room).Error; err != nil {
+			return nil, err
+		}
+
+		return room, nil
 	}
 
-	return room, nil
+	return createWithGeneratedCode(database, room, GenerateRoomCode)
 }
 
 // FindByCode retrieves a room by its invite code.
@@ -69,17 +70,28 @@ func FindByCode(database *gorm.DB, code string) (*models.Room, error) {
 	return &room, nil
 }
 
-func normalizeCode(code string) string {
-	return strings.ToUpper(strings.TrimSpace(code))
-}
+func createWithGeneratedCode(database *gorm.DB, room *models.Room, generator codeGenerator) (*models.Room, error) {
+	for range maxRoomCodeCreateRetries {
+		code, err := generateUniqueRoomCode(database, generator)
+		if err != nil {
+			if errors.Is(err, ErrFailedToGenerateCode) {
+				continue
+			}
+			return nil, err
+		}
 
-func validateAndNormalizeCode(code string) (string, error) {
-	normalized := normalizeCode(code)
-	if !roomCodePattern.MatchString(normalized) {
-		return "", ErrInvalidRoomCode
+		room.Code = code
+		if err := database.Create(room).Error; err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) || isUniqueConstraintError(err) {
+				continue
+			}
+			return nil, err
+		}
+
+		return room, nil
 	}
 
-	return normalized, nil
+	return nil, ErrFailedToGenerateCode
 }
 
 func validateMaxPlayers(maxPlayers int) (int, error) {

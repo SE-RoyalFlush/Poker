@@ -235,7 +235,7 @@ All WebSocket traffic uses `{ type: string, payload: T }`:
 
 ```typescript
 // Sending
-wsService.sendMessage('JOIN_ROOM', { roomCode: 'RF-1234' });
+wsService.sendMessage('JOIN_ROOM', { roomCode: 'AB12CD' });
 
 // Receiving
 wsService.messages$.subscribe(msg => {
@@ -364,4 +364,3 @@ npm run test:integration:backend
 - **Configuration**: `karma.conf.js` defines the testing setup, browser, reporters, and plugins
 
 > **Note:** These tests are automatically run on every pull request via the GitHub Actions workflow (`.github/workflows/pull_request_test.yaml`). The workflow ensures all frontend unit tests pass before merging.
-

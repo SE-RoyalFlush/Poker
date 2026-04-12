@@ -14,7 +14,7 @@ const (
 	MaxRoomPlayers        = 10
 )
 
-// Room represents a persisted poker room that can be created and looked up by invite code.
+// Room represents a persisted poker room that can be created and looked up by a 6-character uppercase alphanumeric room code.
 type Room struct {
 	gorm.Model
 

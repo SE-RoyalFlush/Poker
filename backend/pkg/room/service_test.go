@@ -94,6 +94,31 @@ func TestCreateDefaultsStatusWhenUnset(t *testing.T) {
 	}
 }
 
+func TestCreateGeneratesValidRoomCodeWhenUnset(t *testing.T) {
+	database := setupTestDB(t)
+	host := createHostUser(t, database, "host-generated-code")
+
+	createdRoom, err := room.Create(database, room.CreateParams{
+		HostUserID: host.ID,
+		MaxPlayers: 6,
+	})
+	if err != nil {
+		t.Fatalf("Create returned error: %v", err)
+	}
+
+	if len(createdRoom.Code) != room.RoomCodeLength {
+		t.Fatalf("expected generated code length %d, got %q", room.RoomCodeLength, createdRoom.Code)
+	}
+
+	found, err := room.FindByCode(database, createdRoom.Code)
+	if err != nil {
+		t.Fatalf("FindByCode returned error for generated code %q: %v", createdRoom.Code, err)
+	}
+	if found.ID != createdRoom.ID {
+		t.Fatalf("expected generated room ID %d, got %d", createdRoom.ID, found.ID)
+	}
+}
+
 func TestFindByCodeReturnsMatchingRoom(t *testing.T) {
 	database := setupTestDB(t)
 	host := createHostUser(t, database, "host-lookup")

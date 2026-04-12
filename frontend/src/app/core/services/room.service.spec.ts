@@ -30,7 +30,7 @@ describe('RoomService', () => {
         isPrivate: false,
       })
       .subscribe((room) => {
-        expect(room.code).toBe('RF-1234');
+        expect(room.code).toBe('AB12CD');
         expect(room.seats).toBe(6);
       });
 
@@ -39,7 +39,7 @@ describe('RoomService', () => {
     expect(req.request.withCredentials).toBeTrue();
     req.flush({
       id: 'r1',
-      code: 'RF-1234',
+      code: 'AB12CD',
       name: 'My Table',
       gameType: 'NLH',
       smallBlind: 1,
@@ -52,15 +52,15 @@ describe('RoomService', () => {
   });
 
   it('should call join endpoint with password when provided', () => {
-    service.joinRoom('RF-1234', 'abcd').subscribe();
+    service.joinRoom('AB12CD', 'abcd').subscribe();
 
     const req = httpMock.expectOne('http://localhost:8080/api/rooms/join');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ code: 'RF-1234', password: 'abcd' });
+    expect(req.request.body).toEqual({ code: 'AB12CD', password: 'abcd' });
     expect(req.request.withCredentials).toBeTrue();
     req.flush({
       id: 'r1',
-      code: 'RF-1234',
+      code: 'AB12CD',
       name: 'My Table',
       gameType: 'NLH',
       smallBlind: 1,
@@ -86,7 +86,7 @@ describe('RoomService', () => {
     req.flush([
       {
         id: 'r1',
-        code: 'RF-1111',
+        code: 'AB12CD',
         name: 'A',
         gameType: 'NLH',
         smallBlind: 1,
@@ -98,7 +98,7 @@ describe('RoomService', () => {
       },
       {
         id: 'r2',
-        code: 'RF-2222',
+        code: 'ZX98QP',
         name: 'B',
         gameType: 'PLO',
         smallBlind: 2,
