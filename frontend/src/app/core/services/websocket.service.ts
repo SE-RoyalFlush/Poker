@@ -22,6 +22,10 @@ export const WS_FACTORY = new InjectionToken<(url: string) => WebSocket>(
  * WebSocket (unlike XMLHttpRequest); cookies are always included when
  * the WS origin matches the cookie domain/SameSite policy.
  *
+ * On unexpected disconnection the service retries with exponential backoff
+ * (base 1 s, doubling each attempt, capped at 30 s) up to MAX_RECONNECT_ATTEMPTS.
+ * Calling disconnect() cancels any pending retry.
+ *
  * Usage:
  *   this.wsService.connect();
  *   this.wsService.messages$.subscribe(msg => { ... });
@@ -31,6 +35,12 @@ export const WS_FACTORY = new InjectionToken<(url: string) => WebSocket>(
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
   private socket: WebSocket | null = null;
+  private manualDisconnect = false;
+  private reconnectAttempts = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private readonly MAX_RECONNECT_ATTEMPTS = 5;
+  private readonly BASE_RECONNECT_DELAY_MS = 1000;
 
   // Subject (not BehaviorSubject) — messages are events with no meaningful last value.
   private readonly messagesSubject = new Subject<WsMessage>();
@@ -44,17 +54,25 @@ export class WebSocketService {
 
   /**
    * Open the WebSocket connection to the game server.
-   * Calling connect() while already OPEN is a no-op.
+   * No-op if the socket is already OPEN or CONNECTING.
+   * Cancels any pending reconnect and resets the manual-disconnect flag.
    * @param url WebSocket endpoint (defaults to WS_URL)
    */
   connect(url: string = WS_URL): void {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+    this.manualDisconnect = false;
+
+    if (
+      this.socket &&
+      (this.socket.readyState === WebSocket.OPEN ||
+        this.socket.readyState === WebSocket.CONNECTING)
+    ) {
       return;
     }
 
     this.socket = this.wsFactory(url);
 
     this.socket.onopen = () => {
+      this.reconnectAttempts = 0;
       this.connectedSubject.next(true);
     };
 
@@ -74,10 +92,39 @@ export class WebSocketService {
 
     this.socket.onclose = (event: CloseEvent) => {
       this.connectedSubject.next(false);
-      if (!event.wasClean) {
-        console.warn(`[WebSocketService] Connection dropped (code: ${event.code})`);
+      if (!event.wasClean && !this.manualDisconnect) {
+        this.scheduleReconnect(url);
+      } else if (event.wasClean) {
+        this.reconnectAttempts = 0;
       }
     };
+  }
+
+  /**
+   * Schedule a reconnect attempt with exponential backoff.
+   * Stops after MAX_RECONNECT_ATTEMPTS consecutive failures.
+   */
+  private scheduleReconnect(url: string): void {
+    if (this.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
+      console.error('[WebSocketService] Max reconnect attempts reached, giving up');
+      return;
+    }
+
+    const delay = Math.min(
+      this.BASE_RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts),
+      30000
+    );
+    this.reconnectAttempts++;
+
+    console.warn(
+      `[WebSocketService] Reconnecting in ${delay}ms` +
+        ` (attempt ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS})`
+    );
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect(url);
+    }, delay);
   }
 
   /**
@@ -97,10 +144,16 @@ export class WebSocketService {
   }
 
   /**
-   * Close the WebSocket connection cleanly.
+   * Close the WebSocket connection cleanly and cancel any pending reconnect.
    * Safe to call when no connection exists.
    */
   disconnect(): void {
+    this.manualDisconnect = true;
+    this.reconnectAttempts = 0;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.socket) {
       this.socket.close();
       this.socket = null;

@@ -197,11 +197,11 @@ All 29 tests pass ✅
 
 ### Models
 
-User-related interfaces in `src/app/core/models/user.model.ts` and `src/app/core/models/ws-message.model.ts`.
+User-related interfaces in `src/app/core/models/user.model.ts`.
 
 ## WebSocket Service
 
-Manages the WebSocket connection to the game server for real-time gameplay events.
+Manages the WebSocket connection to the game server for real-time gameplay events. WebSocket message envelope interfaces are defined in `src/app/core/models/ws-message.model.ts`.
 
 ### Architecture
 

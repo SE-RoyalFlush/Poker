@@ -121,6 +121,16 @@ describe('WebSocketService', () => {
       expect(mockSocket).toBe(firstSocket);
     });
 
+    it('should not create a new socket when already CONNECTING', () => {
+      service.connect();
+      // socket is CONNECTING — simulateOpen() never called
+
+      const firstSocket = mockSocket;
+      service.connect(); // second call while still connecting
+
+      expect(mockSocket).toBe(firstSocket);
+    });
+
     it('should set connected$ to false on socket error', (done) => {
       service.connect();
       mockSocket.simulateOpen();
@@ -263,6 +273,73 @@ describe('WebSocketService', () => {
 
     it('should be safe to call when no connection exists', () => {
       expect(() => service.disconnect()).not.toThrow();
+    });
+  });
+
+  // --- Auto-reconnect ---
+  describe('auto-reconnect', () => {
+    beforeEach(() => jasmine.clock().install());
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('should reconnect after an unclean close', () => {
+      service.connect();
+      mockSocket.simulateOpen();
+
+      const firstSocket = mockSocket;
+      mockSocket.simulateClose(false, 1006); // unclean drop
+
+      jasmine.clock().tick(1001); // past the 1 s base delay
+
+      expect(mockSocket).not.toBe(firstSocket); // a new socket was created
+    });
+
+    it('should NOT reconnect after a clean close', () => {
+      service.connect();
+      mockSocket.simulateOpen();
+
+      const firstSocket = mockSocket;
+      mockSocket.simulateClose(true, 1000); // clean close
+
+      jasmine.clock().tick(5000);
+
+      expect(mockSocket).toBe(firstSocket); // no new socket
+    });
+
+    it('should NOT reconnect after explicit disconnect()', () => {
+      service.connect();
+      mockSocket.simulateOpen();
+
+      const firstSocket = mockSocket;
+      service.disconnect(); // sets manualDisconnect = true
+
+      jasmine.clock().tick(5000);
+
+      expect(mockSocket).toBe(firstSocket); // no new socket
+    });
+
+    it('should reset reconnect counter when connection opens successfully', () => {
+      service.connect();
+      // Force a few failed attempts
+      service['reconnectAttempts'] = 3;
+
+      mockSocket.simulateOpen(); // successful open resets counter
+
+      expect(service['reconnectAttempts']).toBe(0);
+    });
+
+    it('should stop reconnecting after MAX_RECONNECT_ATTEMPTS', () => {
+      service.connect();
+      mockSocket.simulateOpen();
+
+      // Force attempts to the limit so the next close will be the final one
+      service['reconnectAttempts'] = service['MAX_RECONNECT_ATTEMPTS'];
+
+      const lastSocket = mockSocket;
+      mockSocket.simulateClose(false, 1006);
+
+      jasmine.clock().tick(30001); // well past any delay
+
+      expect(mockSocket).toBe(lastSocket); // no new socket — gave up
     });
   });
 
