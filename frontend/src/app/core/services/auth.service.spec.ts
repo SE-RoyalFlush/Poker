@@ -30,6 +30,7 @@ describe('AuthService', () => {
 
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
+    spyOn(console, 'error');
   });
 
   afterEach(() => {

@@ -9,3 +9,5 @@
 export * from './user.model';
 export * from './room-code';
 export * from './ws-message.model';
+export * from './player.model';
+
