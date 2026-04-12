@@ -50,6 +50,23 @@ func TestCreatePersistsRoomAndHostAssociation(t *testing.T) {
 	}
 }
 
+func TestCreateDefaultsMaxPlayersWhenUnset(t *testing.T) {
+	database := setupTestDB(t)
+	host := createHostUser(t, database, "host-default-max")
+
+	createdRoom, err := room.Create(database, room.CreateParams{
+		Code:       "df12gh",
+		HostUserID: host.ID,
+	})
+	if err != nil {
+		t.Fatalf("Create returned error: %v", err)
+	}
+
+	if createdRoom.MaxPlayers != 6 {
+		t.Fatalf("expected default MaxPlayers 6, got %d", createdRoom.MaxPlayers)
+	}
+}
+
 func TestFindByCodeReturnsMatchingRoom(t *testing.T) {
 	database := setupTestDB(t)
 	host := createHostUser(t, database, "host-lookup")
@@ -122,6 +139,35 @@ func TestFindByCodeRejectsInvalidRoomCodes(t *testing.T) {
 	}
 	if found != nil {
 		t.Fatalf("expected no room result, got %+v", found)
+	}
+}
+
+func TestCreateRejectsInvalidMaxPlayers(t *testing.T) {
+	database := setupTestDB(t)
+	host := createHostUser(t, database, "host-invalid-max")
+
+	testCases := []struct {
+		name       string
+		maxPlayers int
+	}{
+		{name: "negative", maxPlayers: -1},
+		{name: "above limit", maxPlayers: 11},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			createdRoom, err := room.Create(database, room.CreateParams{
+				Code:       "MN12PQ",
+				HostUserID: host.ID,
+				MaxPlayers: tc.maxPlayers,
+			})
+			if !errors.Is(err, room.ErrInvalidMaxPlayers) {
+				t.Fatalf("expected ErrInvalidMaxPlayers, got %v", err)
+			}
+			if createdRoom != nil {
+				t.Fatalf("expected no room to be created, got %+v", createdRoom)
+			}
+		})
 	}
 }
 

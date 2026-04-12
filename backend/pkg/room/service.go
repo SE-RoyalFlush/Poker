@@ -10,10 +10,12 @@ import (
 )
 
 const defaultMaxPlayers = 6
+const maxAllowedPlayers = 10
 
 var (
-	ErrInvalidRoomCode = errors.New("invalid room code")
-	roomCodePattern    = regexp.MustCompile(`^[A-Z0-9]{6}$`)
+	ErrInvalidRoomCode   = errors.New("invalid room code")
+	ErrInvalidMaxPlayers = errors.New("invalid max players")
+	roomCodePattern      = regexp.MustCompile(`^[A-Z0-9]{6}$`)
 )
 
 // CreateParams defines the persisted room attributes required for creation.
@@ -31,20 +33,21 @@ func Create(database *gorm.DB, params CreateParams) (*models.Room, error) {
 	if err != nil {
 		return nil, err
 	}
+	maxPlayers, err := validateMaxPlayers(params.MaxPlayers)
+	if err != nil {
+		return nil, err
+	}
 
 	room := &models.Room{
 		Code:       code,
 		HostUserID: params.HostUserID,
 		Status:     params.Status,
-		MaxPlayers: params.MaxPlayers,
+		MaxPlayers: maxPlayers,
 		IsPrivate:  params.IsPrivate,
 	}
 
 	if room.Status == "" {
 		room.Status = models.RoomStatusOpen
-	}
-	if room.MaxPlayers == 0 {
-		room.MaxPlayers = defaultMaxPlayers
 	}
 
 	if err := database.Create(room).Error; err != nil {
@@ -80,4 +83,15 @@ func validateAndNormalizeCode(code string) (string, error) {
 	}
 
 	return normalized, nil
+}
+
+func validateMaxPlayers(maxPlayers int) (int, error) {
+	if maxPlayers == 0 {
+		return defaultMaxPlayers, nil
+	}
+	if maxPlayers < 0 || maxPlayers > maxAllowedPlayers {
+		return 0, ErrInvalidMaxPlayers
+	}
+
+	return maxPlayers, nil
 }
