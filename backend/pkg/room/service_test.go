@@ -198,6 +198,22 @@ func TestCreateRejectsInvalidMaxPlayers(t *testing.T) {
 	}
 }
 
+func TestRoomSchemaRejectsInvalidMaxPlayers(t *testing.T) {
+	database := setupTestDB(t)
+	host := createHostUser(t, database, "host-schema-invalid-max")
+
+	err := database.Create(&models.Room{
+		Code:       "SC12MA",
+		HostUserID: host.ID,
+		Status:     models.RoomStatusOpen,
+		MaxPlayers: -1,
+		IsPrivate:  false,
+	}).Error
+	if err == nil {
+		t.Fatal("expected database constraint error for invalid max players")
+	}
+}
+
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 

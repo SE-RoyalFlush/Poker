@@ -9,6 +9,9 @@ const (
 	RoomStatusOpen   RoomStatus = "open"
 	RoomStatusClosed RoomStatus = "closed"
 	RoomStatusInGame RoomStatus = "in_game"
+
+	DefaultRoomMaxPlayers = 6
+	MaxRoomPlayers        = 10
 )
 
 // Room represents a persisted poker room that can be created and looked up by invite code.
@@ -19,6 +22,6 @@ type Room struct {
 	HostUserID uint       `gorm:"not null;index"`
 	HostUser   User       `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:HostUserID"`
 	Status     RoomStatus `gorm:"type:text;not null;default:open;index"`
-	MaxPlayers int        `gorm:"not null;default:6"`
+	MaxPlayers int        `gorm:"not null;default:6;check:max_players_range,max_players > 0 AND max_players <= 10"`
 	IsPrivate  bool       `gorm:"not null;default:false"`
 }

@@ -9,9 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const defaultMaxPlayers = 6
-const maxAllowedPlayers = 10
-
 var (
 	ErrInvalidRoomCode   = errors.New("invalid room code")
 	ErrInvalidMaxPlayers = errors.New("invalid max players")
@@ -87,9 +84,9 @@ func validateAndNormalizeCode(code string) (string, error) {
 
 func validateMaxPlayers(maxPlayers int) (int, error) {
 	if maxPlayers == 0 {
-		return defaultMaxPlayers, nil
+		return models.DefaultRoomMaxPlayers, nil
 	}
-	if maxPlayers < 0 || maxPlayers > maxAllowedPlayers {
+	if maxPlayers < 0 || maxPlayers > models.MaxRoomPlayers {
 		return 0, ErrInvalidMaxPlayers
 	}
 
