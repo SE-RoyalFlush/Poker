@@ -12,7 +12,6 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/migrations"
 	"github.com/gorilla/csrf"
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
@@ -56,26 +55,7 @@ func main() {
 		}
 	}()
 
-	// Initialize router
-	router := mux.NewRouter()
-
-	// API Routes
-	apiRouter := router.PathPrefix("/api").Subrouter()
-	apiRouter.HandleFunc("/health", api.HealthHandler).Methods("GET")
-	apiRouter.HandleFunc("/register", api.RegisterHandler).Methods("POST")
-	apiRouter.HandleFunc("/login", api.LoginHandler).Methods("POST")
-	apiRouter.HandleFunc("/logout", api.LogoutHandler).Methods("POST")
-	apiRouter.HandleFunc("/csrf", api.CSRFTokenHandler).Methods("GET")
-	apiRouter.HandleFunc("/me", api.MeHandler).Methods("GET")
-	apiRouter.HandleFunc("/admin/users", api.AdminListUsersHandler).Methods("GET")
-	apiRouter.HandleFunc("/admin/users/{id:[0-9]+}", api.AdminDeleteUserHandler).Methods("DELETE")
-
-	// Authentication routes
-	router.HandleFunc("/api/login", api.LoginHandler).Methods("POST")
-	router.HandleFunc("/api/logout", api.LogoutHandler).Methods("POST")
-	router.HandleFunc("/api/me", api.MeHandler).Methods("GET")
-
-	router.NotFoundHandler = http.HandlerFunc(api.NotFoundHandler)
+	router := api.NewRouter()
 
 	csrfAuthKey := []byte(os.Getenv("CSRF_AUTH_KEY"))
 	if len(csrfAuthKey) != 32 {
