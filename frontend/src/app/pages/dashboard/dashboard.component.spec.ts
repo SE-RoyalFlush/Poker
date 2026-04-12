@@ -1,25 +1,32 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
-import { AuthService } from '../../core/services';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { of } from 'rxjs';
+import { AuthService, RoomService } from '../../core/services';
 import { DashboardComponent } from './dashboard';
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let fixture: ComponentFixture<DashboardComponent>;
   let authSpy: jasmine.SpyObj<AuthService>;
+  let roomSpy: jasmine.SpyObj<RoomService>;
   let router: Router;
 
   beforeEach(async () => {
     authSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUser', 'logout']);
+    roomSpy = jasmine.createSpyObj<RoomService>('RoomService', ['createRoom', 'joinRoom', 'getLiveRooms']);
+
     authSpy.getCurrentUser.and.returnValue({ id: 1, username: 'ace' });
+    authSpy.logout.and.returnValue(of(undefined));
+    roomSpy.getLiveRooms.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
-      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: AuthService, useValue: authSpy },
+        { provide: RoomService, useValue: roomSpy },
       ],
     }).compileComponents();
 

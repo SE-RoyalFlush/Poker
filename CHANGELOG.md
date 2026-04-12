@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [Frontend: Create & Join Room UI (Issue #20)](https://github.com/SE-RoyalFlush/Poker/issues/20)
     - Extracted `CreateRoomComponent` into `frontend/src/app/features/rooms/create-room/` — room name/players/blinds/privacy form; navigates to `/room/:code` on success
     - Extracted `JoinRoomComponent` into `frontend/src/app/features/rooms/join-room/` — 6-char alphanumeric code input with live rooms browser, 403 password reveal, and `quickJoin`; navigates to `/room/:code` on success
-    - Updated room code validation from legacy `RF-XXXX` pattern to `^[A-Z0-9]{6}$` to match backend `gorm:"size:6"` model
+    - Updated frontend room-code validation from legacy `RF-XXXX` to `^[A-Z0-9]{6}$` for the new join flow and `/room/:code` routing convention
     - Fixed post-join navigation to use `room.code` instead of `room.id`
     - Added `room/:code` protected route and placeholder `RoomComponent` at `frontend/src/app/pages/room/`
     - Refactored `DashboardComponent` to embed `<app-create-room>` and `<app-join-room>`, removing all inline form logic

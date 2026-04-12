@@ -43,6 +43,9 @@ export class JoinRoomComponent implements OnInit {
   private router      = inject(Router);
 
   ngOnInit(): void {
+    // Room code format: 6 uppercase alphanumeric chars (e.g. "AB12CD").
+    // Matches the backend Room model gorm:"size:6". Update this pattern if
+    // the backend contract changes (e.g. to include a prefix like "RF-XXXX").
     this.joinForm = this.fb.group({
       roomCode:     ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{6}$/i)]],
       joinPassword: [''],

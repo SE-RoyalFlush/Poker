@@ -15,6 +15,8 @@ export class RoomComponent implements OnInit {
   constructor(private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-    this.roomCode = this.route.snapshot.paramMap.get('code') ?? '';
+    this.route.paramMap.subscribe((paramMap) => {
+      this.roomCode = paramMap.get('code') ?? '';
+    });
   }
 }

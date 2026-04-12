@@ -14,16 +14,17 @@ const mockRoom = {
 
 describe('Dashboard - Create & Join Room', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/me', { id: 1, username: 'ace' }).as('getMe');
-    cy.intercept('GET', '/api/csrf', { token: 'test-csrf' }).as('getCsrf');
-    cy.intercept('GET', '/api/rooms*', [mockRoom]).as('getLiveRooms');
+    // AuthService maps { ID, username } → { id, username }
+    cy.intercept('GET', '**/api/me', { ID: 1, username: 'ace' }).as('getMe');
+    cy.intercept('GET', '**/api/csrf', { csrfToken: 'test-csrf' }).as('getCsrf');
+    cy.intercept('GET', '**/api/rooms*', [mockRoom]).as('getLiveRooms');
     cy.visit('/dashboard');
     cy.wait('@getMe');
   });
 
   describe('Create Room', () => {
     it('should call API and navigate to /room/code on success', () => {
-      cy.intercept('POST', '/api/rooms', mockRoom).as('createRoom');
+      cy.intercept('POST', '**/api/rooms', mockRoom).as('createRoom');
 
       cy.get('app-create-room').within(() => {
         cy.get('input[formControlName="roomName"]').type('My Table');
@@ -44,7 +45,7 @@ describe('Dashboard - Create & Join Room', () => {
 
   describe('Join Room', () => {
     it('should call API and navigate to /room/code on success', () => {
-      cy.intercept('POST', '/api/rooms/join', mockRoom).as('joinRoom');
+      cy.intercept('POST', '**/api/rooms/join', mockRoom).as('joinRoom');
 
       cy.get('app-join-room').within(() => {
         cy.get('input[formControlName="roomCode"]').type('AB12CD');
@@ -71,7 +72,7 @@ describe('Dashboard - Create & Join Room', () => {
     });
 
     it('should reveal password field on 403 response', () => {
-      cy.intercept('POST', '/api/rooms/join', { statusCode: 403, body: { message: 'Password required.' } }).as('joinFail');
+      cy.intercept('POST', '**/api/rooms/join', { statusCode: 403, body: { message: 'Password required.' } }).as('joinFail');
 
       cy.get('app-join-room').within(() => {
         cy.get('input[formControlName="roomCode"]').type('AB12CD');
