@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { uniqBy, orderBy } from 'lodash-es';
@@ -24,20 +24,24 @@ export class Lobby implements OnInit, OnDestroy {
 
   constructor(
     private readonly route: ActivatedRoute,
+    private readonly router: Router,
     private readonly wsService: WebSocketService,
   ) {}
 
   ngOnInit(): void {
     this.roomCode = this.route.snapshot.queryParamMap.get('code') ?? '';
 
+    if (!this.roomCode) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
     this.wsService.connect();
 
     this.wsService.connected$
       .pipe(filter(v => v), takeUntil(this.destroy$))
       .subscribe(() => {
-        if (this.roomCode) {
-          this.wsService.sendMessage('JOIN_ROOM', { roomCode: this.roomCode });
-        }
+        this.wsService.sendMessage('JOIN_ROOM', { roomCode: this.roomCode });
       });
 
     this.wsService.messages$

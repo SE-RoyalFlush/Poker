@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { convertToParamMap, ActivatedRoute } from '@angular/router';
+import { convertToParamMap, ActivatedRoute, Router } from '@angular/router';
 
 import { Lobby } from './lobby';
 import { WebSocketService, WS_FACTORY } from '../../core/services/websocket.service';
@@ -20,12 +20,16 @@ describe('Lobby', () => {
   let component: Lobby;
   let wsService: WebSocketService;
   let mockSocket: MockWebSocket;
+  let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
+    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+
     await TestBed.configureTestingModule({
       imports: [Lobby],
       providers: [
         WebSocketService,
+        { provide: Router, useValue: routerSpy },
         {
           provide: WS_FACTORY,
           useValue: (url: string) => {
@@ -155,5 +159,34 @@ describe('Lobby', () => {
     const badge: HTMLElement = fixture.nativeElement.querySelector('.rf-lobby__host-badge');
     expect(badge).toBeTruthy();
     expect(badge.textContent?.trim()).toBe('Host');
+  });
+});
+
+describe('Lobby (missing code param)', () => {
+  it('should redirect to /dashboard when code query param is missing', async () => {
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+
+    await TestBed.configureTestingModule({
+      imports: [Lobby],
+      providers: [
+        WebSocketService,
+        { provide: Router, useValue: routerSpy },
+        {
+          provide: WS_FACTORY,
+          useValue: (url: string) => new MockWebSocket(url) as unknown as WebSocket,
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
+      ],
+    }).compileComponents();
+
+    const f = TestBed.createComponent(Lobby);
+    f.detectChanges();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/dashboard']);
+
+    TestBed.resetTestingModule();
   });
 });
