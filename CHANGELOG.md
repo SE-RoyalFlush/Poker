@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: WebSocket Service (Issue #19)](https://github.com/SE-RoyalFlush/Poker/issues/19)
+    - Implemented `WebSocketService` in `src/app/core/services/websocket.service.ts` for managing the client-side WebSocket connection lifecycle
+    - Added `WsMessage<T>` interface in `src/app/core/models/ws-message.model.ts` as the typed `{ type, payload }` envelope for all WebSocket traffic
+    - Exposes `messages$: Observable<WsMessage>` (Subject-backed) for components to subscribe to incoming server events
+    - Exposes `connected$: Observable<boolean>` (BehaviorSubject-backed) for real-time connection state
+    - `sendMessage(type, payload)` serializes and sends a typed JSON message; warns without throwing when socket is not open
+    - `connect(url?)` wires `onopen`/`onmessage`/`onerror`/`onclose` handlers; guards against double-connect when already OPEN
+    - `disconnect()` closes the connection cleanly; safe to call with no active connection
+    - Introduced `WS_FACTORY` InjectionToken as a testability seam — overridden in tests to return a `MockWebSocket` instead of a real browser WebSocket
+    - Session cookies are sent automatically by the browser on the WS handshake (RFC 6455 §10.5); no explicit credential flag is needed unlike XHR
+    - Comprehensive unit tests (17 tests, all passing) using `MockWebSocket` helper covering: connection lifecycle, JSON send/receive, malformed message resilience, double-connect guard, disconnect safety, and cookie URL documentation
+    - Exported from `src/app/core/services/index.ts` and `src/app/core/models/index.ts` barrels
+    - **Note**: Backend `ws://localhost:8080/ws` endpoint not yet implemented; Cypress E2E test deferred until backend endpoint and consuming UI component exist
 - [Frontend: Registration UI Story (Issue #1-11)](https://github.com/SE-RoyalFlush/Poker)
     - Implemented registration UI with Angular Material + Reactive Forms in `frontend/src/app/features/auth/register/`
     - Added validation UX (required/min-length, submit-disabled-until-valid, password match) and `409 -> Username taken` error mapping
