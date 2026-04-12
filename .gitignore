@@ -19,3 +19,7 @@
 
 /updates/*
 .github/prompts/
+
+# Claude Code
+.claude/
+CLAUDE.md

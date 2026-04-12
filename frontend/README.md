@@ -197,6 +197,77 @@ All 29 tests pass ✅
 
 ### Models
 
+User-related interfaces in `src/app/core/models/user.model.ts`.
+
+## WebSocket Service
+
+Manages the WebSocket connection to the game server for real-time gameplay events. WebSocket message envelope interfaces are defined in `src/app/core/models/ws-message.model.ts`.
+
+### Architecture
+
+- **Location**: `src/app/core/services/websocket.service.ts`
+- **State Management**: `connected$` via BehaviorSubject (current state on subscribe); `messages$` via Subject (events only)
+- **Testability**: `WS_FACTORY` InjectionToken swapped in tests for a `MockWebSocket`
+- **Credentials**: Browser sends session cookies automatically on the WS handshake (RFC 6455 §10.5) — no `withCredentials` flag needed unlike XHR
+
+### API
+
+```typescript
+// Open connection to ws://localhost:8080/ws (or custom URL)
+wsService.connect(url?: string): void
+
+// Observable stream of incoming server messages
+wsService.messages$: Observable<WsMessage>
+
+// Observable connection state (true = connected)
+wsService.connected$: Observable<boolean>
+
+// Send a typed message to the server
+wsService.sendMessage(type: string, payload?: unknown): void
+
+// Close the connection cleanly
+wsService.disconnect(): void
+```
+
+### WsMessage envelope
+
+All WebSocket traffic uses `{ type: string, payload: T }`:
+
+```typescript
+// Sending
+wsService.sendMessage('JOIN_ROOM', { roomCode: 'RF-1234' });
+
+// Receiving
+wsService.messages$.subscribe(msg => {
+  if (msg.type === 'PLAYER_JOINED') { ... }
+});
+```
+
+### Testing with MockWebSocket
+
+Override `WS_FACTORY` in `TestBed` to get a fully controllable mock:
+
+```typescript
+import { WS_FACTORY } from './websocket.service';
+
+TestBed.configureTestingModule({
+  providers: [{
+    provide: WS_FACTORY,
+    useValue: (url: string) => new MockWebSocket(url)
+  }]
+});
+```
+
+See `src/app/core/services/websocket.service.spec.ts` for full examples (17 tests).
+
+### Backend contract
+
+| Endpoint | Status |
+|----------|--------|
+| `ws://localhost:8080/ws` | Pending — backend implementation in a future sprint |
+
+### Models
+
 User-related interfaces defined in `src/app/core/models/user.model.ts`:
 - `User` - Authenticated user data (id, username, createdAt, updatedAt)
   - Mapped from backend fields (ID, CreatedAt, UpdatedAt)
