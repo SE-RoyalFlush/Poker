@@ -10,4 +10,5 @@ export * from './auth.service';
 export * from './csrf.service';
 export * from './room.service';
 export * from './admin.service';
+export * from './websocket.service';
 

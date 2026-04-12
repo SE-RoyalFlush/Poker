@@ -45,7 +45,18 @@ The application emphasizes low-latency communication and a responsive user exper
 
 ---
 
-## ✅ Current Story Status (Issue #1-11 Registration UI)
+## ✅ Current Story Status (Issue #19 WebSocket Service)
+
+- `WebSocketService` implemented in `frontend/src/app/core/services/websocket.service.ts`
+- Exposes `messages$` (incoming events) and `connected$` (connection state) observables
+- `sendMessage(type, payload)` sends typed `{ type, payload }` JSON envelopes
+- `WS_FACTORY` InjectionToken allows mock injection in unit tests (17 tests passing)
+- Session cookies sent automatically by browser on WS handshake — no credential flag needed
+- **Pending**: backend `ws://localhost:8080/ws` endpoint (future sprint)
+
+---
+
+## ✅ Previous Story Status (Issue #1-11 Registration UI)
 
 - Registration UI is implemented with Angular Reactive Forms and Material components.
 - Validation behavior is implemented (required/min length, submit disabled until valid).
