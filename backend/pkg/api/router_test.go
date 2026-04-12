@@ -19,9 +19,21 @@ import (
 )
 
 var _ = Describe("Router", func() {
-	var router http.Handler
+	var (
+		router           http.Handler
+		originalAppEnv   string
+		hadOriginalEnv   bool
+		originalAdmin    string
+		hadOriginalAdmin bool
+		originalAdminPw  string
+		hadOriginalPw    bool
+	)
 
 	BeforeEach(func() {
+		originalAppEnv, hadOriginalEnv = os.LookupEnv("APP_ENV")
+		originalAdmin, hadOriginalAdmin = os.LookupEnv("ADMIN_USERNAME")
+		originalAdminPw, hadOriginalPw = os.LookupEnv("ADMIN_PASSWORD")
+
 		db.ResetForTesting()
 		tempDir := GinkgoT().TempDir()
 		cfg := &db.Config{
@@ -50,6 +62,21 @@ var _ = Describe("Router", func() {
 	})
 
 	AfterEach(func() {
+		if hadOriginalEnv {
+			Expect(os.Setenv("APP_ENV", originalAppEnv)).To(Succeed())
+		} else {
+			Expect(os.Unsetenv("APP_ENV")).To(Succeed())
+		}
+		if hadOriginalAdmin {
+			Expect(os.Setenv("ADMIN_USERNAME", originalAdmin)).To(Succeed())
+		} else {
+			Expect(os.Unsetenv("ADMIN_USERNAME")).To(Succeed())
+		}
+		if hadOriginalPw {
+			Expect(os.Setenv("ADMIN_PASSWORD", originalAdminPw)).To(Succeed())
+		} else {
+			Expect(os.Unsetenv("ADMIN_PASSWORD")).To(Succeed())
+		}
 		Expect(db.Close()).To(Succeed())
 	})
 
@@ -114,6 +141,16 @@ var _ = Describe("Router", func() {
 			router.ServeHTTP(recWithAuth, reqWithAuth)
 			Expect(recWithAuth.Code).To(Equal(http.StatusNotImplemented), req.URL.Path)
 		}
+	})
+
+	It("restricts websocket handshake routing to GET", func() {
+		req := httptest.NewRequest(http.MethodPost, "/ws", nil)
+		req.AddCookie(sessionCookie())
+
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		Expect(rec.Code).To(Equal(http.StatusMethodNotAllowed))
 	})
 
 	It("keeps public auth and system routes accessible without auth", func() {

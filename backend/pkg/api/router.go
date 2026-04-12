@@ -29,7 +29,7 @@ func NewRouter() *mux.Router {
 	protectedAPI.HandleFunc("/rooms/join", JoinRoomHandler).Methods(http.MethodPost)
 	protectedAPI.HandleFunc("/rooms/{code}", RoomHandler).Methods(http.MethodGet)
 
-	protected.HandleFunc("/ws", WebSocketHandler)
+	protected.HandleFunc("/ws", WebSocketHandler).Methods(http.MethodGet)
 
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
 
