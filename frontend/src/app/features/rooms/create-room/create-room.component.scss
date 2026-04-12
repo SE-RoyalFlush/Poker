@@ -1,0 +1,190 @@
+:host {
+  display: block;
+  --rf-gold:       #C9A84C;
+  --rf-gold-light: #E8C97A;
+  --rf-gold-dim:   #8A6D2F;
+  --rf-bg:         #0A0A0F;
+  --rf-bg-card:    #12121A;
+  --rf-bg-surface: #1A1A26;
+  --rf-text:       #F0EDE6;
+  --rf-text-muted: #9A9385;
+  --rf-text-hint:  #5A5550;
+  --rf-red:        #C0392B;
+  --rf-border:     rgba(201,168,76,0.15);
+  --rf-border-em:  rgba(201,168,76,0.35);
+  --rf-radius:     12px;
+  --rf-radius-sm:  8px;
+}
+
+.rf-room-card {
+  background: var(--rf-bg-card) !important;
+  border: 0.5px solid var(--rf-border) !important;
+  border-radius: var(--rf-radius) !important;
+  transition: border-color 0.2s;
+
+  &:hover { border-color: var(--rf-border-em) !important; }
+
+  .mat-mdc-card-content { padding: 0 !important; }
+
+  &__content {
+    padding: 36px 32px !important;
+    display: flex;
+    flex-direction: column;
+
+    @media (max-width: 480px) { padding: 28px 20px !important; }
+  }
+
+  &__icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+    color: var(--rf-gold);
+    display: block;
+    line-height: 1;
+  }
+
+  &__title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--rf-text);
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+
+  &__desc {
+    font-size: 14px;
+    color: var(--rf-text-muted);
+    font-weight: 300;
+    margin: 0 0 28px;
+    line-height: 1.6;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__field { width: 100%; }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  &__submit {
+    width: 100%;
+    height: 46px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    border-radius: var(--rf-radius-sm) !important;
+    letter-spacing: 0.04em !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+  }
+}
+
+.rf-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  margin: 8px 0 12px;
+  user-select: none;
+
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0; height: 0;
+
+    &:focus-visible + .rf-toggle__track {
+      outline: 2px solid var(--rf-gold);
+      outline-offset: 2px;
+    }
+  }
+
+  &__track {
+    width: 40px; height: 22px;
+    border-radius: 11px;
+    background: var(--rf-bg-surface);
+    border: 0.5px solid var(--rf-border);
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--rf-text-hint);
+      transition: transform 0.2s, background 0.2s;
+    }
+  }
+
+  &--active .rf-toggle__track {
+    background: rgba(201,168,76,0.2);
+    border-color: var(--rf-gold-dim);
+
+    &::after {
+      transform: translateX(18px);
+      background: var(--rf-gold);
+    }
+  }
+
+  &__label {
+    font-size: 14px;
+    color: var(--rf-text-muted);
+    font-weight: 400;
+  }
+}
+
+.rf-form__error {
+  font-size: 13px;
+  color: #f44336;
+  background: rgba(244,67,54,0.08);
+  border: 0.5px solid rgba(244,67,54,0.25);
+  border-radius: var(--rf-radius-sm);
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.rf-spinner { display: inline-block; vertical-align: middle; }
+
+// Material overrides
+.mat-mdc-form-field {
+  .mdc-text-field {
+    background: var(--rf-bg-surface) !important;
+    border-radius: var(--rf-radius-sm) !important;
+  }
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--rf-border) !important;
+  }
+  &:hover {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing { border-color: var(--rf-border-em) !important; }
+  }
+  &.mat-focused {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing { border-color: var(--rf-gold) !important; border-width: 1px !important; }
+  }
+  .mat-mdc-input-element { color: var(--rf-text) !important; caret-color: var(--rf-gold) !important; }
+  .mat-mdc-floating-label { color: var(--rf-text-muted) !important; }
+  &.mat-focused .mat-mdc-floating-label { color: var(--rf-gold) !important; }
+}
+
+.mat-mdc-unelevated-button.mat-primary {
+  background: var(--rf-gold) !important;
+  color: var(--rf-bg) !important;
+  font-weight: 600 !important;
+  &:hover   { background: var(--rf-gold-light) !important; }
+  &:disabled { opacity: 0.5 !important; }
+}

@@ -1,0 +1,110 @@
+<mat-card class="rf-room-card rf-room-card--join" appearance="outlined" aria-labelledby="join-heading">
+  <mat-card-content class="rf-room-card__content">
+
+    <div class="rf-room-card__icon rf-room-card__icon--red" aria-hidden="true">♥</div>
+    <h2 id="join-heading" class="rf-room-card__title">Join a Room</h2>
+    <p class="rf-room-card__desc">
+      Enter the room code shared by the host to take your seat at the table.
+    </p>
+
+    <form [formGroup]="joinForm" (ngSubmit)="onJoinRoom()" novalidate class="rf-room-card__form">
+
+      <mat-form-field appearance="outline" class="rf-room-card__field">
+        <mat-label>Room Code</mat-label>
+        <input matInput formControlName="roomCode"
+               placeholder="e.g. AB12CD"
+               maxlength="6"
+               autocomplete="off"
+               style="text-transform: uppercase;"
+               [attr.aria-invalid]="joinForm.get('roomCode')?.invalid && joinForm.get('roomCode')?.touched">
+        <mat-error role="alert">
+          <ng-container *ngIf="joinForm.get('roomCode')?.errors as e">
+            <span *ngIf="e['required']">Room code is required.</span>
+            <span *ngIf="e['pattern']">Enter a 6-character alphanumeric code (e.g. AB12CD).</span>
+            <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
+          </ng-container>
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field *ngIf="showJoinPassword" appearance="outline" class="rf-room-card__field">
+        <mat-label>Room Password</mat-label>
+        <input matInput [type]="showJoinPasswordText ? 'text' : 'password'"
+               formControlName="joinPassword"
+               autocomplete="off"
+               [attr.aria-invalid]="joinForm.get('joinPassword')?.invalid && joinForm.get('joinPassword')?.touched">
+        <button mat-icon-button matSuffix type="button"
+                (click)="showJoinPasswordText = !showJoinPasswordText"
+                [attr.aria-label]="showJoinPasswordText ? 'Hide password' : 'Show password'">
+          {{ showJoinPasswordText ? '🙈' : '👁' }}
+        </button>
+        <mat-error role="alert">
+          <ng-container *ngIf="joinForm.get('joinPassword')?.errors as e">
+            <span *ngIf="e['required']">Password is required for this room.</span>
+            <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
+          </ng-container>
+        </mat-error>
+      </mat-form-field>
+
+      <div *ngIf="joinError" class="rf-form__error" role="alert" aria-live="polite">
+        {{ joinError }}
+      </div>
+
+      <button mat-flat-button color="primary" type="submit"
+              class="rf-room-card__submit" [disabled]="joinLoading">
+        <mat-spinner *ngIf="joinLoading" diameter="18" class="rf-spinner" aria-label="Joining room…"></mat-spinner>
+        <span *ngIf="!joinLoading">♥ Join Room</span>
+      </button>
+    </form>
+
+    <div class="rf-divider" aria-hidden="true">
+      <span class="rf-divider__line"></span>
+      <span class="rf-divider__text">or browse open tables</span>
+      <span class="rf-divider__line"></span>
+    </div>
+
+    <div class="rf-live" aria-label="Live open rooms">
+      <div class="rf-live__header">
+        <span class="rf-live__indicator" role="status" aria-label="Live">
+          <span class="rf-live__dot" aria-hidden="true"></span>
+          Live Tables
+        </span>
+        <button mat-button class="rf-live__refresh"
+                (click)="loadLiveRooms()" [disabled]="liveRoomsLoading"
+                aria-label="Refresh live rooms">
+          Refresh
+        </button>
+      </div>
+
+      <mat-spinner *ngIf="liveRoomsLoading" diameter="28"
+                   class="rf-live__spinner" aria-label="Loading rooms…"></mat-spinner>
+
+      <div *ngIf="!liveRoomsLoading && liveRooms.length === 0"
+           class="rf-live__empty" role="status">
+        No open tables right now.
+      </div>
+
+      <ul *ngIf="!liveRoomsLoading && liveRooms.length > 0"
+          class="rf-live__list" role="list">
+        <li *ngFor="let room of liveRooms"
+            class="rf-live__row"
+            role="listitem"
+            (click)="quickJoin(room)"
+            (keydown.enter)="quickJoin(room)"
+            tabindex="0"
+            [attr.aria-label]="room.name + ', ' + room.seats + ' seats open'">
+          <div class="rf-live__info">
+            <span class="rf-live__name">{{ room.name }}</span>
+            <span class="rf-live__meta">{{ room.gameType }} · ${{ room.smallBlind }}/${{ room.bigBlind }} · {{ room.currentPlayers }}/{{ room.maxPlayers }} seats</span>
+          </div>
+          <span class="rf-live__badge"
+                [class.rf-live__badge--open]="!room.isFull"
+                [class.rf-live__badge--full]="room.isFull"
+                [attr.aria-label]="room.isFull ? 'Full' : 'Open'">
+            {{ room.isFull ? 'Full' : 'Open' }}
+          </span>
+        </li>
+      </ul>
+    </div>
+
+  </mat-card-content>
+</mat-card>
