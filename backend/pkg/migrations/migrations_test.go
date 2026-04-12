@@ -3,29 +3,29 @@ package migrations_test
 import (
 	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/migrations"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
-	"gorm.io/gorm/logger"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func TestRunMigrationsCreatesRoomsTable(t *testing.T) {
-	db.ResetForTesting()
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
-
-	database, err := db.Connect(&db.Config{
-		DatabasePath:    filepath.Join(t.TempDir(), "migrations.db"),
-		MaxOpenConns:    10,
-		MaxIdleConns:    2,
-		ConnMaxLifetime: time.Minute,
-		LogLevel:        logger.Silent,
-	})
+	databasePath := filepath.Join(t.TempDir(), "migrations.db")
+	database, err := gorm.Open(sqlite.Open(databasePath), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("failed to connect database: %v", err)
+	}
+	sqlDB, err := database.DB()
+	if err != nil {
+		t.Fatalf("failed to unwrap sql database: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = sqlDB.Close()
+	})
+
+	if database.Migrator().HasTable(&models.Room{}) {
+		t.Fatal("expected rooms table to not exist before migrations")
 	}
 
 	if err := migrations.RunMigrations(database); err != nil {
