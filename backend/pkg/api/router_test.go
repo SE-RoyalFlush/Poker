@@ -122,24 +122,38 @@ var _ = Describe("Router", func() {
 	})
 
 	It("mounts room endpoints and websocket handshake behind auth middleware", func() {
-		protectedRequests := []*http.Request{
-			httptest.NewRequest(http.MethodGet, "/api/rooms?status=open", nil),
-			httptest.NewRequest(http.MethodPost, "/api/rooms", bytes.NewReader([]byte(`{}`))),
-			httptest.NewRequest(http.MethodPost, "/api/rooms/join", bytes.NewReader([]byte(`{}`))),
-			httptest.NewRequest(http.MethodGet, "/api/rooms/ABC123", nil),
-			httptest.NewRequest(http.MethodGet, "/ws", nil),
+		protectedRequests := []struct {
+			method string
+			target string
+			body   []byte
+		}{
+			{method: http.MethodGet, target: "/api/rooms?status=open"},
+			{method: http.MethodPost, target: "/api/rooms", body: []byte(`{}`)},
+			{method: http.MethodPost, target: "/api/rooms/join", body: []byte(`{}`)},
+			{method: http.MethodGet, target: "/api/rooms/ABC123"},
+			{method: http.MethodGet, target: "/ws"},
+		}
+
+		newRequest := func(method, target string, body []byte) *http.Request {
+			if body == nil {
+				return httptest.NewRequest(method, target, nil)
+			}
+			req := httptest.NewRequest(method, target, bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			return req
 		}
 
 		for _, req := range protectedRequests {
+			unauthenticatedReq := newRequest(req.method, req.target, req.body)
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, req)
-			Expect(rec.Code).To(Equal(http.StatusUnauthorized), req.URL.Path)
+			router.ServeHTTP(rec, unauthenticatedReq)
+			Expect(rec.Code).To(Equal(http.StatusUnauthorized), req.target)
 
-			reqWithAuth := req.Clone(req.Context())
+			reqWithAuth := newRequest(req.method, req.target, req.body)
 			reqWithAuth.AddCookie(sessionCookie())
 			recWithAuth := httptest.NewRecorder()
 			router.ServeHTTP(recWithAuth, reqWithAuth)
-			Expect(recWithAuth.Code).To(Equal(http.StatusNotImplemented), req.URL.Path)
+			Expect(recWithAuth.Code).To(Equal(http.StatusNotImplemented), req.target)
 		}
 	})
 
