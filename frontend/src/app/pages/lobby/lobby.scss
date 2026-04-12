@@ -1,0 +1,97 @@
+// ── Tokens ──────────────────────────────────────────────────────
+:host {
+  display: block;
+  --rf-gold:       #C9A84C;
+  --rf-gold-light: #E8C97A;
+  --rf-bg:         #0A0A0F;
+  --rf-bg-card:    #12121A;
+  --rf-text:       #F0EDE6;
+  --rf-text-muted: #9A9385;
+  --rf-border:     rgba(201,168,76,0.15);
+  --rf-border-em:  rgba(201,168,76,0.35);
+  --rf-radius:     12px;
+  --rf-radius-sm:  8px;
+}
+
+// ── Layout ───────────────────────────────────────────────────────
+.rf-lobby {
+  padding: 48px;
+  max-width: 600px;
+  margin: 0 auto;
+  color: var(--rf-text);
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+
+  @media (max-width: 600px) { padding: 24px 20px; }
+
+  &__header {
+    margin-bottom: 32px;
+
+    h1 {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0 0 8px;
+
+      strong { color: var(--rf-gold); }
+    }
+
+    p {
+      margin: 0;
+      color: var(--rf-text-muted);
+      font-size: 14px;
+    }
+  }
+
+  // ── Player list ───────────────────────────────────────────────
+  &__player-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__player-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--rf-bg-card);
+    border: 1px solid var(--rf-border);
+    border-radius: var(--rf-radius);
+  }
+
+  // ── Avatar ────────────────────────────────────────────────────
+  &__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(201, 168, 76, 0.18);
+    color: var(--rf-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &__username {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  // ── Host badge ────────────────────────────────────────────────
+  &__host-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--rf-gold);
+    border: 1px solid var(--rf-border-em);
+    border-radius: 20px;
+    padding: 2px 8px;
+  }
+}

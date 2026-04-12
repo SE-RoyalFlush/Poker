@@ -1,2 +1,16 @@
-<h1>Lobby Page</h1>
-<p>Placeholder</p>
+<div class="rf-lobby">
+  <header class="rf-lobby__header">
+    <h1>Room <strong>{{ roomCode }}</strong></h1>
+    <p>{{ sortedPlayers.length }} player(s) in lobby</p>
+  </header>
+
+  <ul class="rf-lobby__player-list" role="list">
+    <li *ngFor="let player of sortedPlayers" class="rf-lobby__player-card">
+      <div class="rf-lobby__avatar" aria-hidden="true">
+        {{ player.username[0].toUpperCase() }}
+      </div>
+      <span class="rf-lobby__username">{{ player.username }}</span>
+      <span *ngIf="player.isHost" class="rf-lobby__host-badge">Host</span>
+    </li>
+  </ul>
+</div>
