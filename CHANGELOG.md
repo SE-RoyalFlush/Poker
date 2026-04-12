@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Create & Join Room UI (Issue #20)](https://github.com/SE-RoyalFlush/Poker/issues/20)
+    - Extracted `CreateRoomComponent` into `frontend/src/app/features/rooms/create-room/` — room name/players/blinds/privacy form; navigates to `/room/:code` on success
+    - Extracted `JoinRoomComponent` into `frontend/src/app/features/rooms/join-room/` — 6-char alphanumeric code input with live rooms browser, 403 password reveal, and `quickJoin`; navigates to `/room/:code` on success
+    - Updated frontend room-code validation from legacy `RF-XXXX` to `^[A-Z0-9]{6}$` for the new join flow and `/room/:code` routing convention
+    - Fixed post-join navigation to use `room.code` instead of `room.id`
+    - Added `room/:code` protected route and placeholder `RoomComponent` at `frontend/src/app/pages/room/`
+    - Refactored `DashboardComponent` to embed `<app-create-room>` and `<app-join-room>`, removing all inline form logic
+    - Added 13 unit tests covering validation, API calls, navigation, 403 handling, and `quickJoin` behaviour
+    - Added Cypress E2E tests in `frontend/cypress/e2e/dashboard.cy.ts` for create flow, join flow, validation, and password reveal
 - [Frontend: WebSocket Service (Issue #19)](https://github.com/SE-RoyalFlush/Poker/issues/19)
     - Implemented `WebSocketService` in `src/app/core/services/websocket.service.ts` for managing the client-side WebSocket connection lifecycle
     - Added `WsMessage<T>` interface in `src/app/core/models/ws-message.model.ts` as the typed `{ type, payload }` envelope for all WebSocket traffic

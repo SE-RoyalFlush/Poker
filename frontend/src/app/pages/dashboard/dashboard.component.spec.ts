@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { of } from 'rxjs';
 import { AuthService, RoomService } from '../../core/services';
 import { DashboardComponent } from './dashboard';
 
@@ -11,33 +12,19 @@ describe('DashboardComponent', () => {
   let roomSpy: jasmine.SpyObj<RoomService>;
   let router: Router;
 
-  const mockRoom = {
-    id: 'r1',
-    code: 'RF-7742',
-    name: 'Test Table',
-    gameType: 'NLH',
-    smallBlind: 1,
-    bigBlind: 2,
-    maxPlayers: 9,
-    currentPlayers: 4,
-    isPrivate: false,
-    isFull: false,
-    seats: 5,
-  };
-
   beforeEach(async () => {
     authSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUser', 'logout']);
     roomSpy = jasmine.createSpyObj<RoomService>('RoomService', ['createRoom', 'joinRoom', 'getLiveRooms']);
 
     authSpy.getCurrentUser.and.returnValue({ id: 1, username: 'ace' });
-    roomSpy.getLiveRooms.and.returnValue(of([mockRoom]));
-    roomSpy.createRoom.and.returnValue(of(mockRoom));
-    roomSpy.joinRoom.and.returnValue(of(mockRoom));
+    authSpy.logout.and.returnValue(of(undefined));
+    roomSpy.getLiveRooms.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: AuthService, useValue: authSpy },
         { provide: RoomService, useValue: roomSpy },
       ],
@@ -50,33 +37,10 @@ describe('DashboardComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should load live rooms on init', () => {
-    expect(roomSpy.getLiveRooms).toHaveBeenCalled();
-    expect(component.liveRooms.length).toBe(1);
-  });
-
-  it('should create room when form is valid', () => {
-    component.createForm.patchValue({
-      roomName: 'My Table',
-      maxPlayers: 6,
-      smallBlind: 1,
-      bigBlind: 2,
-      isPrivate: false,
-    });
-
-    component.onCreateRoom();
-
-    expect(roomSpy.createRoom).toHaveBeenCalled();
-    expect(component.createdRoomCode).toBe('RF-7742');
-  });
-
-  it('should reveal join password on 403 join response', () => {
-    roomSpy.joinRoom.and.returnValue(throwError(() => ({ status: 403, error: { message: 'Password required.' } })));
-    component.joinForm.patchValue({ roomCode: 'RF-7742', joinPassword: '' });
-
-    component.onJoinRoom();
-
-    expect(component.showJoinPassword).toBeTrue();
+  it('should render create-room and join-room components', () => {
+    const el = fixture.nativeElement;
+    expect(el.querySelector('app-create-room')).toBeTruthy();
+    expect(el.querySelector('app-join-room')).toBeTruthy();
   });
 
   it('should logout and navigate to home', () => {

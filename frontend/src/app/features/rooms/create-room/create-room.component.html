@@ -1,0 +1,102 @@
+<mat-card class="rf-room-card" appearance="outlined" aria-labelledby="create-heading">
+  <mat-card-content class="rf-room-card__content">
+
+    <div class="rf-room-card__icon" aria-hidden="true">♠</div>
+    <h2 id="create-heading" class="rf-room-card__title">Create a Room</h2>
+    <p class="rf-room-card__desc">
+      Set up a private table, choose your game type, blinds, and max players.
+    </p>
+
+    <form [formGroup]="createForm" (ngSubmit)="onCreateRoom()" novalidate class="rf-room-card__form">
+
+      <mat-form-field appearance="outline" class="rf-room-card__field">
+        <mat-label>Room Name</mat-label>
+        <input matInput formControlName="roomName"
+               placeholder="e.g. Friday Night Hustle"
+               autocomplete="off"
+               [attr.aria-invalid]="createForm.get('roomName')?.invalid && createForm.get('roomName')?.touched">
+        <mat-error role="alert">
+          <ng-container *ngIf="createForm.get('roomName')?.errors as e">
+            <span *ngIf="e['required']">Room name is required.</span>
+            <span *ngIf="e['maxlength']">Maximum 40 characters.</span>
+            <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
+          </ng-container>
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="rf-room-card__field">
+        <mat-label>Max Players</mat-label>
+        <input matInput type="number" formControlName="maxPlayers"
+               min="2" max="9"
+               [attr.aria-invalid]="createForm.get('maxPlayers')?.invalid && createForm.get('maxPlayers')?.touched">
+        <mat-error role="alert">
+          <ng-container *ngIf="createForm.get('maxPlayers')?.errors as e">
+            <span *ngIf="e['required']">Max players is required.</span>
+            <span *ngIf="e['min'] || e['max']">Must be between 2 and 9.</span>
+          </ng-container>
+        </mat-error>
+      </mat-form-field>
+
+      <div class="rf-room-card__row">
+        <mat-form-field appearance="outline" class="rf-room-card__field">
+          <mat-label>Small Blind ($)</mat-label>
+          <input matInput type="number" formControlName="smallBlind"
+                 min="0.25" step="0.25">
+          <mat-error role="alert">
+            <ng-container *ngIf="createForm.get('smallBlind')?.errors as e">
+              <span *ngIf="e['required']">Required.</span>
+              <span *ngIf="e['min']">Min $0.25.</span>
+            </ng-container>
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="rf-room-card__field">
+          <mat-label>Big Blind ($)</mat-label>
+          <input matInput type="number" formControlName="bigBlind"
+                 min="0.50" step="0.50">
+          <mat-error role="alert">
+            <ng-container *ngIf="createForm.get('bigBlind')?.errors as e">
+              <span *ngIf="e['required']">Required.</span>
+              <span *ngIf="e['min']">Min $0.50.</span>
+            </ng-container>
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <label class="rf-toggle" [class.rf-toggle--active]="createForm.get('isPrivate')?.value">
+        <input type="checkbox" formControlName="isPrivate"
+               class="rf-toggle__input"
+               role="switch"
+               [attr.aria-checked]="createForm.get('isPrivate')?.value"
+               aria-label="Make room private with a password">
+        <span class="rf-toggle__track" aria-hidden="true"></span>
+        <span class="rf-toggle__label">Private room (password protected)</span>
+      </label>
+
+      <mat-form-field *ngIf="createForm.get('isPrivate')?.value"
+                      appearance="outline" class="rf-room-card__field">
+        <mat-label>Room Password</mat-label>
+        <input matInput formControlName="roomPassword"
+               autocomplete="new-password"
+               [attr.aria-invalid]="createForm.get('roomPassword')?.invalid && createForm.get('roomPassword')?.touched">
+        <mat-error role="alert">
+          <ng-container *ngIf="createForm.get('roomPassword')?.errors as e">
+            <span *ngIf="e['required']">Password is required for private rooms.</span>
+            <span *ngIf="e['minlength']">At least 4 characters.</span>
+          </ng-container>
+        </mat-error>
+      </mat-form-field>
+
+      <div *ngIf="createError" class="rf-form__error" role="alert" aria-live="polite">
+        {{ createError }}
+      </div>
+
+      <button mat-flat-button color="primary" type="submit"
+              class="rf-room-card__submit" [disabled]="createLoading || createForm.invalid">
+        <mat-spinner *ngIf="createLoading" diameter="18" class="rf-spinner" aria-label="Creating room…"></mat-spinner>
+        <span *ngIf="!createLoading">♠ Create Room</span>
+      </button>
+    </form>
+
+  </mat-card-content>
+</mat-card>
