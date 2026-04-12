@@ -60,17 +60,13 @@ var _ = Describe("Router", func() {
 	}
 
 	It("allows authenticated access to protected endpoints", func() {
-		Expect(os.Setenv("ADMIN_USERNAME", "admin")).To(Succeed())
-		Expect(os.Setenv("ADMIN_PASSWORD", "admin")).To(Succeed())
-
-		req := httptest.NewRequest(http.MethodGet, "/api/admin/users", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/rooms?status=open", nil)
 		req.AddCookie(sessionCookie())
-		req.SetBasicAuth("admin", "admin")
 
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
-		Expect(rec.Code).To(Equal(http.StatusOK))
+		Expect(rec.Code).To(Equal(http.StatusNotImplemented))
 	})
 
 	It("returns 401 for protected endpoints without auth", func() {
@@ -83,6 +79,19 @@ var _ = Describe("Router", func() {
 		var body api.ErrorResponse
 		Expect(json.NewDecoder(rec.Body).Decode(&body)).To(Succeed())
 		Expect(body.Error).To(Equal("Unauthorized"))
+	})
+
+	It("keeps admin endpoints on basic auth without requiring a session", func() {
+		Expect(os.Setenv("ADMIN_USERNAME", "admin")).To(Succeed())
+		Expect(os.Setenv("ADMIN_PASSWORD", "admin")).To(Succeed())
+
+		req := httptest.NewRequest(http.MethodGet, "/api/admin/users", nil)
+		req.SetBasicAuth("admin", "admin")
+
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		Expect(rec.Code).To(Equal(http.StatusOK))
 	})
 
 	It("mounts room endpoints and websocket handshake behind auth middleware", func() {
@@ -113,6 +122,11 @@ var _ = Describe("Router", func() {
 			httptest.NewRequest(http.MethodGet, "/api/csrf", nil),
 			httptest.NewRequest(http.MethodPost, "/api/login", bytes.NewReader([]byte(`{"username":"router-user","password":"password123"}`))),
 			httptest.NewRequest(http.MethodPost, "/api/register", bytes.NewReader([]byte(`{"username":"freshuser","password":"password123"}`))),
+			func() *http.Request {
+				req := httptest.NewRequest(http.MethodGet, "/api/admin/users", nil)
+				req.SetBasicAuth("admin", "admin")
+				return req
+			}(),
 		}
 
 		expectedStatuses := []int{
@@ -120,6 +134,7 @@ var _ = Describe("Router", func() {
 			http.StatusOK,
 			http.StatusNoContent,
 			http.StatusCreated,
+			http.StatusOK,
 		}
 
 		for i, req := range publicRequests {
