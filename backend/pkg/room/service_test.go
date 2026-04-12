@@ -67,6 +67,33 @@ func TestCreateDefaultsMaxPlayersWhenUnset(t *testing.T) {
 	}
 }
 
+func TestCreateDefaultsStatusWhenUnset(t *testing.T) {
+	database := setupTestDB(t)
+	host := createHostUser(t, database, "host-default-status")
+
+	createdRoom, err := room.Create(database, room.CreateParams{
+		Code:       "jk34lm",
+		HostUserID: host.ID,
+		MaxPlayers: 6,
+	})
+	if err != nil {
+		t.Fatalf("Create returned error: %v", err)
+	}
+
+	if createdRoom.Status != models.RoomStatusOpen {
+		t.Fatalf("expected default status %q, got %q", models.RoomStatusOpen, createdRoom.Status)
+	}
+
+	var persisted models.Room
+	if err := database.First(&persisted, createdRoom.ID).Error; err != nil {
+		t.Fatalf("failed to reload persisted room: %v", err)
+	}
+
+	if persisted.Status != models.RoomStatusOpen {
+		t.Fatalf("expected persisted default status %q, got %q", models.RoomStatusOpen, persisted.Status)
+	}
+}
+
 func TestFindByCodeReturnsMatchingRoom(t *testing.T) {
 	database := setupTestDB(t)
 	host := createHostUser(t, database, "host-lookup")
