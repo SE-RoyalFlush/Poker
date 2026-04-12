@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
-import { uniqBy, orderBy } from 'lodash';
+import { uniqBy, orderBy } from 'lodash-es';
 
 import { WebSocketService } from '../../core/services/websocket.service';
 import { Player, WsMessage } from '../../core/models';
