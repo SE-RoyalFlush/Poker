@@ -64,4 +64,15 @@ var _ = Describe("Session Helper", func() {
 		_, err := auth.AuthenticatedUserFromRequest(req)
 		Expect(err).To(MatchError(auth.ErrInvalidSession))
 	})
+
+	It("returns unauthenticated when the session cookie is valid but the user no longer exists", func() {
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		rec := httptest.NewRecorder()
+
+		Expect(auth.SetSessionCookie(rec, "deleted-user")).To(Succeed())
+		req.AddCookie(rec.Result().Cookies()[0])
+
+		_, err := auth.AuthenticatedUserFromRequest(req)
+		Expect(err).To(MatchError(auth.ErrUnauthenticated))
+	})
 })
