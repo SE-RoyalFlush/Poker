@@ -2,8 +2,10 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
@@ -22,15 +24,48 @@ var (
 	ErrUnauthenticated   = errors.New("unauthenticated request")
 	ErrSessionUserLookup = errors.New("failed to resolve session user")
 
-	sessionKey   = []byte(os.Getenv("SESSION_KEY"))
+	sessionKey   []byte
 	sessionCodec *securecookie.SecureCookie
 )
 
 func init() {
-	if len(sessionKey) == 0 {
-		sessionKey = []byte("dev-only-32-byte-session-secret-")
+	var err error
+	sessionKey, err = loadSessionKey()
+	if err != nil {
+		panic(err)
 	}
 	sessionCodec = securecookie.New(sessionKey, nil)
+}
+
+func loadSessionKey() ([]byte, error) {
+	configuredKey := os.Getenv("SESSION_KEY")
+	if configuredKey == "" {
+		if allowsInsecureDevSessionKey() {
+			return []byte("dev-only-32-byte-session-secret-"), nil
+		}
+		return nil, errors.New("SESSION_KEY must be set outside development/test")
+	}
+
+	key := []byte(configuredKey)
+	if err := validateSessionKey(key); err != nil {
+		return nil, err
+	}
+
+	return key, nil
+}
+
+func validateSessionKey(key []byte) error {
+	if length := len(key); length != 32 && length != 64 {
+		return fmt.Errorf("SESSION_KEY must be 32 or 64 bytes, got %d", length)
+	}
+	return nil
+}
+
+func allowsInsecureDevSessionKey() bool {
+	appEnv := strings.ToLower(os.Getenv("APP_ENV"))
+	goEnv := strings.ToLower(os.Getenv("GO_ENV"))
+
+	return appEnv == "development" || appEnv == "test" || goEnv == "development" || goEnv == "test" || strings.HasSuffix(os.Args[0], ".test")
 }
 
 func EncodeSessionValue(username string) (string, error) {
