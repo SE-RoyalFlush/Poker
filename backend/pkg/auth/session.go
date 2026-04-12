@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
@@ -121,19 +122,12 @@ func SetSessionCookie(w http.ResponseWriter, username string) error {
 		return err
 	}
 
-	appEnv := os.Getenv("APP_ENV")
-	goEnv := os.Getenv("GO_ENV")
-	secure := true
-	if appEnv == "development" || goEnv == "development" {
-		secure = false
-	}
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     SessionCookieName,
 		Value:    encoded,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   secure,
+		Secure:   sessionCookieSecure(),
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -146,6 +140,15 @@ func ClearSessionCookie(w http.ResponseWriter) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   sessionCookieSecure(),
+		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
 	})
+}
+
+func sessionCookieSecure() bool {
+	appEnv := os.Getenv("APP_ENV")
+	goEnv := os.Getenv("GO_ENV")
+	return appEnv != "development" && goEnv != "development"
 }
