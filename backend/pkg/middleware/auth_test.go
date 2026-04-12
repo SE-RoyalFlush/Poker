@@ -1,6 +1,7 @@
 package middleware_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -14,6 +15,12 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/middleware"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 )
+
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+	Status  int    `json:"status"`
+}
 
 var _ = Describe("AuthMiddleware", func() {
 	BeforeEach(func() {
@@ -63,6 +70,14 @@ var _ = Describe("AuthMiddleware", func() {
 		resp := httptest.NewRecorder()
 		protected.ServeHTTP(resp, req)
 		Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+
+		var body errorResponse
+		Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
+		Expect(body).To(Equal(errorResponse{
+			Error:   "Unauthorized",
+			Message: "Authentication required",
+			Status:  http.StatusUnauthorized,
+		}))
 	})
 
 	It("rejects requests with an invalid session cookie", func() {
@@ -76,5 +91,13 @@ var _ = Describe("AuthMiddleware", func() {
 		resp := httptest.NewRecorder()
 		protected.ServeHTTP(resp, req)
 		Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+
+		var body errorResponse
+		Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
+		Expect(body).To(Equal(errorResponse{
+			Error:   "Unauthorized",
+			Message: "Authentication required",
+			Status:  http.StatusUnauthorized,
+		}))
 	})
 })

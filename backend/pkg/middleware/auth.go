@@ -9,7 +9,9 @@ import (
 )
 
 type errorResponse struct {
-	Error string `json:"error"`
+	Error   string `json:"error"`
+	Message string `json:"message"`
+	Status  int    `json:"status"`
 }
 
 // AuthMiddleware validates the signed session cookie and resolves the authenticated user.
@@ -20,13 +22,21 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			if errors.Is(err, auth.ErrMissingSession) || errors.Is(err, auth.ErrInvalidSession) || errors.Is(err, auth.ErrUnauthenticated) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
-				_ = json.NewEncoder(w).Encode(errorResponse{Error: "unauthorized"})
+				_ = json.NewEncoder(w).Encode(errorResponse{
+					Error:   "Unauthorized",
+					Message: "Authentication required",
+					Status:  http.StatusUnauthorized,
+				})
 				return
 			}
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(errorResponse{Error: "internal_server_error"})
+			_ = json.NewEncoder(w).Encode(errorResponse{
+				Error:   "Internal Server Error",
+				Message: "Authentication failed",
+				Status:  http.StatusInternalServerError,
+			})
 			return
 		}
 
