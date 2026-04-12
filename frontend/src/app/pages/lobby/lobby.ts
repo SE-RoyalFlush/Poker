@@ -18,6 +18,7 @@ import { Player, WsMessage } from '../../core/models';
 export class Lobby implements OnInit, OnDestroy {
   roomCode = '';
   players: Player[] = [];
+  sortedPlayers: Player[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -25,10 +26,6 @@ export class Lobby implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly wsService: WebSocketService,
   ) {}
-
-  get sortedPlayers(): Player[] {
-    return orderBy(this.players, ['isHost'], ['desc']);
-  }
 
   ngOnInit(): void {
     this.roomCode = this.route.snapshot.queryParamMap.get('code') ?? '';
@@ -60,5 +57,6 @@ export class Lobby implements OnInit, OnDestroy {
       const { id } = msg.payload as Pick<Player, 'id'>;
       this.players = this.players.filter(p => p.id !== id);
     }
+    this.sortedPlayers = orderBy(this.players, ['isHost'], ['desc']);
   }
 }

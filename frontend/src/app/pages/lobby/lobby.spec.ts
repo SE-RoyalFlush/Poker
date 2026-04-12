@@ -4,43 +4,7 @@ import { convertToParamMap, ActivatedRoute } from '@angular/router';
 import { Lobby } from './lobby';
 import { WebSocketService, WS_FACTORY } from '../../core/services/websocket.service';
 import { Player } from '../../core/models';
-
-// ---------------------------------------------------------------------------
-// MockWebSocket — mirrors the helper in websocket.service.spec.ts
-// ---------------------------------------------------------------------------
-class MockWebSocket {
-  readyState: number = WebSocket.CONNECTING;
-  url: string;
-
-  onopen: ((event: Event) => void) | null = null;
-  onmessage: ((event: MessageEvent) => void) | null = null;
-  onerror: ((event: Event) => void) | null = null;
-  onclose: ((event: CloseEvent) => void) | null = null;
-
-  send = jasmine.createSpy('send');
-  close = jasmine.createSpy('close').and.callFake(() => {
-    this.readyState = WebSocket.CLOSED;
-    this.onclose?.(new CloseEvent('close', { wasClean: true, code: 1000 }));
-  });
-
-  constructor(url: string) {
-    this.url = url;
-  }
-
-  simulateOpen(): void {
-    this.readyState = WebSocket.OPEN;
-    this.onopen?.(new Event('open'));
-  }
-
-  simulateMessage(data: unknown): void {
-    this.onmessage?.(new MessageEvent('message', { data: JSON.stringify(data) }));
-  }
-
-  simulateClose(wasClean = true, code = 1000): void {
-    this.readyState = WebSocket.CLOSED;
-    this.onclose?.(new CloseEvent('close', { wasClean, code }));
-  }
-}
+import { MockWebSocket } from '../../../test-utils/mock-websocket';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -138,7 +102,7 @@ describe('Lobby', () => {
   });
 
   // --- sortedPlayers (host first) ---
-  it('should sort host to the top via sortedPlayers getter', () => {
+  it('should sort host to the top via sortedPlayers', () => {
     mockSocket.simulateOpen();
     // Add non-host first, then host
     mockSocket.simulateMessage({ type: 'PLAYER_JOINED', payload: BOB });
