@@ -7,7 +7,7 @@
   <ul class="rf-lobby__player-list" role="list">
     <li *ngFor="let player of sortedPlayers" class="rf-lobby__player-card">
       <div class="rf-lobby__avatar" aria-hidden="true">
-        {{ player.username[0].toUpperCase() }}
+        {{ player.username.slice(0, 1).toUpperCase() || '?' }}
       </div>
       <span class="rf-lobby__username">{{ player.username }}</span>
       <span *ngIf="player.isHost" class="rf-lobby__host-badge">Host</span>

@@ -35,7 +35,9 @@ export class Lobby implements OnInit, OnDestroy {
     this.wsService.connected$
       .pipe(filter(v => v), takeUntil(this.destroy$))
       .subscribe(() => {
-        this.wsService.sendMessage('JOIN_ROOM', { roomCode: this.roomCode });
+        if (this.roomCode) {
+          this.wsService.sendMessage('JOIN_ROOM', { roomCode: this.roomCode });
+        }
       });
 
     this.wsService.messages$
@@ -50,13 +52,20 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   private handleMessage(msg: WsMessage): void {
+    let playersChanged = false;
+
     if (msg.type === 'PLAYER_JOINED') {
       const player = msg.payload as Player;
       this.players = uniqBy([...this.players, player], 'id');
+      playersChanged = true;
     } else if (msg.type === 'PLAYER_LEFT') {
       const { id } = msg.payload as Pick<Player, 'id'>;
       this.players = this.players.filter(p => p.id !== id);
+      playersChanged = true;
     }
-    this.sortedPlayers = orderBy(this.players, ['isHost'], ['desc']);
+
+    if (playersChanged) {
+      this.sortedPlayers = orderBy(this.players, ['isHost'], ['desc']);
+    }
   }
 }
