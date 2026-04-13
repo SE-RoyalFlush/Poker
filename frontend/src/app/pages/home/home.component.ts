@@ -13,6 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { normalizeRoomCode, ROOM_CODE_EXAMPLE, roomCodeValidator } from '../../core/models';
 import { AuthService, RoomService } from '../../core/services';
 
 export type ActivePanel = 'login' | 'register' | null;
@@ -35,6 +36,7 @@ export type ActivePanel = 'login' | 'register' | null;
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
+  readonly roomCodeExample = ROOM_CODE_EXAMPLE;
 
   // ── Panel state ────────────────────────────────────────────────
   activePanel: ActivePanel = null;
@@ -85,7 +87,7 @@ export class HomeComponent implements OnInit {
     this.joinForm = this.fb.group({
       roomCode: ['', [
         Validators.required,
-        Validators.pattern(/^RF-[A-Z0-9]{4}$/i),
+        roomCodeValidator(),
       ]],
     });
   }
@@ -242,7 +244,7 @@ export class HomeComponent implements OnInit {
     }
 
     this.joinLoading = true;
-    this.roomService.joinRoom(roomCode.toUpperCase()).subscribe({
+    this.roomService.joinRoom(normalizeRoomCode(roomCode)).subscribe({
       next: (room) => {
         this.joinLoading = false;
         this.router.navigate(['/room', room.id]);

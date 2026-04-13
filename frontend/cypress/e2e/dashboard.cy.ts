@@ -60,7 +60,7 @@ describe('Dashboard - Create & Join Room', () => {
       cy.get('app-join-room').within(() => {
         cy.get('input[formControlName="roomCode"]').type('RF-7742');
         cy.get('input[formControlName="roomCode"]').blur();
-        cy.get('mat-error').should('contain', '6-character');
+        cy.get('mat-error').should('contain', 'AB12CD');
       });
     });
 

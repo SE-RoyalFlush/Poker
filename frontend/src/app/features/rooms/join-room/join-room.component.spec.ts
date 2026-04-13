@@ -51,7 +51,7 @@ describe('JoinRoomComponent', () => {
     expect(component.liveRooms.length).toBe(1);
   });
 
-  it('should reject room codes not matching ^[A-Z0-9]{6}$', () => {
+  it('should reject room codes not matching the shared 6-character format', () => {
     component.joinForm.patchValue({ roomCode: 'RF-7742' });
     component.joinForm.markAllAsTouched();
 

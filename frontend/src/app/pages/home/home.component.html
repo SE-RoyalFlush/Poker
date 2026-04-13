@@ -71,14 +71,16 @@
               <mat-label>Room Code</mat-label>
               <input matInput
                      formControlName="roomCode"
-                     placeholder="e.g. RF-7742"
+                     [placeholder]="'e.g. ' + roomCodeExample"
+                     maxlength="6"
+                     style="text-transform: uppercase;"
                      autocomplete="off"
                      aria-describedby="roomCode-error"
                      [attr.aria-invalid]="joinForm.get('roomCode')?.invalid && joinForm.get('roomCode')?.touched">
               <mat-error id="roomCode-error" role="alert">
                 <ng-container *ngIf="joinForm.get('roomCode')?.errors as errors">
                   <span *ngIf="errors['required']">Room code is required.</span>
-                  <span *ngIf="errors['pattern']">Enter a valid code (e.g. RF-7742).</span>
+                  <span *ngIf="errors['pattern']">Enter a 6-character alphanumeric code (e.g. {{ roomCodeExample }}).</span>
                   <span *ngIf="errors['serverError']">{{ errors['serverError'] }}</span>
                 </ng-container>
               </mat-error>

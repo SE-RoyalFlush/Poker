@@ -12,7 +12,7 @@
       <mat-form-field appearance="outline" class="rf-room-card__field">
         <mat-label>Room Code</mat-label>
         <input matInput formControlName="roomCode"
-               placeholder="e.g. AB12CD"
+               [placeholder]="'e.g. ' + roomCodeExample"
                maxlength="6"
                autocomplete="off"
                style="text-transform: uppercase;"
@@ -20,7 +20,7 @@
         <mat-error role="alert">
           <ng-container *ngIf="joinForm.get('roomCode')?.errors as e">
             <span *ngIf="e['required']">Room code is required.</span>
-            <span *ngIf="e['pattern']">Enter a 6-character alphanumeric code (e.g. AB12CD).</span>
+            <span *ngIf="e['pattern']">Enter a 6-character alphanumeric code (e.g. {{ roomCodeExample }}).</span>
             <span *ngIf="e['serverError']">{{ e['serverError'] }}</span>
           </ng-container>
         </mat-error>

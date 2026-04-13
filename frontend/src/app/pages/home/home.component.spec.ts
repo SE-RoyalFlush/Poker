@@ -66,7 +66,7 @@ describe('HomeComponent', () => {
   });
 
   it('should open login panel when unauthenticated user tries to join room', () => {
-    component.joinForm.setValue({ roomCode: 'RF-7742' });
+    component.joinForm.setValue({ roomCode: 'AB12CD' });
     component.onJoinRoom();
 
     expect(component.activePanel).toBe('login');

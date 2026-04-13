@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { normalizeRoomCode, ROOM_CODE_EXAMPLE, roomCodeValidator } from '../../../core/models';
 import { Room, RoomService } from '../../../core/services';
 
 @Component({
@@ -29,6 +30,7 @@ import { Room, RoomService } from '../../../core/services';
   styleUrl: './join-room.component.scss',
 })
 export class JoinRoomComponent implements OnInit {
+  readonly roomCodeExample = ROOM_CODE_EXAMPLE;
   joinForm!: FormGroup;
   joinLoading         = false;
   joinError           = '';
@@ -43,11 +45,8 @@ export class JoinRoomComponent implements OnInit {
   private router      = inject(Router);
 
   ngOnInit(): void {
-    // Room code format: 6 uppercase alphanumeric chars (e.g. "AB12CD").
-    // Matches the backend Room model gorm:"size:6". Update this pattern if
-    // the backend contract changes (e.g. to include a prefix like "RF-XXXX").
     this.joinForm = this.fb.group({
-      roomCode:     ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{6}$/i)]],
+      roomCode:     ['', [Validators.required, roomCodeValidator()]],
       joinPassword: [''],
     });
     this.loadLiveRooms();
@@ -77,7 +76,7 @@ export class JoinRoomComponent implements OnInit {
     const { roomCode, joinPassword } = this.joinForm.value;
     this.joinLoading = true;
 
-    this.roomService.joinRoom(roomCode.toUpperCase(), joinPassword || undefined).subscribe({
+    this.roomService.joinRoom(normalizeRoomCode(roomCode), joinPassword || undefined).subscribe({
       next: (room) => {
         this.joinLoading = false;
         this.router.navigate(['/room', room.code]);

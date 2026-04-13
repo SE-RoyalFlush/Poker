@@ -171,10 +171,10 @@ describe('WebSocketService', () => {
       service.connect();
       mockSocket.simulateOpen();
 
-      service.sendMessage('JOIN_ROOM', { roomCode: 'RF-1234' });
+      service.sendMessage('JOIN_ROOM', { roomCode: 'AB12CD' });
 
       expect(mockSocket.send).toHaveBeenCalledOnceWith(
-        JSON.stringify({ type: 'JOIN_ROOM', payload: { roomCode: 'RF-1234' } })
+        JSON.stringify({ type: 'JOIN_ROOM', payload: { roomCode: 'AB12CD' } })
       );
     });
 
