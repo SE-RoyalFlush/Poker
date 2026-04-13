@@ -175,8 +175,10 @@ func (h *wsHub) leave(client *wsClient) {
 	client.roomCode = ""
 	h.mu.Unlock()
 
-	for _, member := range recipients {
-		member.send <- leftMessage
+	if !hasActiveConnection {
+		for _, member := range recipients {
+			member.send <- leftMessage
+		}
 	}
 }
 
