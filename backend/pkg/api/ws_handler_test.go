@@ -249,7 +249,7 @@ func dialWebSocket(t *testing.T, serverURL string, cookie *http.Cookie) *websock
 	t.Helper()
 
 	wsURL := "ws" + serverURL[len("http"):] + "/ws"
-	config, err := websocket.NewConfig(wsURL, "http://localhost/")
+	config, err := websocket.NewConfig(wsURL, "http://localhost:4200")
 	if err != nil {
 		t.Fatalf("failed to create websocket config: %v", err)
 	}

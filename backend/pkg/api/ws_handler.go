@@ -2,7 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
+	"os"
+	"strings"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/auth"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
@@ -14,6 +18,40 @@ import (
 type incomingWSMessage struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"payload"`
+}
+
+// allowedOrigins returns the list of origins permitted to open a WebSocket
+// connection. The list is read from the ALLOWED_ORIGINS environment variable
+// (comma-separated). When the variable is absent, it defaults to the local
+// Angular development server.
+func allowedOrigins() []string {
+	raw := os.Getenv("ALLOWED_ORIGINS")
+	if raw == "" {
+		return []string{"http://localhost:4200"}
+	}
+	parts := strings.Split(raw, ",")
+	origins := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			origins = append(origins, trimmed)
+		}
+	}
+	return origins
+}
+
+// isOriginAllowed reports whether the parsed WebSocket Origin is in the
+// configured allowlist.
+func isOriginAllowed(origin *url.URL) bool {
+	if origin == nil {
+		return false
+	}
+	originStr := origin.Scheme + "://" + origin.Host
+	for _, allowed := range allowedOrigins() {
+		if strings.TrimRight(allowed, "/") == originStr {
+			return true
+		}
+	}
+	return false
 }
 
 // WebSocketHandler upgrades the authenticated request and manages lobby events.
@@ -30,9 +68,22 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	websocket.Handler(func(conn *websocket.Conn) {
-		handleWebSocketConnection(conn, user)
-	}).ServeHTTP(w, r)
+	wsServer := websocket.Server{
+		Handler: func(conn *websocket.Conn) {
+			handleWebSocketConnection(conn, user)
+		},
+		Handshake: func(cfg *websocket.Config, req *http.Request) error {
+			origin, err := websocket.Origin(cfg, req)
+			if err != nil {
+				return fmt.Errorf("forbidden: invalid origin: %w", err)
+			}
+			if !isOriginAllowed(origin) {
+				return fmt.Errorf("forbidden: origin %q is not allowed", origin)
+			}
+			return nil
+		},
+	}
+	wsServer.ServeHTTP(w, r)
 }
 
 func handleWebSocketConnection(conn *websocket.Conn, user *models.User) {
