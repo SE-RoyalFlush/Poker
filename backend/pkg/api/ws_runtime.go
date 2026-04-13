@@ -131,16 +131,26 @@ func (h *wsHub) leave(client *wsClient) {
 	}
 
 	delete(wsRoomState.clients, client)
-	wsRoomState.lobby.RemovePlayer(client.user.ID)
 
-	leftMessage := wsMessage{
-		Type:    messageTypePlayerLeft,
-		Payload: playerLeftPayload{ID: client.user.ID},
-	}
+	hasActiveConnection := false
 	for member := range wsRoomState.clients {
-		member.send <- leftMessage
+		if member != nil && member.user.ID == client.user.ID {
+			hasActiveConnection = true
+			break
+		}
 	}
 
+	if !hasActiveConnection {
+		wsRoomState.lobby.RemovePlayer(client.user.ID)
+
+		leftMessage := wsMessage{
+			Type:    messageTypePlayerLeft,
+			Payload: playerLeftPayload{ID: client.user.ID},
+		}
+		for member := range wsRoomState.clients {
+			member.send <- leftMessage
+		}
+	}
 	if len(wsRoomState.clients) == 0 {
 		delete(h.rooms, client.roomCode)
 	}
