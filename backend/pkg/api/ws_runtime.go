@@ -56,7 +56,14 @@ func newWSHub() *wsHub {
 var globalWSHub = newWSHub()
 
 func resetWebSocketStateForTesting() {
-	globalWSHub = newWSHub()
+	globalWSHub.reset()
+}
+
+func (h *wsHub) reset() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	h.rooms = make(map[string]*wsRoom)
 }
 
 func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, error) {
