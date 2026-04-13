@@ -72,7 +72,6 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 	}
 
 	h.mu.Lock()
-	defer h.mu.Unlock()
 
 	wsRoomState, ok := h.rooms[roomModel.Code]
 	if !ok {
@@ -108,7 +107,14 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 		Payload: player,
 	}
 
+	recipients := make([]*wsClient, 0, len(wsRoomState.clients))
 	for member := range wsRoomState.clients {
+		recipients = append(recipients, member)
+	}
+
+	h.mu.Unlock()
+
+	for _, member := range recipients {
 		member.send <- broadcast
 	}
 
@@ -129,11 +135,11 @@ func (h *wsHub) leave(client *wsClient) {
 	}
 
 	h.mu.Lock()
-	defer h.mu.Unlock()
 
 	wsRoomState, ok := h.rooms[client.roomCode]
 	if !ok {
 		client.roomCode = ""
+		h.mu.Unlock()
 		return
 	}
 
@@ -147,22 +153,31 @@ func (h *wsHub) leave(client *wsClient) {
 		}
 	}
 
+	var recipients []*wsClient
+	var leftMessage wsMessage
 	if !hasActiveConnection {
 		wsRoomState.lobby.RemovePlayer(client.user.ID)
 
-		leftMessage := wsMessage{
+		leftMessage = wsMessage{
 			Type:    messageTypePlayerLeft,
 			Payload: playerLeftPayload{ID: client.user.ID},
 		}
+		recipients = make([]*wsClient, 0, len(wsRoomState.clients))
 		for member := range wsRoomState.clients {
-			member.send <- leftMessage
+			recipients = append(recipients, member)
 		}
 	}
+
 	if len(wsRoomState.clients) == 0 {
 		delete(h.rooms, client.roomCode)
 	}
 
 	client.roomCode = ""
+	h.mu.Unlock()
+
+	for _, member := range recipients {
+		member.send <- leftMessage
+	}
 }
 
 func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
@@ -191,8 +206,13 @@ func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
 	}
 
 	h.mu.RLock()
-	defer h.mu.RUnlock()
+	recipients := make([]*wsClient, 0, len(wsRoomState.clients))
 	for member := range wsRoomState.clients {
+		recipients = append(recipients, member)
+	}
+	h.mu.RUnlock()
+
+	for _, member := range recipients {
 		member.send <- message
 	}
 
