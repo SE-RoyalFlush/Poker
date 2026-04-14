@@ -72,6 +72,34 @@ func TestLobbyJoinPlayerResetsReadyStateOnReconnect(t *testing.T) {
 	}
 }
 
+func TestLobbyPlayersReturnsDeterministicRosterOrder(t *testing.T) {
+	lobby := room.NewLobby()
+	lobby.JoinPlayer(room.Player{ID: 3, Username: "zoe"})
+	lobby.JoinPlayer(room.Player{ID: 1, Username: "host", IsHost: true})
+	lobby.JoinPlayer(room.Player{ID: 2, Username: "alice"})
+
+	players := lobby.Players()
+	if len(players) != 3 {
+		t.Fatalf("expected 3 players, got %d", len(players))
+	}
+
+	expected := []struct {
+		id       uint
+		username string
+		isHost   bool
+	}{
+		{id: 1, username: "host", isHost: true},
+		{id: 2, username: "alice", isHost: false},
+		{id: 3, username: "zoe", isHost: false},
+	}
+
+	for i, want := range expected {
+		if players[i].ID != want.id || players[i].Username != want.username || players[i].IsHost != want.isHost {
+			t.Fatalf("unexpected player at index %d: got %+v want id=%d username=%q isHost=%t", i, players[i], want.id, want.username, want.isHost)
+		}
+	}
+}
+
 func TestLobbyToggleReadyReturnsErrorForUnknownPlayer(t *testing.T) {
 	lobby := room.NewLobby()
 

@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Backend: Lobby Logic & Broadcasting (Issue #18)](https://github.com/SE-RoyalFlush/Poker/issues/18)
+    - Implemented room-scoped WebSocket lobby state in `backend/pkg/api/ws_runtime.go` with per-room client membership and broadcasts
+    - Added `JOIN_ROOM`, `LEAVE_ROOM`, `ROOM_STATE`, `PLAYER_JOINED`, and `PLAYER_LEFT` message handling for lobby presence updates
+    - `JOIN_ROOM` now returns a room snapshot to the joining client and broadcasts `PLAYER_JOINED` only to the other clients in that room
+    - Disconnects and explicit `LEAVE_ROOM` events now remove the client from the room and notify remaining members with `PLAYER_LEFT`
+    - Added backend tests covering room isolation, join broadcast semantics, explicit leave, and reconnect-ready-state reset
 - [Frontend: Lobby Component & State (Issue #21)](https://github.com/SE-RoyalFlush/Poker/issues/21)
     - Implemented `Lobby` at `frontend/src/app/pages/lobby/lobby.ts` — reads `roomCode` from `?code=` query param, connects via `WebSocketService`, sends `JOIN_ROOM` on open, handles `PLAYER_JOINED` (with `_.uniqBy` deduplication by id) and `PLAYER_LEFT` messages, sorts players host-first via `_.orderBy`
     - Added `Player` interface (`{ id, username, isHost }`) at `frontend/src/app/core/models/player.model.ts` and exported from models barrel

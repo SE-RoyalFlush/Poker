@@ -80,6 +80,17 @@ describe('Lobby', () => {
   });
 
   // --- PLAYER_JOINED ---
+  it('should replace the roster from ROOM_STATE', () => {
+    mockSocket.simulateOpen();
+    mockSocket.simulateMessage({
+      type: 'ROOM_STATE',
+      payload: { roomCode: 'AB12CD', players: [ALICE, BOB] },
+    });
+
+    expect(component.players.length).toBe(2);
+    expect(component.sortedPlayers[0].username).toBe('alice');
+  });
+
   it('should add a player on PLAYER_JOINED', () => {
     mockSocket.simulateOpen();
     mockSocket.simulateMessage({ type: 'PLAYER_JOINED', payload: BOB });

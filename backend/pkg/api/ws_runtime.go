@@ -10,6 +10,8 @@ import (
 
 const (
 	messageTypeJoinRoom     = "JOIN_ROOM"
+	messageTypeLeaveRoom    = "LEAVE_ROOM"
+	messageTypeRoomState    = "ROOM_STATE"
 	messageTypePlayerJoined = "PLAYER_JOINED"
 	messageTypePlayerLeft   = "PLAYER_LEFT"
 )
@@ -29,6 +31,11 @@ type joinRoomPayload struct {
 
 type playerLeftPayload struct {
 	ID uint `json:"id"`
+}
+
+type roomStatePayload struct {
+	RoomCode string        `json:"roomCode"`
+	Players  []room.Player `json:"players"`
 }
 
 type wsClient struct {
@@ -51,6 +58,18 @@ func newWSHub() *wsHub {
 	return &wsHub{
 		rooms: make(map[string]*wsRoom),
 	}
+}
+
+// safeSend prevents a racing channel close from crashing the websocket hub.
+func safeSend(ch chan<- wsMessage, msg wsMessage) (ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
+		}
+	}()
+
+	ch <- msg
+	return true
 }
 
 var globalWSHub = newWSHub()
@@ -91,17 +110,6 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 		IsHost:   roomModel.HostUserID == client.user.ID,
 	})
 
-	existingPlayers := make([]room.Player, 0, len(wsRoomState.clients))
-	for existingClient := range wsRoomState.clients {
-		if existingClient == client {
-			continue
-		}
-		existingPlayer, ok := wsRoomState.lobby.Player(existingClient.user.ID)
-		if ok {
-			existingPlayers = append(existingPlayers, existingPlayer)
-		}
-	}
-
 	broadcast := wsMessage{
 		Type:    messageTypePlayerJoined,
 		Payload: player,
@@ -109,24 +117,27 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 
 	recipients := make([]*wsClient, 0, len(wsRoomState.clients))
 	for member := range wsRoomState.clients {
+		if member == client {
+			continue
+		}
 		recipients = append(recipients, member)
+	}
+
+	snapshot := wsMessage{
+		Type: messageTypeRoomState,
+		Payload: roomStatePayload{
+			RoomCode: roomModel.Code,
+			Players:  wsRoomState.lobby.Players(),
+		},
 	}
 
 	h.mu.Unlock()
 
 	for _, member := range recipients {
-		member.send <- broadcast
+		safeSend(member.send, broadcast)
 	}
 
-	initialMessages := make([]wsMessage, 0, len(existingPlayers))
-	for _, existingPlayer := range existingPlayers {
-		initialMessages = append(initialMessages, wsMessage{
-			Type:    messageTypePlayerJoined,
-			Payload: existingPlayer,
-		})
-	}
-
-	return initialMessages, nil
+	return []wsMessage{snapshot}, nil
 }
 
 func (h *wsHub) leave(client *wsClient) {
@@ -177,7 +188,7 @@ func (h *wsHub) leave(client *wsClient) {
 
 	if !hasActiveConnection {
 		for _, member := range recipients {
-			member.send <- leftMessage
+			safeSend(member.send, leftMessage)
 		}
 	}
 }
@@ -215,7 +226,7 @@ func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
 	h.mu.RUnlock()
 
 	for _, member := range recipients {
-		member.send <- message
+		safeSend(member.send, message)
 	}
 
 	return nil

@@ -8,6 +8,11 @@ import { uniqBy, orderBy } from 'lodash-es';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { Player, WsMessage } from '../../core/models';
 
+interface RoomStatePayload {
+  roomCode: string;
+  players: Player[];
+}
+
 @Component({
   selector: 'app-lobby',
   standalone: true,
@@ -58,7 +63,11 @@ export class Lobby implements OnInit, OnDestroy {
   private handleMessage(msg: WsMessage): void {
     let playersChanged = false;
 
-    if (msg.type === 'PLAYER_JOINED') {
+    if (msg.type === 'ROOM_STATE') {
+      const payload = msg.payload as RoomStatePayload;
+      this.players = uniqBy(payload.players, 'id');
+      playersChanged = true;
+    } else if (msg.type === 'PLAYER_JOINED') {
       const player = msg.payload as Player;
       this.players = uniqBy([...this.players, player], 'id');
       playersChanged = true;
