@@ -3,6 +3,8 @@ import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { WsMessage } from '../models';
 import { WS_URL } from '../config/endpoints';
 
+export { WS_URL } from '../config/endpoints';
+
 /**
  * Injectable factory for creating WebSocket instances.
  * Overridden in tests to return a MockWebSocket instead of a real browser WebSocket.
