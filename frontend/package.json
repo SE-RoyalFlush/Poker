@@ -10,7 +10,8 @@
     "test:watch": "ng test --watch",
     "test:unit": "ng test --watch=false --browsers=ChromeHeadless",
     "e2e": "cypress open",
-    "e2e:headless": "cypress run"
+    "e2e:headless": "cypress run",
+    "test:integration:backend": "bash scripts/test-backend-integration.sh"
   },
   "prettier": {
     "printWidth": 100,

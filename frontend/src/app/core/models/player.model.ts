@@ -6,4 +6,5 @@ export interface Player {
   id: number;
   username: string;
   isHost: boolean;
+  isReady?: boolean;
 }
