@@ -41,6 +41,8 @@ type roomStatePayload struct {
 type wsClient struct {
 	user     *models.User
 	send     chan wsMessage
+	done     chan struct{}
+	mu       sync.Mutex
 	roomCode string
 }
 
@@ -60,16 +62,15 @@ func newWSHub() *wsHub {
 	}
 }
 
-// safeSend prevents a racing channel close from crashing the websocket hub.
-func safeSend(ch chan<- wsMessage, msg wsMessage) (ok bool) {
-	defer func() {
-		if recover() != nil {
-			ok = false
-		}
-	}()
-
-	ch <- msg
-	return true
+// safeSend delivers msg to ch without blocking and without panicking.
+// Non-blocking so a slow or exited client never stalls the hub.
+func safeSend(ch chan<- wsMessage, msg wsMessage) bool {
+	select {
+	case ch <- msg:
+		return true
+	default:
+		return false
+	}
 }
 
 var globalWSHub = newWSHub()
@@ -101,7 +102,9 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 		h.rooms[roomModel.Code] = wsRoomState
 	}
 
+	client.mu.Lock()
 	client.roomCode = roomModel.Code
+	client.mu.Unlock()
 	wsRoomState.clients[client] = struct{}{}
 
 	player := wsRoomState.lobby.JoinPlayer(room.Player{
@@ -141,15 +144,25 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 }
 
 func (h *wsHub) leave(client *wsClient) {
-	if client == nil || client.roomCode == "" {
+	if client == nil {
+		return
+	}
+
+	client.mu.Lock()
+	roomCode := client.roomCode
+	client.mu.Unlock()
+
+	if roomCode == "" {
 		return
 	}
 
 	h.mu.Lock()
 
-	wsRoomState, ok := h.rooms[client.roomCode]
+	wsRoomState, ok := h.rooms[roomCode]
 	if !ok {
+		client.mu.Lock()
 		client.roomCode = ""
+		client.mu.Unlock()
 		h.mu.Unlock()
 		return
 	}
@@ -180,10 +193,12 @@ func (h *wsHub) leave(client *wsClient) {
 	}
 
 	if len(wsRoomState.clients) == 0 {
-		delete(h.rooms, client.roomCode)
+		delete(h.rooms, roomCode)
 	}
 
+	client.mu.Lock()
 	client.roomCode = ""
+	client.mu.Unlock()
 	h.mu.Unlock()
 
 	if !hasActiveConnection {
@@ -194,12 +209,20 @@ func (h *wsHub) leave(client *wsClient) {
 }
 
 func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
-	if client == nil || client.roomCode == "" {
+	if client == nil {
+		return nil
+	}
+
+	client.mu.Lock()
+	roomCode := client.roomCode
+	client.mu.Unlock()
+
+	if roomCode == "" {
 		return nil
 	}
 
 	h.mu.RLock()
-	wsRoomState, ok := h.rooms[client.roomCode]
+	wsRoomState, ok := h.rooms[roomCode]
 	h.mu.RUnlock()
 	if !ok {
 		return nil

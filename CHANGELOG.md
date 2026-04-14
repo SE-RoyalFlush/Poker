@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Ready Button & Chat UI (Issue #23)](https://github.com/SE-RoyalFlush/Poker/issues/23)
+    - Implemented `LobbyWebSocketService` in `frontend/src/app/core/services/lobby-websocket.service.ts` for real-time WebSocket communication; exposes `messages$` and `playerReady$` observables and gracefully degrades when backend is unavailable
+    - Implemented full `LobbyComponent` with a ready-toggle button (grey → green on activation) and a scrollable chat panel using Angular Material List
+    - Chat supports sending via Enter key or Send button; auto-scrolls to the latest message on receipt
+    - Added Cypress 14 E2E tests in `frontend/cypress/e2e/lobby.cy.ts` covering ready button toggle, WebSocket event dispatch, chat send via button and Enter key, empty-message guard, and message list rendering
+    - Bootstrapped Cypress E2E infrastructure (`cypress.config.ts`, `cypress/support/e2e.ts`) and added `e2e` / `e2e:headless` npm scripts
+    - Added `.claude/` and `CLAUDE.md` to `.gitignore`
 - [Backend: Lobby Logic & Broadcasting (Issue #18)](https://github.com/SE-RoyalFlush/Poker/issues/18)
     - Implemented room-scoped WebSocket lobby state in `backend/pkg/api/ws_runtime.go` with per-room client membership and broadcasts
     - Added `JOIN_ROOM`, `LEAVE_ROOM`, `ROOM_STATE`, `PLAYER_JOINED`, and `PLAYER_LEFT` message handling for lobby presence updates

@@ -1,16 +1,117 @@
 <div class="rf-lobby">
-  <header class="rf-lobby__header">
-    <h1>Room <strong>{{ roomCode }}</strong></h1>
-    <p>{{ players.length }} player(s) in lobby</p>
-  </header>
 
-  <ul class="rf-lobby__player-list" role="list">
-    <li *ngFor="let player of sortedPlayers" class="rf-lobby__player-card">
-      <div class="rf-lobby__avatar" aria-hidden="true">
-        {{ (player.username || '').slice(0, 1).toUpperCase() || '?' }}
-      </div>
-      <span class="rf-lobby__username">{{ player.username }}</span>
-      <span *ngIf="player.isHost" class="rf-lobby__host-badge">Host</span>
-    </li>
-  </ul>
+  <!-- NAV -->
+  <nav class="rf-nav" aria-label="Lobby navigation">
+    <span class="rf-nav__logo">
+      <span class="rf-nav__logo-badge">RF</span>
+      <span class="rf-nav__logo-text">RoyalFlush</span>
+    </span>
+    <span class="rf-nav__user">
+      <span class="rf-nav__username">{{ currentUsername }}</span>
+      <span class="rf-nav__avatar" aria-hidden="true">
+        {{ currentUsername.charAt(0).toUpperCase() }}
+      </span>
+    </span>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="rf-lobby__main">
+
+    <!-- Room header -->
+    <header class="rf-lobby__header">
+      <h1>Room <strong>{{ roomCode }}</strong></h1>
+      <p>{{ players.length }} player(s) in lobby</p>
+    </header>
+
+    <div class="rf-lobby__grid">
+
+      <!-- LEFT: Players panel + Ready button -->
+      <section class="rf-panel rf-panel--players" aria-label="Players in lobby">
+        <h2 class="rf-panel__title">
+          <span class="rf-live-dot" aria-hidden="true"></span>
+          Waiting Room
+        </h2>
+
+        <ul class="rf-lobby__player-list" role="list">
+          <li *ngFor="let player of sortedPlayers"
+              class="rf-lobby__player-card"
+              [class.rf-lobby__player-card--ready]="player.isReady">
+            <div class="rf-lobby__avatar" aria-hidden="true">
+              {{ (player.username || '').slice(0, 1).toUpperCase() || '?' }}
+            </div>
+            <span class="rf-lobby__username">{{ player.username }}</span>
+            <span *ngIf="player.isHost" class="rf-lobby__host-badge">Host</span>
+            <span *ngIf="player.isReady" class="rf-lobby__ready-badge" aria-label="Ready">✓</span>
+          </li>
+        </ul>
+
+        <p class="rf-panel__hint">Signal to the table that you're ready to play.</p>
+
+        <button
+          mat-flat-button
+          class="rf-ready-btn"
+          [class.rf-ready-btn--active]="isReady"
+          (click)="toggleReady()"
+          [attr.aria-pressed]="isReady"
+          aria-label="Toggle ready status"
+          data-cy="ready-btn"
+        >
+          <mat-icon>{{ isReady ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+          {{ isReady ? 'Ready' : 'Not Ready' }}
+        </button>
+      </section>
+
+      <!-- RIGHT: Chat panel -->
+      <section class="rf-panel rf-panel--chat" aria-label="Lobby chat">
+        <h2 class="rf-panel__title">Chat</h2>
+
+        <!-- Message list -->
+        <div class="rf-chat__messages" #chatScroll aria-live="polite" aria-label="Chat messages">
+          <ng-container *ngIf="messages.length === 0">
+            <p class="rf-chat__empty">No messages yet. Say hello!</p>
+          </ng-container>
+
+          <mat-list role="list">
+            <mat-list-item
+              *ngFor="let msg of messages"
+              role="listitem"
+              class="rf-chat__item"
+            >
+              <div class="rf-chat__row">
+                <span class="rf-chat__sender">{{ msg.sender }}</span>
+                <span class="rf-chat__time">{{ formatTime(msg.timestamp) }}</span>
+              </div>
+              <p class="rf-chat__text">{{ msg.text }}</p>
+            </mat-list-item>
+          </mat-list>
+        </div>
+
+        <!-- Input row -->
+        <div class="rf-chat__input-row">
+          <mat-form-field appearance="outline" class="rf-chat__field">
+            <input
+              matInput
+              [(ngModel)]="chatInput"
+              (keydown)="onChatKeydown($event)"
+              placeholder="Type a message…"
+              aria-label="Chat message input"
+              data-cy="chat-input"
+              autocomplete="off"
+            />
+          </mat-form-field>
+
+          <button
+            mat-flat-button
+            class="rf-chat__send"
+            (click)="sendMessage()"
+            aria-label="Send message"
+            data-cy="send-btn"
+          >
+            <mat-icon>send</mat-icon>
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </main>
 </div>
