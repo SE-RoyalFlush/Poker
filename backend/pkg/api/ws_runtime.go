@@ -10,6 +10,8 @@ import (
 
 const (
 	messageTypeJoinRoom     = "JOIN_ROOM"
+	messageTypeLeaveRoom    = "LEAVE_ROOM"
+	messageTypeRoomState    = "ROOM_STATE"
 	messageTypePlayerJoined = "PLAYER_JOINED"
 	messageTypePlayerLeft   = "PLAYER_LEFT"
 )
@@ -29,6 +31,11 @@ type joinRoomPayload struct {
 
 type playerLeftPayload struct {
 	ID uint `json:"id"`
+}
+
+type roomStatePayload struct {
+	RoomCode string        `json:"roomCode"`
+	Players  []room.Player `json:"players"`
 }
 
 type wsClient struct {
@@ -91,17 +98,6 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 		IsHost:   roomModel.HostUserID == client.user.ID,
 	})
 
-	existingPlayers := make([]room.Player, 0, len(wsRoomState.clients))
-	for existingClient := range wsRoomState.clients {
-		if existingClient == client {
-			continue
-		}
-		existingPlayer, ok := wsRoomState.lobby.Player(existingClient.user.ID)
-		if ok {
-			existingPlayers = append(existingPlayers, existingPlayer)
-		}
-	}
-
 	broadcast := wsMessage{
 		Type:    messageTypePlayerJoined,
 		Payload: player,
@@ -109,7 +105,18 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 
 	recipients := make([]*wsClient, 0, len(wsRoomState.clients))
 	for member := range wsRoomState.clients {
+		if member == client {
+			continue
+		}
 		recipients = append(recipients, member)
+	}
+
+	snapshot := wsMessage{
+		Type: messageTypeRoomState,
+		Payload: roomStatePayload{
+			RoomCode: roomModel.Code,
+			Players:  wsRoomState.lobby.Players(),
+		},
 	}
 
 	h.mu.Unlock()
@@ -118,15 +125,7 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 		member.send <- broadcast
 	}
 
-	initialMessages := make([]wsMessage, 0, len(existingPlayers))
-	for _, existingPlayer := range existingPlayers {
-		initialMessages = append(initialMessages, wsMessage{
-			Type:    messageTypePlayerJoined,
-			Payload: existingPlayer,
-		})
-	}
-
-	return initialMessages, nil
+	return []wsMessage{snapshot}, nil
 }
 
 func (h *wsHub) leave(client *wsClient) {

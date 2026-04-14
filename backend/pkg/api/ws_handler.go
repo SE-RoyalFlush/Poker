@@ -111,6 +111,8 @@ func handleWebSocketConnection(conn *websocket.Conn, user *models.User) {
 			if err := handleJoinRoomMessage(client, message.Payload); err != nil {
 				continue
 			}
+		case messageTypeLeaveRoom:
+			globalWSHub.leave(client)
 		case room.MessageTypeToggleReady:
 			if err := globalWSHub.handleRoomMessage(client, message.Type); err != nil {
 				continue
@@ -136,6 +138,10 @@ func handleJoinRoomMessage(client *wsClient, payload json.RawMessage) error {
 	roomModel, err := loadRoomByCode(joinPayload.RoomCode)
 	if err != nil {
 		return err
+	}
+
+	if client.roomCode != "" && client.roomCode != roomModel.Code {
+		globalWSHub.leave(client)
 	}
 
 	initialMessages, err := globalWSHub.join(roomModel, client)

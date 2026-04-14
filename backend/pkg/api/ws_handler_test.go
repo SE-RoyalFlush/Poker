@@ -46,13 +46,16 @@ func TestWebSocketHandlerJoinToggleReadyAndDisconnect(t *testing.T) {
 		Payload: joinRoomPayload{RoomCode: roomModel.Code},
 	})
 
-	hostJoined := readWSMessage(t, hostConn)
-	if hostJoined.Type != messageTypePlayerJoined {
-		t.Fatalf("expected host join message type %q, got %q", messageTypePlayerJoined, hostJoined.Type)
+	hostSnapshot := readWSMessage(t, hostConn)
+	if hostSnapshot.Type != messageTypeRoomState {
+		t.Fatalf("expected host snapshot message type %q, got %q", messageTypeRoomState, hostSnapshot.Type)
 	}
-	hostPlayer := decodeRoomPlayer(t, hostJoined.Payload)
-	if hostPlayer.Username != "host-user" || !hostPlayer.IsHost || hostPlayer.IsReady {
-		t.Fatalf("unexpected host player payload: %+v", hostPlayer)
+	hostPlayers := decodeRoomState(t, hostSnapshot.Payload)
+	if len(hostPlayers) != 1 {
+		t.Fatalf("expected snapshot with 1 player, got %d", len(hostPlayers))
+	}
+	if hostPlayers[0].Username != "host-user" || !hostPlayers[0].IsHost || hostPlayers[0].IsReady {
+		t.Fatalf("unexpected host player payload: %+v", hostPlayers[0])
 	}
 
 	writeWSMessage(t, guestConn, wsMessage{
@@ -60,13 +63,19 @@ func TestWebSocketHandlerJoinToggleReadyAndDisconnect(t *testing.T) {
 		Payload: joinRoomPayload{RoomCode: roomModel.Code},
 	})
 
-	guestSeesSelf := decodeRoomPlayer(t, readWSMessage(t, guestConn).Payload)
-	guestSeesHost := decodeRoomPlayer(t, readWSMessage(t, guestConn).Payload)
-	if guestSeesSelf.ID != guest.ID && guestSeesHost.ID != guest.ID {
-		t.Fatalf("expected guest to receive their own join payload")
+	guestSnapshot := readWSMessage(t, guestConn)
+	if guestSnapshot.Type != messageTypeRoomState {
+		t.Fatalf("expected guest snapshot message type %q, got %q", messageTypeRoomState, guestSnapshot.Type)
 	}
-	if guestSeesSelf.ID != host.ID && guestSeesHost.ID != host.ID {
-		t.Fatalf("expected guest to receive existing host payload")
+	guestPlayers := decodeRoomState(t, guestSnapshot.Payload)
+	if len(guestPlayers) != 2 {
+		t.Fatalf("expected snapshot with 2 players, got %d", len(guestPlayers))
+	}
+	if !containsPlayer(guestPlayers, guest.ID) {
+		t.Fatalf("expected guest snapshot to include guest ID %d", guest.ID)
+	}
+	if !containsPlayer(guestPlayers, host.ID) {
+		t.Fatalf("expected guest snapshot to include host ID %d", host.ID)
 	}
 
 	hostSeesGuest := readWSMessage(t, hostConn)
@@ -78,25 +87,9 @@ func TestWebSocketHandlerJoinToggleReadyAndDisconnect(t *testing.T) {
 	}
 
 	writeWSMessage(t, guestConn, wsMessage{
-		Type:    room.MessageTypeToggleReady,
+		Type:    messageTypeLeaveRoom,
 		Payload: map[string]any{},
 	})
-
-	hostReadyUpdate := readWSMessage(t, hostConn)
-	guestReadyUpdate := readWSMessage(t, guestConn)
-	for _, update := range []wsMessage{hostReadyUpdate, guestReadyUpdate} {
-		if update.Type != room.MessageTypePlayerUpdate {
-			t.Fatalf("expected ready update type %q, got %q", room.MessageTypePlayerUpdate, update.Type)
-		}
-		player := decodeRoomPlayer(t, update.Payload)
-		if player.ID != guest.ID || !player.IsReady {
-			t.Fatalf("unexpected ready update payload: %+v", player)
-		}
-	}
-
-	if err := guestConn.Close(); err != nil {
-		t.Fatalf("failed to close guest websocket: %v", err)
-	}
 
 	hostLeftUpdate := readWSMessage(t, hostConn)
 	if hostLeftUpdate.Type != messageTypePlayerLeft {
@@ -106,6 +99,8 @@ func TestWebSocketHandlerJoinToggleReadyAndDisconnect(t *testing.T) {
 	if left.ID != guest.ID {
 		t.Fatalf("expected guest ID %d in PLAYER_LEFT, got %d", guest.ID, left.ID)
 	}
+
+	expectNoWSMessage(t, guestConn)
 }
 
 func TestWebSocketHandlerReconnectResetsReadyState(t *testing.T) {
@@ -135,7 +130,6 @@ func TestWebSocketHandlerReconnectResetsReadyState(t *testing.T) {
 
 	writeWSMessage(t, firstGuestConn, wsMessage{Type: messageTypeJoinRoom, Payload: joinRoomPayload{RoomCode: roomModel.Code}})
 	_ = readWSMessage(t, firstGuestConn)
-	_ = readWSMessage(t, firstGuestConn)
 	_ = readWSMessage(t, hostConn)
 
 	writeWSMessage(t, firstGuestConn, wsMessage{Type: room.MessageTypeToggleReady, Payload: map[string]any{}})
@@ -152,18 +146,75 @@ func TestWebSocketHandlerReconnectResetsReadyState(t *testing.T) {
 
 	writeWSMessage(t, secondGuestConn, wsMessage{Type: messageTypeJoinRoom, Payload: joinRoomPayload{RoomCode: roomModel.Code}})
 
-	first := decodeRoomPlayer(t, readWSMessage(t, secondGuestConn).Payload)
-	second := decodeRoomPlayer(t, readWSMessage(t, secondGuestConn).Payload)
-	rejoined := first
-	if rejoined.ID != guest.ID {
-		rejoined = second
+	snapshot := readWSMessage(t, secondGuestConn)
+	if snapshot.Type != messageTypeRoomState {
+		t.Fatalf("expected rejoin snapshot type %q, got %q", messageTypeRoomState, snapshot.Type)
 	}
-	if rejoined.ID != guest.ID {
-		t.Fatalf("expected rejoined guest payload, got %+v %+v", first, second)
+	players := decodeRoomState(t, snapshot.Payload)
+	rejoined, ok := findPlayer(players, guest.ID)
+	if !ok {
+		t.Fatalf("expected rejoined guest payload in snapshot, got %+v", players)
 	}
 	if rejoined.IsReady {
 		t.Fatal("expected ready state to reset on reconnect")
 	}
+}
+
+func TestWebSocketHandlerIsolatesRoomsAndBroadcastsWithinRoomOnly(t *testing.T) {
+	database := setupWebSocketTestDB(t)
+	resetWebSocketStateForTesting()
+
+	hostRoomOne := createWebSocketUser(t, database, "host-room-one")
+	hostRoomTwo := createWebSocketUser(t, database, "host-room-two")
+	guestRoomOne := createWebSocketUser(t, database, "guest-room-one")
+
+	roomOne, err := room.Create(database, room.CreateParams{
+		Code:       "ROOM11",
+		HostUserID: hostRoomOne.ID,
+		MaxPlayers: 6,
+	})
+	if err != nil {
+		t.Fatalf("failed to create room one: %v", err)
+	}
+	roomTwo, err := room.Create(database, room.CreateParams{
+		Code:       "ROOM22",
+		HostUserID: hostRoomTwo.ID,
+		MaxPlayers: 6,
+	})
+	if err != nil {
+		t.Fatalf("failed to create room two: %v", err)
+	}
+
+	server := httptest.NewServer(NewRouter())
+	defer server.Close()
+
+	roomOneHostConn := dialWebSocket(t, server.URL, sessionCookieForTest(t, "host-room-one"))
+	defer roomOneHostConn.Close()
+	roomTwoHostConn := dialWebSocket(t, server.URL, sessionCookieForTest(t, "host-room-two"))
+	defer roomTwoHostConn.Close()
+	roomOneGuestConn := dialWebSocket(t, server.URL, sessionCookieForTest(t, "guest-room-one"))
+	defer roomOneGuestConn.Close()
+
+	writeWSMessage(t, roomOneHostConn, wsMessage{Type: messageTypeJoinRoom, Payload: joinRoomPayload{RoomCode: roomOne.Code}})
+	writeWSMessage(t, roomTwoHostConn, wsMessage{Type: messageTypeJoinRoom, Payload: joinRoomPayload{RoomCode: roomTwo.Code}})
+	_ = readWSMessage(t, roomOneHostConn)
+	_ = readWSMessage(t, roomTwoHostConn)
+
+	writeWSMessage(t, roomOneGuestConn, wsMessage{Type: messageTypeJoinRoom, Payload: joinRoomPayload{RoomCode: roomOne.Code}})
+	guestSnapshot := readWSMessage(t, roomOneGuestConn)
+	if guestSnapshot.Type != messageTypeRoomState {
+		t.Fatalf("expected guest snapshot type %q, got %q", messageTypeRoomState, guestSnapshot.Type)
+	}
+
+	hostOneEvent := readWSMessage(t, roomOneHostConn)
+	if hostOneEvent.Type != messageTypePlayerJoined {
+		t.Fatalf("expected room one host to receive %q, got %q", messageTypePlayerJoined, hostOneEvent.Type)
+	}
+	if decodeRoomPlayer(t, hostOneEvent.Payload).ID != guestRoomOne.ID {
+		t.Fatalf("expected room one broadcast for guest ID %d", guestRoomOne.ID)
+	}
+
+	expectNoWSMessage(t, roomTwoHostConn)
 }
 
 func setupWebSocketTestDB(t *testing.T) *gorm.DB {
@@ -287,6 +338,22 @@ func readWSMessage(t *testing.T, conn *websocket.Conn) wsMessage {
 	return message
 }
 
+func expectNoWSMessage(t *testing.T, conn *websocket.Conn) {
+	t.Helper()
+
+	if err := conn.SetDeadline(time.Now().Add(200 * time.Millisecond)); err != nil {
+		t.Fatalf("failed to set websocket deadline: %v", err)
+	}
+	defer func() {
+		_ = conn.SetDeadline(time.Time{})
+	}()
+
+	var message wsMessage
+	if err := websocket.JSON.Receive(conn, &message); err == nil {
+		t.Fatalf("expected no websocket message, got %+v", message)
+	}
+}
+
 func decodeRoomPlayer(t *testing.T, payload interface{}) room.Player {
 	t.Helper()
 
@@ -314,4 +381,49 @@ func decodePlayerLeft(t *testing.T, payload interface{}) playerLeftPayload {
 	return playerLeftPayload{
 		ID: uint(payloadMap["id"].(float64)),
 	}
+}
+
+func decodeRoomState(t *testing.T, payload interface{}) []room.Player {
+	t.Helper()
+
+	payloadMap, ok := payload.(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected map payload, got %T", payload)
+	}
+
+	rawPlayers, ok := payloadMap["players"].([]interface{})
+	if !ok {
+		t.Fatalf("expected players array, got %T", payloadMap["players"])
+	}
+
+	players := make([]room.Player, 0, len(rawPlayers))
+	for _, rawPlayer := range rawPlayers {
+		playerMap, ok := rawPlayer.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected player map, got %T", rawPlayer)
+		}
+		players = append(players, room.Player{
+			ID:       uint(playerMap["id"].(float64)),
+			Username: playerMap["username"].(string),
+			IsHost:   playerMap["isHost"].(bool),
+			IsReady:  playerMap["isReady"].(bool),
+		})
+	}
+
+	return players
+}
+
+func containsPlayer(players []room.Player, playerID uint) bool {
+	_, ok := findPlayer(players, playerID)
+	return ok
+}
+
+func findPlayer(players []room.Player, playerID uint) (room.Player, bool) {
+	for _, player := range players {
+		if player.ID == playerID {
+			return player, true
+		}
+	}
+
+	return room.Player{}, false
 }

@@ -98,6 +98,19 @@ func (l *Lobby) Player(playerID uint) (Player, bool) {
 	return player, ok
 }
 
+// Players returns a snapshot of the current room roster.
+func (l *Lobby) Players() []Player {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	players := make([]Player, 0, len(l.players))
+	for _, player := range l.players {
+		players = append(players, player)
+	}
+
+	return players
+}
+
 // AllReady reports whether every tracked player is marked ready.
 func (l *Lobby) AllReady() bool {
 	l.mu.RLock()
