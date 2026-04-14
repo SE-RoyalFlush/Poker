@@ -12,6 +12,9 @@ export const API_BASE_URL = isLocalhost() ? LOCAL_API_ORIGIN : '';
 
 export const API_URL = `${API_BASE_URL}/api`;
 
+const wsProtocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
+const wsHost = typeof window !== 'undefined' ? window.location.host : 'localhost:8080';
+
 export const WS_URL = isLocalhost()
   ? LOCAL_WS_URL
-  : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
+  : `${wsProtocol}://${wsHost}/ws`;
