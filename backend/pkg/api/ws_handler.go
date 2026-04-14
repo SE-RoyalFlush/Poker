@@ -90,15 +90,18 @@ func handleWebSocketConnection(conn *websocket.Conn, user *models.User) {
 	client := &wsClient{
 		user: user,
 		send: make(chan wsMessage, 16),
+		done: make(chan struct{}),
 	}
 
 	defer func() {
+		// Signal the writer goroutine to stop before leaving the hub, so
+		// no further broadcasts can race against the connection teardown.
+		close(client.done)
 		globalWSHub.leave(client)
-		close(client.send)
 		_ = conn.Close()
 	}()
 
-	go writeWebSocketMessages(conn, client.send)
+	go writeWebSocketMessages(conn, client)
 
 	for {
 		var message incomingWSMessage
@@ -121,10 +124,18 @@ func handleWebSocketConnection(conn *websocket.Conn, user *models.User) {
 	}
 }
 
-func writeWebSocketMessages(conn *websocket.Conn, send <-chan wsMessage) {
-	for message := range send {
-		if err := websocket.JSON.Send(conn, message); err != nil {
+func writeWebSocketMessages(conn *websocket.Conn, client *wsClient) {
+	for {
+		select {
+		case <-client.done:
 			return
+		case message, ok := <-client.send:
+			if !ok {
+				return
+			}
+			if err := websocket.JSON.Send(conn, message); err != nil {
+				return
+			}
 		}
 	}
 }
@@ -140,7 +151,11 @@ func handleJoinRoomMessage(client *wsClient, payload json.RawMessage) error {
 		return err
 	}
 
-	if client.roomCode != "" && client.roomCode != roomModel.Code {
+	client.mu.Lock()
+	currentRoom := client.roomCode
+	client.mu.Unlock()
+
+	if currentRoom != "" && currentRoom != roomModel.Code {
 		globalWSHub.leave(client)
 	}
 
@@ -150,7 +165,11 @@ func handleJoinRoomMessage(client *wsClient, payload json.RawMessage) error {
 	}
 
 	for _, message := range initialMessages {
-		client.send <- message
+		select {
+		case client.send <- message:
+		case <-client.done:
+			return nil
+		}
 	}
 
 	return nil
