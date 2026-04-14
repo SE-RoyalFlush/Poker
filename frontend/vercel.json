@@ -2,11 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/poker-frontend/browser",
   "framework": "angular",
-  "env": {
-    "NG_BUILD_OPTIMIZATION": {
-      "value": "true"
-    }
-  },
   "routes": [
     {
       "src": "^/api/.*",
