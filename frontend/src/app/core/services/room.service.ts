@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
+import { API_URL } from '../config/endpoints';
 
 export interface Room {
   id: string;
@@ -25,7 +26,7 @@ export interface CreateRoomPayload {
   roomPassword?: string;
 }
 
-const API = 'http://localhost:8080/api';
+const API = API_URL;
 
 @Injectable({ providedIn: 'root' })
 export class RoomService {

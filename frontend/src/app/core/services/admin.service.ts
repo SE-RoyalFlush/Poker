@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { API_URL } from '../config/endpoints';
 
 export interface AdminUser {
   id: number;
@@ -9,7 +10,7 @@ export interface AdminUser {
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private readonly apiUrl = 'http://localhost:8080/api/admin';
+  private readonly apiUrl = `${API_URL}/admin`;
 
   constructor(private http: HttpClient) {}
 

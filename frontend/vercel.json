@@ -4,16 +4,15 @@
   "framework": "angular",
   "routes": [
     {
-      "src": "^/api/.*",
-      "dest": "https://$BACKEND_URL$0",
-      "headers": {
-        "Access-Control-Allow-Credentials": "true"
-      }
+      "handle": "filesystem"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "https://poker-csxs.onrender.com/api/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html",
-      "status": 200
+      "dest": "/index.html"
     }
   ]
 }
