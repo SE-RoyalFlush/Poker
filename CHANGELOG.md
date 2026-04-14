@@ -7,6 +7,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Generic Card Component (Issue #70)](https://github.com/SE-RoyalFlush/Poker/issues/70)
+    - Added reusable `CardComponent` at `frontend/src/app/shared/card/` accepting `rank`, `suit`, and `faceDown` inputs
+    - Renders rank label and suit symbol (♠ ♥ ♦ ♣) in top-left and bottom-right corners with a large centre symbol
+    - Applies red colouring for hearts/diamonds; black for spades/clubs via `rf-card--red` CSS class
+    - Face-down state (`faceDown=true`) shows a styled blue back with a diagonal hatch pattern and hides face content
+    - SCSS uses component-scoped CSS custom properties (`--rf-card-*`) aligned with the project `--rf-*` token naming convention
+    - Added comprehensive unit test coverage for `CardComponent`, covering all 52 rank/suit combinations, face-down state, colour classification, and aria labels
+- [Frontend: Ready Button & Chat UI (Issue #23)](https://github.com/SE-RoyalFlush/Poker/issues/23)
+    - Implemented `LobbyWebSocketService` in `frontend/src/app/core/services/lobby-websocket.service.ts` for real-time WebSocket communication; exposes `messages$` and `playerReady$` observables and gracefully degrades when backend is unavailable
+    - Implemented full `LobbyComponent` with a ready-toggle button (grey → green on activation) and a scrollable chat panel using Angular Material List
+    - Chat supports sending via Enter key or Send button; auto-scrolls to the latest message on receipt
+    - Added Cypress 14 E2E tests in `frontend/cypress/e2e/lobby.cy.ts` covering ready button toggle, WebSocket event dispatch, chat send via button and Enter key, empty-message guard, and message list rendering
+    - Bootstrapped Cypress E2E infrastructure (`cypress.config.ts`, `cypress/support/e2e.ts`) and added `e2e` / `e2e:headless` npm scripts
+    - Added `.claude/` and `CLAUDE.md` to `.gitignore`
+- [Backend: Lobby Logic & Broadcasting (Issue #18)](https://github.com/SE-RoyalFlush/Poker/issues/18)
+    - Implemented room-scoped WebSocket lobby state in `backend/pkg/api/ws_runtime.go` with per-room client membership and broadcasts
+    - Added `JOIN_ROOM`, `LEAVE_ROOM`, `ROOM_STATE`, `PLAYER_JOINED`, and `PLAYER_LEFT` message handling for lobby presence updates
+    - `JOIN_ROOM` now returns a room snapshot to the joining client and broadcasts `PLAYER_JOINED` only to the other clients in that room
+    - Disconnects and explicit `LEAVE_ROOM` events now remove the client from the room and notify remaining members with `PLAYER_LEFT`
+    - Added backend tests covering room isolation, join broadcast semantics, explicit leave, and reconnect-ready-state reset
 - [Frontend: Lobby Component & State (Issue #21)](https://github.com/SE-RoyalFlush/Poker/issues/21)
     - Implemented `Lobby` at `frontend/src/app/pages/lobby/lobby.ts` — reads `roomCode` from `?code=` query param, connects via `WebSocketService`, sends `JOIN_ROOM` on open, handles `PLAYER_JOINED` (with `_.uniqBy` deduplication by id) and `PLAYER_LEFT` messages, sorts players host-first via `_.orderBy`
     - Added `Player` interface (`{ id, username, isHost }`) at `frontend/src/app/core/models/player.model.ts` and exported from models barrel

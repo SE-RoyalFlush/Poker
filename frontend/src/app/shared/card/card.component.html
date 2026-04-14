@@ -1,0 +1,27 @@
+<div
+  class="rf-card"
+  [class.rf-card--face-down]="faceDown"
+  [class.rf-card--red]="!faceDown && isRedSuit"
+  role="img"
+  [attr.aria-label]="faceDown ? 'Card face down' : rank + ' of ' + suit"
+>
+  <ng-container *ngIf="!faceDown; else faceDownTpl">
+    <div class="rf-card__corner rf-card__corner--top">
+      <span class="rf-card__rank">{{ rank }}</span>
+      <span class="rf-card__symbol">{{ suitSymbol }}</span>
+    </div>
+
+    <div class="rf-card__center">{{ suitSymbol }}</div>
+
+    <div class="rf-card__corner rf-card__corner--bottom">
+      <span class="rf-card__rank">{{ rank }}</span>
+      <span class="rf-card__symbol">{{ suitSymbol }}</span>
+    </div>
+  </ng-container>
+
+  <ng-template #faceDownTpl>
+    <div class="rf-card__back">
+      <div class="rf-card__back-pattern"></div>
+    </div>
+  </ng-template>
+</div>

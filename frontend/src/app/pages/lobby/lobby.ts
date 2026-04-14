@@ -1,30 +1,71 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { uniqBy, orderBy } from 'lodash-es';
 
+import { MatListModule } from '@angular/material/list';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+
+import { AuthService } from '../../core/services/auth.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { Player, WsMessage } from '../../core/models';
+
+interface PlayerReadyPayload {
+  userId: number;
+  isReady: boolean;
+}
+
+interface RoomStatePayload {
+  roomCode: string;
+  players: Player[];
+}
+
+export interface ChatMessage {
+  sender: string;
+  text: string;
+  timestamp: string;
+}
 
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatListModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+  ],
   templateUrl: './lobby.html',
   styleUrl: './lobby.scss',
 })
-export class Lobby implements OnInit, OnDestroy {
+export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
+  @ViewChild('chatScroll') chatScrollEl?: ElementRef<HTMLDivElement>;
+
   roomCode = '';
   players: Player[] = [];
   sortedPlayers: Player[] = [];
 
+  isReady = false;
+  messages: ChatMessage[] = [];
+  chatInput = '';
+  currentUsername = '';
+
+  private shouldScroll = false;
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
+    private readonly authService: AuthService,
     private readonly wsService: WebSocketService,
   ) {}
 
@@ -35,6 +76,9 @@ export class Lobby implements OnInit, OnDestroy {
       this.router.navigate(['/dashboard']);
       return;
     }
+
+    const user = this.authService.getCurrentUser();
+    this.currentUsername = user?.username ?? 'You';
 
     this.wsService.connect();
 
@@ -49,6 +93,13 @@ export class Lobby implements OnInit, OnDestroy {
       .subscribe(msg => this.handleMessage(msg));
   }
 
+  ngAfterViewChecked(): void {
+    if (this.shouldScroll) {
+      this.scrollChatToBottom();
+      this.shouldScroll = false;
+    }
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -58,7 +109,11 @@ export class Lobby implements OnInit, OnDestroy {
   private handleMessage(msg: WsMessage): void {
     let playersChanged = false;
 
-    if (msg.type === 'PLAYER_JOINED') {
+    if (msg.type === 'ROOM_STATE') {
+      const payload = msg.payload as RoomStatePayload;
+      this.players = uniqBy(payload.players, 'id');
+      playersChanged = true;
+    } else if (msg.type === 'PLAYER_JOINED') {
       const player = msg.payload as Player;
       this.players = uniqBy([...this.players, player], 'id');
       playersChanged = true;
@@ -66,10 +121,55 @@ export class Lobby implements OnInit, OnDestroy {
       const { id } = msg.payload as Pick<Player, 'id'>;
       this.players = this.players.filter(p => p.id !== id);
       playersChanged = true;
+    } else if (msg.type === 'PLAYER_READY') {
+      const { userId, isReady } = msg.payload as PlayerReadyPayload;
+      this.players = this.players.map(p => p.id === userId ? { ...p, isReady } : p);
+      playersChanged = true;
+    } else if (msg.type === 'CHAT_MESSAGE') {
+      const chatMsg = msg.payload as ChatMessage;
+      this.messages.push(chatMsg);
+      this.shouldScroll = true;
     }
 
     if (playersChanged) {
       this.sortedPlayers = orderBy(this.players, ['isHost'], ['desc']);
     }
+  }
+
+  toggleReady(): void {
+    this.isReady = !this.isReady;
+    this.wsService.sendMessage('PLAYER_READY', { isReady: this.isReady });
+  }
+
+  sendMessage(): void {
+    const text = this.chatInput.trim();
+    if (!text) return;
+
+    const msg: ChatMessage = {
+      sender: this.currentUsername,
+      text,
+      timestamp: new Date().toISOString(),
+    };
+    this.messages.push(msg);
+    this.wsService.sendMessage('CHAT_MESSAGE', { text });
+    this.chatInput = '';
+    this.shouldScroll = true;
+  }
+
+  onChatKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.sendMessage();
+    }
+  }
+
+  formatTime(timestamp: string): string {
+    const d = new Date(timestamp);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  private scrollChatToBottom(): void {
+    const el = this.chatScrollEl?.nativeElement;
+    if (el) el.scrollTop = el.scrollHeight;
   }
 }

@@ -2,6 +2,7 @@ package room
 
 import (
 	"errors"
+	"slices"
 	"sync"
 )
 
@@ -96,6 +97,40 @@ func (l *Lobby) Player(playerID uint) (Player, bool) {
 
 	player, ok := l.players[playerID]
 	return player, ok
+}
+
+// Players returns a snapshot of the current room roster.
+func (l *Lobby) Players() []Player {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	players := make([]Player, 0, len(l.players))
+	for _, player := range l.players {
+		players = append(players, player)
+	}
+	slices.SortFunc(players, func(a, b Player) int {
+		if a.IsHost != b.IsHost {
+			if a.IsHost {
+				return -1
+			}
+			return 1
+		}
+		if a.Username != b.Username {
+			if a.Username < b.Username {
+				return -1
+			}
+			return 1
+		}
+		if a.ID < b.ID {
+			return -1
+		}
+		if a.ID > b.ID {
+			return 1
+		}
+		return 0
+	})
+
+	return players
 }
 
 // AllReady reports whether every tracked player is marked ready.

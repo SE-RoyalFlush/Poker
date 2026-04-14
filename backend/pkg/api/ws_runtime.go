@@ -10,6 +10,8 @@ import (
 
 const (
 	messageTypeJoinRoom     = "JOIN_ROOM"
+	messageTypeLeaveRoom    = "LEAVE_ROOM"
+	messageTypeRoomState    = "ROOM_STATE"
 	messageTypePlayerJoined = "PLAYER_JOINED"
 	messageTypePlayerLeft   = "PLAYER_LEFT"
 )
@@ -31,9 +33,16 @@ type playerLeftPayload struct {
 	ID uint `json:"id"`
 }
 
+type roomStatePayload struct {
+	RoomCode string        `json:"roomCode"`
+	Players  []room.Player `json:"players"`
+}
+
 type wsClient struct {
 	user     *models.User
 	send     chan wsMessage
+	done     chan struct{}
+	mu       sync.Mutex
 	roomCode string
 }
 
@@ -50,6 +59,17 @@ type wsHub struct {
 func newWSHub() *wsHub {
 	return &wsHub{
 		rooms: make(map[string]*wsRoom),
+	}
+}
+
+// safeSend delivers msg to ch without blocking and without panicking.
+// Non-blocking so a slow or exited client never stalls the hub.
+func safeSend(ch chan<- wsMessage, msg wsMessage) bool {
+	select {
+	case ch <- msg:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -82,7 +102,9 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 		h.rooms[roomModel.Code] = wsRoomState
 	}
 
+	client.mu.Lock()
 	client.roomCode = roomModel.Code
+	client.mu.Unlock()
 	wsRoomState.clients[client] = struct{}{}
 
 	player := wsRoomState.lobby.JoinPlayer(room.Player{
@@ -91,17 +113,6 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 		IsHost:   roomModel.HostUserID == client.user.ID,
 	})
 
-	existingPlayers := make([]room.Player, 0, len(wsRoomState.clients))
-	for existingClient := range wsRoomState.clients {
-		if existingClient == client {
-			continue
-		}
-		existingPlayer, ok := wsRoomState.lobby.Player(existingClient.user.ID)
-		if ok {
-			existingPlayers = append(existingPlayers, existingPlayer)
-		}
-	}
-
 	broadcast := wsMessage{
 		Type:    messageTypePlayerJoined,
 		Payload: player,
@@ -109,36 +120,49 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 
 	recipients := make([]*wsClient, 0, len(wsRoomState.clients))
 	for member := range wsRoomState.clients {
+		if member == client {
+			continue
+		}
 		recipients = append(recipients, member)
+	}
+
+	snapshot := wsMessage{
+		Type: messageTypeRoomState,
+		Payload: roomStatePayload{
+			RoomCode: roomModel.Code,
+			Players:  wsRoomState.lobby.Players(),
+		},
 	}
 
 	h.mu.Unlock()
 
 	for _, member := range recipients {
-		member.send <- broadcast
+		safeSend(member.send, broadcast)
 	}
 
-	initialMessages := make([]wsMessage, 0, len(existingPlayers))
-	for _, existingPlayer := range existingPlayers {
-		initialMessages = append(initialMessages, wsMessage{
-			Type:    messageTypePlayerJoined,
-			Payload: existingPlayer,
-		})
-	}
-
-	return initialMessages, nil
+	return []wsMessage{snapshot}, nil
 }
 
 func (h *wsHub) leave(client *wsClient) {
-	if client == nil || client.roomCode == "" {
+	if client == nil {
+		return
+	}
+
+	client.mu.Lock()
+	roomCode := client.roomCode
+	client.mu.Unlock()
+
+	if roomCode == "" {
 		return
 	}
 
 	h.mu.Lock()
 
-	wsRoomState, ok := h.rooms[client.roomCode]
+	wsRoomState, ok := h.rooms[roomCode]
 	if !ok {
+		client.mu.Lock()
 		client.roomCode = ""
+		client.mu.Unlock()
 		h.mu.Unlock()
 		return
 	}
@@ -169,26 +193,36 @@ func (h *wsHub) leave(client *wsClient) {
 	}
 
 	if len(wsRoomState.clients) == 0 {
-		delete(h.rooms, client.roomCode)
+		delete(h.rooms, roomCode)
 	}
 
+	client.mu.Lock()
 	client.roomCode = ""
+	client.mu.Unlock()
 	h.mu.Unlock()
 
 	if !hasActiveConnection {
 		for _, member := range recipients {
-			member.send <- leftMessage
+			safeSend(member.send, leftMessage)
 		}
 	}
 }
 
 func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
-	if client == nil || client.roomCode == "" {
+	if client == nil {
+		return nil
+	}
+
+	client.mu.Lock()
+	roomCode := client.roomCode
+	client.mu.Unlock()
+
+	if roomCode == "" {
 		return nil
 	}
 
 	h.mu.RLock()
-	wsRoomState, ok := h.rooms[client.roomCode]
+	wsRoomState, ok := h.rooms[roomCode]
 	h.mu.RUnlock()
 	if !ok {
 		return nil
@@ -215,7 +249,7 @@ func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
 	h.mu.RUnlock()
 
 	for _, member := range recipients {
-		member.send <- message
+		safeSend(member.send, message)
 	}
 
 	return nil
