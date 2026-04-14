@@ -3,16 +3,8 @@ name: Tests
 on:
   pull_request:
     branches: [main, develop]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - '.github/workflows/pull_request_test.yaml'
   push:
     branches: [main, develop]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - '.github/workflows/pull_request_test.yaml'
 
 jobs:
   backend-tests:
