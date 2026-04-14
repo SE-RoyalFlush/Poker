@@ -1,3 +1,6 @@
+Frontend Video - https://youtu.be/VVIyLQ9D1NY 
+Backend Video - https://www.youtube.com/watch?v=hy8Zer2STrM
+
 # Sprint 3: Protected Rooms, Live Lobby State, and Shared Auth
 
 **Sprint Goal:** Strengthen the multiplayer foundation by standardizing authentication, protecting room and WebSocket routes, persisting room metadata, and implementing room-scoped real-time lobby behavior with test coverage across backend and frontend.
@@ -134,6 +137,55 @@ Additional frontend unit tests still included in the full suite:
 - `frontend/src/app/pages/admin/admin.spec.ts`
 - `frontend/src/app/app.spec.ts`
 
+### Frontend Unit Test Report
+
+**Command Run**
+
+```bash
+cd frontend && npm run test:unit
+```
+
+**Result**
+
+- Browser: Chrome Headless 147.0.0.0
+- Total specs executed: 181
+- Passed: 181
+- Failed: 0
+- Status: SUCCESS
+
+**Frontend Unit Test Files**
+
+- `src/app/app.spec.ts`
+- `src/app/core/interceptors/auth.interceptor.spec.ts`
+- `src/app/core/services/admin.service.spec.ts`
+- `src/app/core/services/auth.service.spec.ts`
+- `src/app/core/services/csrf.service.spec.ts`
+- `src/app/core/services/room.service.spec.ts`
+- `src/app/core/services/websocket.service.spec.ts`
+- `src/app/features/auth/register/register.component.spec.ts`
+- `src/app/features/rooms/create-room/create-room.component.spec.ts`
+- `src/app/features/rooms/join-room/join-room.component.spec.ts`
+- `src/app/pages/admin/admin.spec.ts`
+- `src/app/pages/dashboard/dashboard.component.spec.ts`
+- `src/app/pages/home/home.component.spec.ts`
+- `src/app/pages/lobby/lobby.spec.ts`
+- `src/app/shared/card/card.component.spec.ts`
+
+**Coverage Summary by Area**
+
+- App bootstrap and CSRF initialization
+- Authentication service, interceptor, and CSRF service
+- Room service API calls and seat normalization
+- WebSocket service connection and message flow
+- Register, create-room, and join-room component behavior
+- Dashboard, admin, home, and lobby page behavior
+- Card component rendering and state handling
+
+**Notes**
+
+- The suite completed successfully with no failures.
+- The run was executed in headless Chrome through Angular Karma.
+
 ---
 
 ## Backend Unit Tests
@@ -164,6 +216,21 @@ Additional backend tests still included in the full suite:
 - `backend/pkg/api/handlers_test.go`
 - `backend/pkg/db/client_test.go`
 - `backend/pkg/models/models_test.go`
+
+### Backend Test Run Results
+
+Latest backend package test results:
+
+```text
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg                     0.296s  coverage: [no statements]
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg/api                 5.713s  coverage: 75.9% of statements
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg/auth                1.801s  coverage: 44.2% of statements
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg/db                  0.872s  coverage: 67.8% of statements
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg/middleware          0.284s  coverage: 69.2% of statements
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg/migrations          1.553s  coverage: 66.7% of statements
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg/models              1.104s  coverage: 50.0% of statements
+ok      github.com/SE-RoyalFlush/Poker/backend/pkg/room                1.337s  coverage: 81.8% of statements
+```
 
 ---
 
