@@ -60,14 +60,14 @@ func newWSHub() *wsHub {
 	}
 }
 
-// safeSend delivers msg to ch without panicking if ch has already been closed.
-// It returns false when the channel was closed before the send could complete.
+// safeSend prevents a racing channel close from crashing the websocket hub.
 func safeSend(ch chan<- wsMessage, msg wsMessage) (ok bool) {
 	defer func() {
 		if recover() != nil {
 			ok = false
 		}
 	}()
+
 	ch <- msg
 	return true
 }

@@ -2,6 +2,7 @@ package room
 
 import (
 	"errors"
+	"slices"
 	"sync"
 )
 
@@ -107,6 +108,27 @@ func (l *Lobby) Players() []Player {
 	for _, player := range l.players {
 		players = append(players, player)
 	}
+	slices.SortFunc(players, func(a, b Player) int {
+		if a.IsHost != b.IsHost {
+			if a.IsHost {
+				return -1
+			}
+			return 1
+		}
+		if a.Username != b.Username {
+			if a.Username < b.Username {
+				return -1
+			}
+			return 1
+		}
+		if a.ID < b.ID {
+			return -1
+		}
+		if a.ID > b.ID {
+			return 1
+		}
+		return 0
+	})
 
 	return players
 }

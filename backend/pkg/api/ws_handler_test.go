@@ -1,6 +1,9 @@
 package api
 
 import (
+	"errors"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -341,7 +344,7 @@ func readWSMessage(t *testing.T, conn *websocket.Conn) wsMessage {
 func expectNoWSMessage(t *testing.T, conn *websocket.Conn) {
 	t.Helper()
 
-	if err := conn.SetDeadline(time.Now().Add(200 * time.Millisecond)); err != nil {
+	if err := conn.SetDeadline(time.Now().Add(500 * time.Millisecond)); err != nil {
 		t.Fatalf("failed to set websocket deadline: %v", err)
 	}
 	defer func() {
@@ -351,7 +354,30 @@ func expectNoWSMessage(t *testing.T, conn *websocket.Conn) {
 	var message wsMessage
 	if err := websocket.JSON.Receive(conn, &message); err == nil {
 		t.Fatalf("expected no websocket message, got %+v", message)
+	} else if !isTimeoutError(err) {
+		t.Fatalf("expected timeout while waiting for no websocket message, got %v", err)
 	}
+}
+
+func isTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if errors.Is(err, os.ErrDeadlineExceeded) {
+		return true
+	}
+
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	if errors.Is(err, io.EOF) {
+		return false
+	}
+
+	return false
 }
 
 func decodeRoomPlayer(t *testing.T, payload interface{}) room.Player {
