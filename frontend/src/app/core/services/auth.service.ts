@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, of, switchMap, throwError, finalize, map } from 'rxjs';
+import { API_URL } from '../config/endpoints';
 
 export interface User {
   id: number | string;
@@ -46,7 +47,7 @@ interface BackendUser {
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:8080/api';
+  private readonly apiUrl = API_URL;
 
   // BehaviorSubject holds the current user state
   // - null: user is not authenticated (guest)

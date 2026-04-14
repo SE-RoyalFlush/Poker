@@ -1,8 +1,7 @@
 import { Injectable, InjectionToken, Inject } from '@angular/core';
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import { WsMessage } from '../models';
-
-export const WS_URL = 'ws://localhost:8080/ws';
+import { WS_URL } from '../config/endpoints';
 
 /**
  * Injectable factory for creating WebSocket instances.
