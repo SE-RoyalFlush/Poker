@@ -153,7 +153,11 @@ var _ = Describe("Router", func() {
 			reqWithAuth.AddCookie(sessionCookie())
 			recWithAuth := httptest.NewRecorder()
 			router.ServeHTTP(recWithAuth, reqWithAuth)
-			Expect(recWithAuth.Code).To(Equal(http.StatusNotImplemented), req.target)
+			expectedStatus := http.StatusNotImplemented
+			if req.target == "/ws" {
+				expectedStatus = http.StatusBadRequest
+			}
+			Expect(recWithAuth.Code).To(Equal(expectedStatus), req.target)
 		}
 	})
 
