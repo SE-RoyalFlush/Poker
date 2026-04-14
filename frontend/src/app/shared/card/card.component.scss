@@ -2,39 +2,39 @@
 :host {
   display: inline-block;
 
-  --card-w:        70px;
-  --card-h:        100px;
-  --card-radius:   8px;
-  --card-bg:       #FAFAF8;
-  --card-border:   rgba(0, 0, 0, 0.12);
-  --card-shadow:   0 2px 8px rgba(0, 0, 0, 0.25);
-  --card-black:    #1A1A1A;
-  --card-red:      #C0392B;
-  --card-back-bg:  #1A3A8F;
-  --card-back-pat: rgba(255, 255, 255, 0.08);
-  --card-font:     'Georgia', serif;
+  --rf-card-w:        70px;
+  --rf-card-h:        100px;
+  --rf-card-radius:   8px;
+  --rf-card-bg:       #FAFAF8;
+  --rf-card-border:   rgba(0, 0, 0, 0.12);
+  --rf-card-shadow:   0 2px 8px rgba(0, 0, 0, 0.25);
+  --rf-card-black:    #1A1A1A;
+  --rf-card-red:      #C0392B;
+  --rf-card-back-bg:  #1A3A8F;
+  --rf-card-back-pat: rgba(255, 255, 255, 0.08);
+  --rf-card-font:     'Georgia', serif;
 }
 
 // ── Card shell ───────────────────────────────────────────────────
 .rf-card {
   position: relative;
-  width: var(--card-w);
-  height: var(--card-h);
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow);
+  width: var(--rf-card-w);
+  height: var(--rf-card-h);
+  background: var(--rf-card-bg);
+  border: 1px solid var(--rf-card-border);
+  border-radius: var(--rf-card-radius);
+  box-shadow: var(--rf-card-shadow);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 4px 5px;
-  font-family: var(--card-font);
-  color: var(--card-black);
+  font-family: var(--rf-card-font);
+  color: var(--rf-card-black);
   user-select: none;
   box-sizing: border-box;
 
   &--red {
-    color: var(--card-red);
+    color: var(--rf-card-red);
   }
 
   // ── Corners ─────────────────────────────────────────────────
@@ -75,14 +75,14 @@
 
   // ── Face-down ────────────────────────────────────────────────
   &--face-down {
-    background: var(--card-back-bg);
+    background: var(--rf-card-back-bg);
     border-color: rgba(255, 255, 255, 0.1);
   }
 
   &__back {
     position: absolute;
     inset: 6px;
-    border-radius: calc(var(--card-radius) - 3px);
+    border-radius: calc(var(--rf-card-radius) - 3px);
     border: 1.5px solid rgba(255, 255, 255, 0.18);
     overflow: hidden;
   }
@@ -93,8 +93,8 @@
     background-image:
       repeating-linear-gradient(
         45deg,
-        var(--card-back-pat) 0,
-        var(--card-back-pat) 1px,
+        var(--rf-card-back-pat) 0,
+        var(--rf-card-back-pat) 1px,
         transparent 0,
         transparent 50%
       );

@@ -9,22 +9,24 @@ import { CommonModule } from '@angular/common';
   styleUrl: './card.component.scss',
 })
 export class CardComponent {
+  private static readonly SUIT_SYMBOLS: Record<string, string> = {
+    spades:   '♠',
+    hearts:   '♥',
+    diamonds: '♦',
+    clubs:    '♣',
+  };
+
   @Input() rank = '';
   @Input() suit = '';
   @Input() faceDown = false;
 
   get suitSymbol(): string {
-    const symbols: Record<string, string> = {
-      spades:   '♠',
-      hearts:   '♥',
-      diamonds: '♦',
-      clubs:    '♣',
-    };
-    return symbols[this.suit.toLowerCase()] ?? '';
+    const lowerSuit = this.suit.toLowerCase();
+    return CardComponent.SUIT_SYMBOLS[lowerSuit] ?? '';
   }
 
   get isRedSuit(): boolean {
-    const s = this.suit.toLowerCase();
-    return s === 'hearts' || s === 'diamonds';
+    const lowerSuit = this.suit.toLowerCase();
+    return lowerSuit === 'hearts' || lowerSuit === 'diamonds';
   }
 }
