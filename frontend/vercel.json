@@ -1,0 +1,24 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/poker-frontend/browser",
+  "framework": "angular",
+  "env": {
+    "NG_BUILD_OPTIMIZATION": {
+      "value": "true"
+    }
+  },
+  "routes": [
+    {
+      "src": "^/api/.*",
+      "dest": "https://$BACKEND_URL$0",
+      "headers": {
+        "Access-Control-Allow-Credentials": "true"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html",
+      "status": 200
+    }
+  ]
+}

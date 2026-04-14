@@ -1,0 +1,41 @@
+Frontend Unit Test Report
+
+Command Run:
+cd frontend && npm run test:unit
+
+Result:
+- Browser: Chrome Headless 147.0.0.0
+- Total specs executed: 181
+- Passed: 181
+- Failed: 0
+- Status: SUCCESS
+
+Frontend Unit Test Files:
+- src/app/app.spec.ts
+- src/app/core/interceptors/auth.interceptor.spec.ts
+- src/app/core/services/admin.service.spec.ts
+- src/app/core/services/auth.service.spec.ts
+- src/app/core/services/csrf.service.spec.ts
+- src/app/core/services/room.service.spec.ts
+- src/app/core/services/websocket.service.spec.ts
+- src/app/features/auth/register/register.component.spec.ts
+- src/app/features/rooms/create-room/create-room.component.spec.ts
+- src/app/features/rooms/join-room/join-room.component.spec.ts
+- src/app/pages/admin/admin.spec.ts
+- src/app/pages/dashboard/dashboard.component.spec.ts
+- src/app/pages/home/home.component.spec.ts
+- src/app/pages/lobby/lobby.spec.ts
+- src/app/shared/card/card.component.spec.ts
+
+Coverage Summary by Area:
+- App bootstrap and CSRF initialization
+- Authentication service, interceptor, and CSRF service
+- Room service API calls and seat normalization
+- WebSocket service connection and message flow
+- Register, create-room, and join-room component behavior
+- Dashboard, admin, home, and lobby page behavior
+- Card component rendering and state handling
+
+Notes:
+- The suite completed successfully with no failures.
+- The run was executed in headless Chrome through Angular Karma.

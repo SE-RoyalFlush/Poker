@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: poker-backend
+    runtime: go
+    region: oregon
+    plan: free
+    buildCommand: cd backend && go build -o server ./cmd/server
+    startCommand: cd backend && ./server
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: GO_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: CSRF_AUTH_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://your-vercel-frontend-url.vercel.app
+        sync: false
