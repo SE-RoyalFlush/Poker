@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: poker-backend
+    runtime: go
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app ./cmd/server
+    startCommand: ./app
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: GO_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: SESSION_KEY
+        generateValue: true
+      - key: CSRF_AUTH_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://your-vercel-frontend-url.vercel.app
+        sync: false
