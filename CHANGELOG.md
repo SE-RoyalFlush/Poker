@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Generic Card Component (Issue #70)](https://github.com/SE-RoyalFlush/Poker/issues/70)
+    - Added reusable `CardComponent` at `frontend/src/app/shared/card/` accepting `rank`, `suit`, and `faceDown` inputs
+    - Renders rank label and suit symbol (♠ ♥ ♦ ♣) in top-left and bottom-right corners with a large centre symbol
+    - Applies red colouring for hearts/diamonds; black for spades/clubs via `rf-card--red` CSS class
+    - Face-down state (`faceDown=true`) shows a styled blue back with a diagonal hatch pattern and hides face content
+    - SCSS uses component-scoped CSS custom properties (`--rf-card-*`) aligned with the project `--rf-*` token naming convention
+    - Added comprehensive unit test coverage for `CardComponent`, covering all 52 rank/suit combinations, face-down state, colour classification, and aria labels
 - [Frontend: Ready Button & Chat UI (Issue #23)](https://github.com/SE-RoyalFlush/Poker/issues/23)
     - Implemented `LobbyWebSocketService` in `frontend/src/app/core/services/lobby-websocket.service.ts` for real-time WebSocket communication; exposes `messages$` and `playerReady$` observables and gracefully degrades when backend is unavailable
     - Implemented full `LobbyComponent` with a ready-toggle button (grey → green on activation) and a scrollable chat panel using Angular Material List
