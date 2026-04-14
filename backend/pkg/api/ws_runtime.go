@@ -60,6 +60,18 @@ func newWSHub() *wsHub {
 	}
 }
 
+// safeSend delivers msg to ch without panicking if ch has already been closed.
+// It returns false when the channel was closed before the send could complete.
+func safeSend(ch chan<- wsMessage, msg wsMessage) (ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
+		}
+	}()
+	ch <- msg
+	return true
+}
+
 var globalWSHub = newWSHub()
 
 func resetWebSocketStateForTesting() {
@@ -122,7 +134,7 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 	h.mu.Unlock()
 
 	for _, member := range recipients {
-		member.send <- broadcast
+		safeSend(member.send, broadcast)
 	}
 
 	return []wsMessage{snapshot}, nil
@@ -176,7 +188,7 @@ func (h *wsHub) leave(client *wsClient) {
 
 	if !hasActiveConnection {
 		for _, member := range recipients {
-			member.send <- leftMessage
+			safeSend(member.send, leftMessage)
 		}
 	}
 }
@@ -214,7 +226,7 @@ func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
 	h.mu.RUnlock()
 
 	for _, member := range recipients {
-		member.send <- message
+		safeSend(member.send, message)
 	}
 
 	return nil
