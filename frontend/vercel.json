@@ -8,7 +8,7 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "https://$BACKEND_URL/api/$1"
+      "dest": "https://poker-csxs.onrender.com/api/$1"
     },
     {
       "src": "/(.*)",
