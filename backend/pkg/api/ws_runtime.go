@@ -13,6 +13,8 @@ var (
 	errMissingRoomCode = errors.New("missing room code")
 )
 
+// The WebSocket hub owns only transient live room state: active socket
+// membership and ready flags. Persisted room metadata stays in the database.
 type wsMessage = protocol.Envelope[any]
 
 type wsClient struct {
@@ -80,7 +82,7 @@ func toProtocolPlayers(players []room.Player) []protocol.Player {
 	return result
 }
 
-func (h *wsHub) occupancy(roomCode string) int {
+func (h *wsHub) activePlayerCount(roomCode string) int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -89,14 +91,14 @@ func (h *wsHub) occupancy(roomCode string) int {
 		return 0
 	}
 
-	uniquePlayers := make(map[uint]struct{}, len(wsRoomState.clients))
+	players := make(map[uint]struct{}, len(wsRoomState.clients))
 	for client := range wsRoomState.clients {
 		if client != nil && client.user != nil {
-			uniquePlayers[client.user.ID] = struct{}{}
+			players[client.user.ID] = struct{}{}
 		}
 	}
 
-	return len(uniquePlayers)
+	return len(players)
 }
 
 func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, error) {
