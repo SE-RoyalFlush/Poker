@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
@@ -32,6 +33,35 @@ type Client struct {
 	user     *models.User
 	send     chan Message
 	roomCode string
+	mu       sync.Mutex
+	isClosed bool
+}
+
+// trySend delivers msg to the client's send channel without blocking.
+// It is safe to call concurrently and returns false when the client is
+// disconnecting or its send buffer is full (slow client).
+func (c *Client) trySend(msg Message) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.isClosed {
+		return false
+	}
+	select {
+	case c.send <- msg:
+		return true
+	default:
+		return false
+	}
+}
+
+// closeChannel closes the send channel exactly once, signalling WritePump to exit.
+func (c *Client) closeChannel() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.isClosed {
+		c.isClosed = true
+		close(c.send)
+	}
 }
 
 var upgrader = websocket.Upgrader{
@@ -70,6 +100,7 @@ func ServeWs(w http.ResponseWriter, r *http.Request, user *models.User) {
 func (c *Client) ReadPump() {
 	defer func() {
 		c.hub.Leave(c)
+		c.closeChannel()
 		_ = c.conn.Close()
 	}()
 
@@ -142,7 +173,7 @@ func (c *Client) handleJoinRoomMessage(payload json.RawMessage) error {
 	}
 
 	for _, message := range initialMessages {
-		c.send <- message
+		c.trySend(message)
 	}
 
 	return nil

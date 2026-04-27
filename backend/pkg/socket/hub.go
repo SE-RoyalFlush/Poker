@@ -16,24 +16,6 @@ const (
 
 var errMissingRoomCode = errors.New("missing room code")
 
-// safeSend attempts a non-blocking send of msg to ch.
-// It returns false without panicking if ch is full or already closed,
-// preventing the hub from blocking on slow clients or panicking on
-// concurrently-disconnecting ones.
-func safeSend(ch chan Message, msg Message) (sent bool) {
-	defer func() {
-		if recover() != nil {
-			sent = false
-		}
-	}()
-	select {
-	case ch <- msg:
-		return true
-	default:
-		return false
-	}
-}
-
 type Message struct {
 	Type    string      `json:"type"`
 	Payload interface{} `json:"payload"`
@@ -125,7 +107,7 @@ func (h *Hub) Join(roomModel *models.Room, client *Client) ([]Message, error) {
 	h.mu.Unlock()
 
 	for _, member := range recipients {
-		safeSend(member.send, broadcast)
+		member.trySend(broadcast)
 	}
 
 	initialMessages := make([]Message, 0, len(existingPlayers))
@@ -187,7 +169,7 @@ func (h *Hub) Leave(client *Client) {
 
 	if !hasActiveConnection {
 		for _, member := range recipients {
-			safeSend(member.send, leftMessage)
+			member.trySend(leftMessage)
 		}
 	}
 }
@@ -225,7 +207,7 @@ func (h *Hub) HandleRoomMessage(client *Client, messageType string) error {
 	h.mu.RUnlock()
 
 	for _, member := range recipients {
-		safeSend(member.send, message)
+		member.trySend(message)
 	}
 
 	return nil
