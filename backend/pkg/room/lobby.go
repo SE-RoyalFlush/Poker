@@ -4,15 +4,12 @@ import (
 	"errors"
 	"slices"
 	"sync"
+
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 )
 
 var (
 	ErrPlayerNotFound = errors.New("player not found")
-)
-
-const (
-	MessageTypeToggleReady  = "TOGGLE_READY"
-	MessageTypePlayerUpdate = "PLAYER_UPDATE"
 )
 
 // Player represents the public player state shared with room participants.
@@ -75,7 +72,7 @@ func (l *Lobby) ToggleReady(playerID uint) (Event, error) {
 	l.players[playerID] = player
 
 	return Event{
-		Type:    MessageTypePlayerUpdate,
+		Type:    protocol.ServerMsgPlayerUpdate,
 		Payload: player,
 	}, nil
 }
@@ -83,7 +80,7 @@ func (l *Lobby) ToggleReady(playerID uint) (Event, error) {
 // HandleMessage applies supported room messages and returns any event to broadcast.
 func (l *Lobby) HandleMessage(messageType string, playerID uint) (Event, error) {
 	switch messageType {
-	case MessageTypeToggleReady:
+	case protocol.ClientMsgToggleReady:
 		return l.ToggleReady(playerID)
 	default:
 		return Event{}, nil

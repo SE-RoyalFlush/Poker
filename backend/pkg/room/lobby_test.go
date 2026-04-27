@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
 )
 
@@ -19,13 +20,13 @@ func TestLobbyToggleReadyBroadcastsPlayerUpdate(t *testing.T) {
 		t.Fatal("expected joined player to start not ready")
 	}
 
-	event, err := lobby.HandleMessage(room.MessageTypeToggleReady, player.ID)
+	event, err := lobby.HandleMessage(protocol.ClientMsgToggleReady, player.ID)
 	if err != nil {
 		t.Fatalf("HandleMessage returned error: %v", err)
 	}
 
-	if event.Type != room.MessageTypePlayerUpdate {
-		t.Fatalf("expected event type %q, got %q", room.MessageTypePlayerUpdate, event.Type)
+	if event.Type != protocol.ServerMsgPlayerUpdate {
+		t.Fatalf("expected event type %q, got %q", protocol.ServerMsgPlayerUpdate, event.Type)
 	}
 	if event.Payload.ID != player.ID {
 		t.Fatalf("expected payload player ID %d, got %d", player.ID, event.Payload.ID)

@@ -11,6 +11,7 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/auth"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
 	"golang.org/x/net/websocket"
 )
@@ -110,16 +111,18 @@ func handleWebSocketConnection(conn *websocket.Conn, user *models.User) {
 		}
 
 		switch message.Type {
-		case messageTypeJoinRoom:
+		case protocol.ClientMsgJoinRoom:
 			if err := handleJoinRoomMessage(client, message.Payload); err != nil {
-				continue
+				sendWSError(client, "JOIN_FAILED", err.Error())
 			}
-		case messageTypeLeaveRoom:
+		case protocol.ClientMsgLeaveRoom:
 			globalWSHub.leave(client)
-		case room.MessageTypeToggleReady:
+		case protocol.ClientMsgToggleReady:
 			if err := globalWSHub.handleRoomMessage(client, message.Type); err != nil {
-				continue
+				sendWSError(client, "ROOM_ACTION_FAILED", err.Error())
 			}
+		default:
+			sendWSError(client, "UNKNOWN_TYPE", fmt.Sprintf("unrecognized message type: %q", message.Type))
 		}
 	}
 }
@@ -141,7 +144,7 @@ func writeWebSocketMessages(conn *websocket.Conn, client *wsClient) {
 }
 
 func handleJoinRoomMessage(client *wsClient, payload json.RawMessage) error {
-	var joinPayload joinRoomPayload
+	var joinPayload protocol.JoinRoomPayload
 	if err := json.Unmarshal(payload, &joinPayload); err != nil {
 		return err
 	}
@@ -182,4 +185,14 @@ func loadRoomByCode(code string) (*models.Room, error) {
 	}
 
 	return room.FindByCode(database, code)
+}
+
+func sendWSError(client *wsClient, code, msg string) {
+	safeSend(client.send, wsMessage{
+		Type: protocol.ServerMsgError,
+		Payload: protocol.ErrorPayload{
+			Code:    code,
+			Message: msg,
+		},
+	})
 }
