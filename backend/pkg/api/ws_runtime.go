@@ -12,6 +12,10 @@ func resetWebSocketStateForTesting() {
 	socket.ResetForTesting()
 }
 
+func (wsHubAdapter) activePlayerCount(roomCode string) int {
+	return socket.Occupancy(roomCode)
+}
+
 func (wsHubAdapter) occupancy(roomCode string) int {
 	return socket.Occupancy(roomCode)
 }

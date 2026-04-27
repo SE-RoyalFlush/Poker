@@ -153,14 +153,12 @@ var _ = Describe("Router", func() {
 			reqWithAuth.AddCookie(sessionCookie())
 			recWithAuth := httptest.NewRecorder()
 			router.ServeHTTP(recWithAuth, reqWithAuth)
-			expectedStatus := http.StatusNotImplemented
+			expectedStatus := http.StatusOK
 			switch req.target {
-			case "/api/rooms?status=open":
-				expectedStatus = http.StatusOK
 			case "/api/rooms":
-				expectedStatus = http.StatusOK
+				expectedStatus = http.StatusCreated
 			case "/api/rooms/join":
-				expectedStatus = http.StatusNotFound
+				expectedStatus = http.StatusBadRequest
 			case "/api/rooms/ABC123":
 				expectedStatus = http.StatusNotFound
 			case "/ws":

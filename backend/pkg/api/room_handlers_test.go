@@ -67,22 +67,24 @@ var _ = Describe("Room Handlers", func() {
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
-		Expect(rec.Code).To(Equal(http.StatusOK))
+		Expect(rec.Code).To(Equal(http.StatusCreated))
 
 		var body struct {
-			Code       string `json:"code"`
-			HostUserID uint   `json:"hostUserId"`
-			Status     string `json:"status"`
-			MaxPlayers int    `json:"maxPlayers"`
-			IsPrivate  bool   `json:"isPrivate"`
-			Seats      int    `json:"seats"`
-			IsFull     bool   `json:"isFull"`
+			Code           string `json:"code"`
+			HostUserID     uint   `json:"hostUserId"`
+			Status         string `json:"status"`
+			MaxPlayers     int    `json:"maxPlayers"`
+			CurrentPlayers int    `json:"currentPlayers"`
+			IsPrivate      bool   `json:"isPrivate"`
+			Seats          int    `json:"seats"`
+			IsFull         bool   `json:"isFull"`
 		}
 		Expect(json.NewDecoder(rec.Body).Decode(&body)).To(Succeed())
 		Expect(body.Code).To(MatchRegexp(`^[A-Z0-9]{6}$`))
 		Expect(body.HostUserID).To(Equal(user.ID))
 		Expect(body.Status).To(Equal(string(models.RoomStatusOpen)))
 		Expect(body.MaxPlayers).To(Equal(8))
+		Expect(body.CurrentPlayers).To(Equal(0))
 		Expect(body.IsPrivate).To(BeTrue())
 		Expect(body.Seats).To(Equal(8))
 		Expect(body.IsFull).To(BeFalse())
@@ -114,14 +116,16 @@ var _ = Describe("Room Handlers", func() {
 
 		Expect(rec.Code).To(Equal(http.StatusOK))
 		var body struct {
-			Code         string `json:"code"`
-			HostUsername string `json:"hostUsername"`
-			Status       string `json:"status"`
+			Code           string `json:"code"`
+			HostUsername   string `json:"hostUsername"`
+			Status         string `json:"status"`
+			CurrentPlayers int    `json:"currentPlayers"`
 		}
 		Expect(json.NewDecoder(rec.Body).Decode(&body)).To(Succeed())
 		Expect(body.Code).To(Equal("ZX98QP"))
 		Expect(body.HostUsername).To(Equal(user.Username))
 		Expect(body.Status).To(Equal(string(models.RoomStatusOpen)))
+		Expect(body.CurrentPlayers).To(Equal(0))
 	})
 
 	It("lists rooms filtered by status", func() {
@@ -196,7 +200,7 @@ var _ = Describe("Room Handlers", func() {
 		Expect(body.Code).To(Equal("JOIN01"))
 	})
 
-	It("returns 404 when joining an invalid or closed room", func() {
+	It("returns 400 for malformed join codes and 409 for closed rooms", func() {
 		database, err := db.GetDB()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(database.Create(&models.Room{
@@ -206,27 +210,43 @@ var _ = Describe("Room Handlers", func() {
 			MaxPlayers: 6,
 		}).Error).NotTo(HaveOccurred())
 
-		for _, body := range []string{`{"code":"BAD"}`, `{"code":"NOJOIN"}`} {
-			req := httptest.NewRequest(http.MethodPost, "/api/rooms/join", bytes.NewReader([]byte(body)))
+		cases := []struct {
+			body   string
+			status int
+		}{
+			{body: `{"code":"BAD"}`, status: http.StatusBadRequest},
+			{body: `{"code":"NOJOIN"}`, status: http.StatusConflict},
+		}
+
+		for _, tc := range cases {
+			req := httptest.NewRequest(http.MethodPost, "/api/rooms/join", bytes.NewReader([]byte(tc.body)))
 			req.Header.Set("Content-Type", "application/json")
 			req.AddCookie(sessionCookie())
 
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 
-			Expect(rec.Code).To(Equal(http.StatusNotFound), body)
+			Expect(rec.Code).To(Equal(tc.status), tc.body)
 		}
 	})
 
-	It("returns 404 for invalid or unknown room codes", func() {
-		for _, target := range []string{"/api/rooms/BADCODE", "/api/rooms/ABC123"} {
-			req := httptest.NewRequest(http.MethodGet, target, nil)
+	It("returns 400 for malformed room codes and 404 for unknown room codes", func() {
+		cases := []struct {
+			target string
+			status int
+		}{
+			{target: "/api/rooms/BADCODE", status: http.StatusBadRequest},
+			{target: "/api/rooms/ABC123", status: http.StatusNotFound},
+		}
+
+		for _, tc := range cases {
+			req := httptest.NewRequest(http.MethodGet, tc.target, nil)
 			req.AddCookie(sessionCookie())
 
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 
-			Expect(rec.Code).To(Equal(http.StatusNotFound), target)
+			Expect(rec.Code).To(Equal(tc.status), tc.target)
 		}
 	})
 
@@ -258,5 +278,43 @@ var _ = Describe("Room Handlers", func() {
 		router.ServeHTTP(rec, req)
 
 		Expect(rec.Code).To(Equal(http.StatusBadRequest))
+	})
+
+	It("persists and looks up room metadata without an active socket", func() {
+		req := httptest.NewRequest(http.MethodPost, "/api/rooms", bytes.NewReader([]byte(`{"maxPlayers":8,"isPrivate":true}`)))
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(sessionCookie())
+
+		createRec := httptest.NewRecorder()
+		router.ServeHTTP(createRec, req)
+
+		Expect(createRec.Code).To(Equal(http.StatusCreated))
+		var created struct {
+			Code           string `json:"code"`
+			HostUserID     uint   `json:"hostUserId"`
+			MaxPlayers     int    `json:"maxPlayers"`
+			CurrentPlayers int    `json:"currentPlayers"`
+			IsPrivate      bool   `json:"isPrivate"`
+		}
+		Expect(json.NewDecoder(createRec.Body).Decode(&created)).To(Succeed())
+		Expect(created.Code).NotTo(BeEmpty())
+		Expect(created.HostUserID).To(Equal(user.ID))
+		Expect(created.MaxPlayers).To(Equal(8))
+		Expect(created.CurrentPlayers).To(Equal(0))
+		Expect(created.IsPrivate).To(BeTrue())
+
+		lookupReq := httptest.NewRequest(http.MethodGet, "/api/rooms/"+created.Code, nil)
+		lookupReq.AddCookie(sessionCookie())
+		lookupRec := httptest.NewRecorder()
+		router.ServeHTTP(lookupRec, lookupReq)
+
+		Expect(lookupRec.Code).To(Equal(http.StatusOK))
+		var found struct {
+			Code           string `json:"code"`
+			CurrentPlayers int    `json:"currentPlayers"`
+		}
+		Expect(json.NewDecoder(lookupRec.Body).Decode(&found)).To(Succeed())
+		Expect(found.Code).To(Equal(created.Code))
+		Expect(found.CurrentPlayers).To(Equal(0))
 	})
 })
