@@ -5,29 +5,13 @@ import (
 	"sync"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
-)
-
-const (
-	MessageTypeJoinRoom     = "JOIN_ROOM"
-	MessageTypePlayerJoined = "PLAYER_JOINED"
-	MessageTypePlayerLeft   = "PLAYER_LEFT"
 )
 
 var errMissingRoomCode = errors.New("missing room code")
 
-type Message struct {
-	Type    string      `json:"type"`
-	Payload interface{} `json:"payload"`
-}
-
-type JoinRoomPayload struct {
-	RoomCode string `json:"roomCode"`
-}
-
-type PlayerLeftPayload struct {
-	ID uint `json:"id"`
-}
+type Message = protocol.Envelope[any]
 
 type roomState struct {
 	lobby   *room.Lobby
@@ -51,11 +35,55 @@ func ResetForTesting() {
 	defaultHub.Reset()
 }
 
+func Occupancy(roomCode string) int {
+	return defaultHub.Occupancy(roomCode)
+}
+
+func RoomOccupancy(roomCode string) int {
+	return defaultHub.Occupancy(roomCode)
+}
+
 func (h *Hub) Reset() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	h.rooms = make(map[string]*roomState)
+}
+
+func (h *Hub) Occupancy(roomCode string) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	state, ok := h.rooms[roomCode]
+	if !ok {
+		return 0
+	}
+
+	uniquePlayers := make(map[uint]struct{}, len(state.clients))
+	for client := range state.clients {
+		if client != nil && client.user != nil {
+			uniquePlayers[client.user.ID] = struct{}{}
+		}
+	}
+
+	return len(uniquePlayers)
+}
+
+func toProtocolPlayer(p room.Player) protocol.Player {
+	return protocol.Player{
+		ID:       p.ID,
+		Username: p.Username,
+		IsHost:   p.IsHost,
+		IsReady:  p.IsReady,
+	}
+}
+
+func toProtocolPlayers(players []room.Player) []protocol.Player {
+	result := make([]protocol.Player, len(players))
+	for i, p := range players {
+		result[i] = toProtocolPlayer(p)
+	}
+	return result
 }
 
 func (h *Hub) Join(roomModel *models.Room, client *Client) ([]Message, error) {
@@ -74,7 +102,7 @@ func (h *Hub) Join(roomModel *models.Room, client *Client) ([]Message, error) {
 		h.rooms[roomModel.Code] = state
 	}
 
-	client.roomCode = roomModel.Code
+	client.setRoomCode(roomModel.Code)
 	state.clients[client] = true
 
 	player := state.lobby.JoinPlayer(room.Player{
@@ -83,25 +111,25 @@ func (h *Hub) Join(roomModel *models.Room, client *Client) ([]Message, error) {
 		IsHost:   roomModel.HostUserID == client.user.ID,
 	})
 
-	existingPlayers := make([]room.Player, 0, len(state.clients))
-	for existingClient := range state.clients {
-		if existingClient == client {
-			continue
-		}
-		existingPlayer, ok := state.lobby.Player(existingClient.user.ID)
-		if ok {
-			existingPlayers = append(existingPlayers, existingPlayer)
-		}
-	}
-
 	broadcast := Message{
-		Type:    MessageTypePlayerJoined,
-		Payload: player,
+		Type:    protocol.ServerMsgPlayerJoined,
+		Payload: toProtocolPlayer(player),
 	}
 
 	recipients := make([]*Client, 0, len(state.clients))
 	for member := range state.clients {
+		if member == client {
+			continue
+		}
 		recipients = append(recipients, member)
+	}
+
+	snapshot := Message{
+		Type: protocol.ServerMsgRoomState,
+		Payload: protocol.RoomStatePayload{
+			RoomCode: roomModel.Code,
+			Players:  toProtocolPlayers(state.lobby.Players()),
+		},
 	}
 
 	h.mu.Unlock()
@@ -110,27 +138,24 @@ func (h *Hub) Join(roomModel *models.Room, client *Client) ([]Message, error) {
 		member.trySend(broadcast)
 	}
 
-	initialMessages := make([]Message, 0, len(existingPlayers))
-	for _, existingPlayer := range existingPlayers {
-		initialMessages = append(initialMessages, Message{
-			Type:    MessageTypePlayerJoined,
-			Payload: existingPlayer,
-		})
-	}
-
-	return initialMessages, nil
+	return []Message{snapshot}, nil
 }
 
 func (h *Hub) Leave(client *Client) {
-	if client == nil || client.roomCode == "" {
+	if client == nil {
+		return
+	}
+
+	roomCode := client.roomCodeValue()
+	if roomCode == "" {
 		return
 	}
 
 	h.mu.Lock()
 
-	state, ok := h.rooms[client.roomCode]
+	state, ok := h.rooms[roomCode]
 	if !ok {
-		client.roomCode = ""
+		client.setRoomCode("")
 		h.mu.Unlock()
 		return
 	}
@@ -151,8 +176,8 @@ func (h *Hub) Leave(client *Client) {
 		state.lobby.RemovePlayer(client.user.ID)
 
 		leftMessage = Message{
-			Type:    MessageTypePlayerLeft,
-			Payload: PlayerLeftPayload{ID: client.user.ID},
+			Type:    protocol.ServerMsgPlayerLeft,
+			Payload: protocol.PlayerLeftPayload{ID: client.user.ID},
 		}
 		recipients = make([]*Client, 0, len(state.clients))
 		for member := range state.clients {
@@ -161,10 +186,10 @@ func (h *Hub) Leave(client *Client) {
 	}
 
 	if len(state.clients) == 0 {
-		delete(h.rooms, client.roomCode)
+		delete(h.rooms, roomCode)
 	}
 
-	client.roomCode = ""
+	client.setRoomCode("")
 	h.mu.Unlock()
 
 	if !hasActiveConnection {
@@ -175,12 +200,17 @@ func (h *Hub) Leave(client *Client) {
 }
 
 func (h *Hub) HandleRoomMessage(client *Client, messageType string) error {
-	if client == nil || client.roomCode == "" {
+	if client == nil {
+		return nil
+	}
+
+	roomCode := client.roomCodeValue()
+	if roomCode == "" {
 		return nil
 	}
 
 	h.mu.RLock()
-	state, ok := h.rooms[client.roomCode]
+	state, ok := h.rooms[roomCode]
 	h.mu.RUnlock()
 	if !ok {
 		return nil
@@ -196,7 +226,7 @@ func (h *Hub) HandleRoomMessage(client *Client, messageType string) error {
 
 	message := Message{
 		Type:    event.Type,
-		Payload: event.Payload,
+		Payload: toProtocolPlayer(event.Payload),
 	}
 
 	h.mu.RLock()

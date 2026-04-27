@@ -2,6 +2,7 @@ package socket
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
 	"github.com/gorilla/websocket"
 )
@@ -22,10 +24,7 @@ const (
 	maxMessageSize = 4096
 )
 
-type incomingMessage struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
-}
+type incomingMessage = protocol.Envelope[json.RawMessage]
 
 type Client struct {
 	hub      *Hub
@@ -117,14 +116,18 @@ func (c *Client) ReadPump() {
 		}
 
 		switch message.Type {
-		case MessageTypeJoinRoom:
+		case protocol.ClientMsgJoinRoom:
 			if err := c.handleJoinRoomMessage(message.Payload); err != nil {
-				continue
+				c.sendError("JOIN_FAILED", err.Error())
 			}
-		case room.MessageTypeToggleReady:
+		case protocol.ClientMsgLeaveRoom:
+			c.hub.Leave(c)
+		case protocol.ClientMsgToggleReady:
 			if err := c.hub.HandleRoomMessage(c, message.Type); err != nil {
-				continue
+				c.sendError("ROOM_ACTION_FAILED", err.Error())
 			}
+		default:
+			c.sendError("UNKNOWN_TYPE", fmt.Sprintf("unrecognized message type: %q", message.Type))
 		}
 	}
 }
@@ -157,7 +160,7 @@ func (c *Client) WritePump() {
 }
 
 func (c *Client) handleJoinRoomMessage(payload json.RawMessage) error {
-	var joinPayload JoinRoomPayload
+	var joinPayload protocol.JoinRoomPayload
 	if err := json.Unmarshal(payload, &joinPayload); err != nil {
 		return err
 	}
@@ -165,6 +168,10 @@ func (c *Client) handleJoinRoomMessage(payload json.RawMessage) error {
 	roomModel, err := loadRoomByCode(joinPayload.RoomCode)
 	if err != nil {
 		return err
+	}
+
+	if currentRoom := c.roomCodeValue(); currentRoom != "" && currentRoom != roomModel.Code {
+		c.hub.Leave(c)
 	}
 
 	initialMessages, err := c.hub.Join(roomModel, c)
@@ -177,6 +184,30 @@ func (c *Client) handleJoinRoomMessage(payload json.RawMessage) error {
 	}
 
 	return nil
+}
+
+func (c *Client) sendError(code, msg string) {
+	c.trySend(Message{
+		Type: protocol.ServerMsgError,
+		Payload: protocol.ErrorPayload{
+			Code:    code,
+			Message: msg,
+		},
+	})
+}
+
+func (c *Client) roomCodeValue() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.roomCode
+}
+
+func (c *Client) setRoomCode(roomCode string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.roomCode = roomCode
 }
 
 func loadRoomByCode(code string) (*models.Room, error) {
