@@ -25,9 +25,10 @@ func NewRouter() *mux.Router {
 
 	protectedAPI := protected.PathPrefix("/api").Subrouter()
 	protectedAPI.HandleFunc("/me", MeHandler).Methods(http.MethodGet)
-	protectedAPI.HandleFunc("/rooms", RoomsHandler).Methods(http.MethodGet, http.MethodPost)
+	protectedAPI.HandleFunc("/rooms", RoomsHandler).Methods(http.MethodGet)
+	protectedAPI.HandleFunc("/rooms", CreateRoomHandler).Methods(http.MethodPost)
 	protectedAPI.HandleFunc("/rooms/join", JoinRoomHandler).Methods(http.MethodPost)
-	protectedAPI.HandleFunc("/rooms/{code}", RoomHandler).Methods(http.MethodGet)
+	protectedAPI.HandleFunc("/rooms/{code}", GetRoomHandler).Methods(http.MethodGet)
 
 	protected.HandleFunc("/ws", WebSocketHandler).Methods(http.MethodGet)
 

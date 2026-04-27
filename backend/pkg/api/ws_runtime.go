@@ -80,6 +80,25 @@ func toProtocolPlayers(players []room.Player) []protocol.Player {
 	return result
 }
 
+func (h *wsHub) occupancy(roomCode string) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	wsRoomState, ok := h.rooms[roomCode]
+	if !ok {
+		return 0
+	}
+
+	uniquePlayers := make(map[uint]struct{}, len(wsRoomState.clients))
+	for client := range wsRoomState.clients {
+		if client != nil && client.user != nil {
+			uniquePlayers[client.user.ID] = struct{}{}
+		}
+	}
+
+	return len(uniquePlayers)
+}
+
 func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, error) {
 	if roomModel == nil {
 		return nil, errMissingRoomCode

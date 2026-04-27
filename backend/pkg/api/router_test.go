@@ -93,7 +93,7 @@ var _ = Describe("Router", func() {
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
-		Expect(rec.Code).To(Equal(http.StatusNotImplemented))
+		Expect(rec.Code).To(Equal(http.StatusOK))
 	})
 
 	It("returns 401 for protected endpoints without auth", func() {
@@ -154,7 +154,16 @@ var _ = Describe("Router", func() {
 			recWithAuth := httptest.NewRecorder()
 			router.ServeHTTP(recWithAuth, reqWithAuth)
 			expectedStatus := http.StatusNotImplemented
-			if req.target == "/ws" {
+			switch req.target {
+			case "/api/rooms?status=open":
+				expectedStatus = http.StatusOK
+			case "/api/rooms":
+				expectedStatus = http.StatusOK
+			case "/api/rooms/join":
+				expectedStatus = http.StatusNotFound
+			case "/api/rooms/ABC123":
+				expectedStatus = http.StatusNotFound
+			case "/ws":
 				expectedStatus = http.StatusBadRequest
 			}
 			Expect(recWithAuth.Code).To(Equal(expectedStatus), req.target)
