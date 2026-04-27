@@ -16,10 +16,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type incomingWSMessage struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
-}
+type incomingWSMessage = protocol.Envelope[json.RawMessage]
 
 // allowedOrigins returns the list of origins permitted to open a WebSocket
 // connection. The list is read from the ALLOWED_ORIGINS environment variable
@@ -188,11 +185,16 @@ func loadRoomByCode(code string) (*models.Room, error) {
 }
 
 func sendWSError(client *wsClient, code, msg string) {
-	safeSend(client.send, wsMessage{
+	message := wsMessage{
 		Type: protocol.ServerMsgError,
 		Payload: protocol.ErrorPayload{
 			Code:    code,
 			Message: msg,
 		},
-	})
+	}
+
+	select {
+	case client.send <- message:
+	case <-client.done:
+	}
 }

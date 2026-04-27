@@ -40,9 +40,9 @@ const (
 )
 
 // Envelope is the shared wire format for all WebSocket messages.
-type Envelope struct {
+type Envelope[T any] struct {
 	Type    string `json:"type"`
-	Payload any    `json:"payload"`
+	Payload T      `json:"payload"`
 }
 
 // Player is the public player state transmitted over the wire.

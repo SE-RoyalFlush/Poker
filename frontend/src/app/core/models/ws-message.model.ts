@@ -7,11 +7,6 @@ import { Player } from './player.model';
  *   { type: 'JOIN_ROOM', payload: { roomCode: 'AB12CD' } }
  *   { type: 'PLAYER_JOINED', payload: { id: 1, username: 'alice', ... } }
  */
-export interface WsMessage<T = unknown> {
-  type: string;
-  payload: T;
-}
-
 /** Client → Server event type constants. */
 export const ClientMessageType = {
   JOIN_ROOM: 'JOIN_ROOM',
@@ -31,6 +26,12 @@ export const ServerMessageType = {
 } as const;
 
 export type ServerMessageType = (typeof ServerMessageType)[keyof typeof ServerMessageType];
+export type MessageType = ClientMessageType | ServerMessageType;
+
+export interface WsMessage<TPayload = unknown, TType extends MessageType = MessageType> {
+  type: TType;
+  payload: TPayload;
+}
 
 // ---------------------------------------------------------------------------
 // Payload schemas
@@ -62,11 +63,11 @@ export interface ErrorPayload {
 // Typed message aliases
 // ---------------------------------------------------------------------------
 
-export type JoinRoomMessage = WsMessage<JoinRoomPayload>;
-export type LeaveRoomMessage = WsMessage<Record<string, never>>;
-export type ToggleReadyMessage = WsMessage<Record<string, never>>;
-export type PlayerJoinedMessage = WsMessage<Player>;
-export type PlayerLeftMessage = WsMessage<PlayerLeftPayload>;
-export type PlayerUpdateMessage = WsMessage<Player>;
-export type RoomStateMessage = WsMessage<RoomStatePayload>;
-export type ErrorMessage = WsMessage<ErrorPayload>;
+export type JoinRoomMessage = WsMessage<JoinRoomPayload, typeof ClientMessageType.JOIN_ROOM>;
+export type LeaveRoomMessage = WsMessage<Record<string, never>, typeof ClientMessageType.LEAVE_ROOM>;
+export type ToggleReadyMessage = WsMessage<Record<string, never>, typeof ClientMessageType.TOGGLE_READY>;
+export type PlayerJoinedMessage = WsMessage<Player, typeof ServerMessageType.PLAYER_JOINED>;
+export type PlayerLeftMessage = WsMessage<PlayerLeftPayload, typeof ServerMessageType.PLAYER_LEFT>;
+export type PlayerUpdateMessage = WsMessage<Player, typeof ServerMessageType.PLAYER_UPDATE>;
+export type RoomStateMessage = WsMessage<RoomStatePayload, typeof ServerMessageType.ROOM_STATE>;
+export type ErrorMessage = WsMessage<ErrorPayload, typeof ServerMessageType.ERROR>;

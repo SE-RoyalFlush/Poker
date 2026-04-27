@@ -13,10 +13,7 @@ var (
 	errMissingRoomCode = errors.New("missing room code")
 )
 
-type wsMessage struct {
-	Type    string `json:"type"`
-	Payload any    `json:"payload"`
-}
+type wsMessage = protocol.Envelope[any]
 
 type wsClient struct {
 	user     *models.User
