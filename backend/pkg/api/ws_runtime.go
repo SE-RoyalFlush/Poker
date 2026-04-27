@@ -5,38 +5,15 @@ import (
 	"sync"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
-)
-
-const (
-	messageTypeJoinRoom     = "JOIN_ROOM"
-	messageTypeLeaveRoom    = "LEAVE_ROOM"
-	messageTypeRoomState    = "ROOM_STATE"
-	messageTypePlayerJoined = "PLAYER_JOINED"
-	messageTypePlayerLeft   = "PLAYER_LEFT"
 )
 
 var (
 	errMissingRoomCode = errors.New("missing room code")
 )
 
-type wsMessage struct {
-	Type    string      `json:"type"`
-	Payload interface{} `json:"payload"`
-}
-
-type joinRoomPayload struct {
-	RoomCode string `json:"roomCode"`
-}
-
-type playerLeftPayload struct {
-	ID uint `json:"id"`
-}
-
-type roomStatePayload struct {
-	RoomCode string        `json:"roomCode"`
-	Players  []room.Player `json:"players"`
-}
+type wsMessage = protocol.Envelope[any]
 
 type wsClient struct {
 	user     *models.User
@@ -86,6 +63,23 @@ func (h *wsHub) reset() {
 	h.rooms = make(map[string]*wsRoom)
 }
 
+func toProtocolPlayer(p room.Player) protocol.Player {
+	return protocol.Player{
+		ID:       p.ID,
+		Username: p.Username,
+		IsHost:   p.IsHost,
+		IsReady:  p.IsReady,
+	}
+}
+
+func toProtocolPlayers(players []room.Player) []protocol.Player {
+	result := make([]protocol.Player, len(players))
+	for i, p := range players {
+		result[i] = toProtocolPlayer(p)
+	}
+	return result
+}
+
 func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, error) {
 	if roomModel == nil {
 		return nil, errMissingRoomCode
@@ -114,8 +108,8 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 	})
 
 	broadcast := wsMessage{
-		Type:    messageTypePlayerJoined,
-		Payload: player,
+		Type:    protocol.ServerMsgPlayerJoined,
+		Payload: toProtocolPlayer(player),
 	}
 
 	recipients := make([]*wsClient, 0, len(wsRoomState.clients))
@@ -127,10 +121,10 @@ func (h *wsHub) join(roomModel *models.Room, client *wsClient) ([]wsMessage, err
 	}
 
 	snapshot := wsMessage{
-		Type: messageTypeRoomState,
-		Payload: roomStatePayload{
+		Type: protocol.ServerMsgRoomState,
+		Payload: protocol.RoomStatePayload{
 			RoomCode: roomModel.Code,
-			Players:  wsRoomState.lobby.Players(),
+			Players:  toProtocolPlayers(wsRoomState.lobby.Players()),
 		},
 	}
 
@@ -183,8 +177,8 @@ func (h *wsHub) leave(client *wsClient) {
 		wsRoomState.lobby.RemovePlayer(client.user.ID)
 
 		leftMessage = wsMessage{
-			Type:    messageTypePlayerLeft,
-			Payload: playerLeftPayload{ID: client.user.ID},
+			Type:    protocol.ServerMsgPlayerLeft,
+			Payload: protocol.PlayerLeftPayload{ID: client.user.ID},
 		}
 		recipients = make([]*wsClient, 0, len(wsRoomState.clients))
 		for member := range wsRoomState.clients {
@@ -238,7 +232,7 @@ func (h *wsHub) handleRoomMessage(client *wsClient, messageType string) error {
 
 	message := wsMessage{
 		Type:    event.Type,
-		Payload: event.Payload,
+		Payload: toProtocolPlayer(event.Payload),
 	}
 
 	h.mu.RLock()

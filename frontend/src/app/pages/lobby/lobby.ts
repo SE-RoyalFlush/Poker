@@ -14,17 +14,14 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { AuthService } from '../../core/services/auth.service';
 import { WebSocketService } from '../../core/services/websocket.service';
-import { Player, WsMessage } from '../../core/models';
-
-interface PlayerReadyPayload {
-  userId: number;
-  isReady: boolean;
-}
-
-interface RoomStatePayload {
-  roomCode: string;
-  players: Player[];
-}
+import {
+  ClientMessageType,
+  Player,
+  PlayerLeftPayload,
+  RoomStatePayload,
+  ServerMessageType,
+  WsMessage,
+} from '../../core/models';
 
 export interface ChatMessage {
   sender: string;
@@ -85,7 +82,7 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
     this.wsService.connected$
       .pipe(filter(v => v), takeUntil(this.destroy$))
       .subscribe(() => {
-        this.wsService.sendMessage('JOIN_ROOM', { roomCode: this.roomCode });
+        this.wsService.sendMessage(ClientMessageType.JOIN_ROOM, { roomCode: this.roomCode });
       });
 
     this.wsService.messages$
@@ -109,26 +106,22 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
   private handleMessage(msg: WsMessage): void {
     let playersChanged = false;
 
-    if (msg.type === 'ROOM_STATE') {
+    if (msg.type === ServerMessageType.ROOM_STATE) {
       const payload = msg.payload as RoomStatePayload;
       this.players = uniqBy(payload.players, 'id');
       playersChanged = true;
-    } else if (msg.type === 'PLAYER_JOINED') {
+    } else if (msg.type === ServerMessageType.PLAYER_JOINED) {
       const player = msg.payload as Player;
       this.players = uniqBy([...this.players, player], 'id');
       playersChanged = true;
-    } else if (msg.type === 'PLAYER_LEFT') {
-      const { id } = msg.payload as Pick<Player, 'id'>;
+    } else if (msg.type === ServerMessageType.PLAYER_LEFT) {
+      const { id } = msg.payload as PlayerLeftPayload;
       this.players = this.players.filter(p => p.id !== id);
       playersChanged = true;
-    } else if (msg.type === 'PLAYER_READY') {
-      const { userId, isReady } = msg.payload as PlayerReadyPayload;
-      this.players = this.players.map(p => p.id === userId ? { ...p, isReady } : p);
+    } else if (msg.type === ServerMessageType.PLAYER_UPDATE) {
+      const player = msg.payload as Player;
+      this.players = this.players.map(p => p.id === player.id ? { ...p, ...player } : p);
       playersChanged = true;
-    } else if (msg.type === 'CHAT_MESSAGE') {
-      const chatMsg = msg.payload as ChatMessage;
-      this.messages.push(chatMsg);
-      this.shouldScroll = true;
     }
 
     if (playersChanged) {
@@ -138,7 +131,7 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
 
   toggleReady(): void {
     this.isReady = !this.isReady;
-    this.wsService.sendMessage('PLAYER_READY', { isReady: this.isReady });
+    this.wsService.sendMessage(ClientMessageType.TOGGLE_READY, {});
   }
 
   sendMessage(): void {
