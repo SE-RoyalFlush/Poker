@@ -135,8 +135,8 @@ describe('WebSocketService', () => {
 
     it('should emit multiple messages in order', (done) => {
       const received: WsMessage[] = [];
-      const msg1: WsMessage = { type: 'EVENT_A', payload: {} };
-      const msg2: WsMessage = { type: 'EVENT_B', payload: { x: 1 } };
+      const msg1: WsMessage = { type: 'ROOM_STATE', payload: {} };
+      const msg2: WsMessage = { type: 'ERROR', payload: { x: 1 } };
 
       service.connect();
       mockSocket.simulateOpen();
