@@ -70,7 +70,6 @@ func ServeWs(w http.ResponseWriter, r *http.Request, user *models.User) {
 func (c *Client) ReadPump() {
 	defer func() {
 		c.hub.Leave(c)
-		close(c.send)
 		_ = c.conn.Close()
 	}()
 
