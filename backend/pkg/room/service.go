@@ -77,7 +77,7 @@ func FindByCode(database *gorm.DB, code string) (*models.Room, error) {
 
 // List returns persisted room metadata matching the supplied filters.
 func List(database *gorm.DB, params ListParams) ([]models.Room, error) {
-	query := database.Preload("HostUser").Order("created_at DESC")
+	query := database.Order("created_at DESC")
 	if params.Status != "" {
 		query = query.Where("status = ?", params.Status)
 	}
