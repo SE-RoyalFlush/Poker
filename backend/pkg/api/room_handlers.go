@@ -225,10 +225,11 @@ func writeRoomResponse(w http.ResponseWriter, status int, roomModel *models.Room
 
 func buildRoomResponse(roomModel *models.Room) roomResponse {
 	currentPlayers := globalWSHub.activePlayerCount(roomModel.Code)
-	seats := roomModel.MaxPlayers - currentPlayers
-	if seats < 0 {
-		seats = 0
+	if currentPlayers > roomModel.MaxPlayers {
+		log.Printf("WARNING: room %s hub player count (%d) exceeds maxPlayers (%d); capping for response", roomModel.Code, currentPlayers, roomModel.MaxPlayers)
+		currentPlayers = roomModel.MaxPlayers
 	}
+	seats := roomModel.MaxPlayers - currentPlayers
 
 	return roomResponse{
 		ID:             strconv.FormatUint(uint64(roomModel.ID), 10),
