@@ -16,8 +16,8 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
+	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/net/websocket"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -343,6 +343,43 @@ func TestWebSocketHandlerBroadcastShape(t *testing.T) {
 	}
 }
 
+func TestWebSocketHandlerRespondsToPing(t *testing.T) {
+	database := setupWebSocketTestDB(t)
+	resetWebSocketStateForTesting()
+	createWebSocketUser(t, database, "ping-user")
+
+	server := httptest.NewServer(NewRouter())
+	defer server.Close()
+
+	conn := dialWebSocket(t, server.URL, sessionCookieForTest(t, "ping-user"))
+	defer conn.Close()
+
+	pongReceived := make(chan struct{})
+	conn.SetPongHandler(func(string) error {
+		close(pongReceived)
+		return nil
+	})
+
+	if err := conn.WriteControl(websocket.PingMessage, []byte("heartbeat"), time.Now().Add(time.Second)); err != nil {
+		t.Fatalf("failed to send websocket ping: %v", err)
+	}
+
+	readDone := make(chan struct{})
+	go func() {
+		defer close(readDone)
+		_, _, _ = conn.ReadMessage()
+	}()
+
+	select {
+	case <-pongReceived:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected websocket pong response")
+	}
+
+	_ = conn.Close()
+	<-readDone
+}
+
 func setupWebSocketTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -426,14 +463,11 @@ func dialWebSocket(t *testing.T, serverURL string, cookie *http.Cookie) *websock
 	t.Helper()
 
 	wsURL := "ws" + serverURL[len("http"):] + "/ws"
-	config, err := websocket.NewConfig(wsURL, "http://localhost:4200")
-	if err != nil {
-		t.Fatalf("failed to create websocket config: %v", err)
-	}
-	config.Header = http.Header{}
-	config.Header.Set("Cookie", cookie.String())
+	header := http.Header{}
+	header.Set("Cookie", cookie.String())
+	header.Set("Origin", "http://localhost:4200")
 
-	conn, err := websocket.DialConfig(config)
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, header)
 	if err != nil {
 		t.Fatalf("failed to dial websocket: %v", err)
 	}
@@ -444,7 +478,7 @@ func dialWebSocket(t *testing.T, serverURL string, cookie *http.Cookie) *websock
 func writeWSMessage(t *testing.T, conn *websocket.Conn, message wsMessage) {
 	t.Helper()
 
-	if err := websocket.JSON.Send(conn, message); err != nil {
+	if err := conn.WriteJSON(message); err != nil {
 		t.Fatalf("failed to send websocket message: %v", err)
 	}
 }
@@ -452,12 +486,12 @@ func writeWSMessage(t *testing.T, conn *websocket.Conn, message wsMessage) {
 func readWSMessage(t *testing.T, conn *websocket.Conn) wsMessage {
 	t.Helper()
 
-	if err := conn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
-		t.Fatalf("failed to set websocket deadline: %v", err)
+	if err := conn.SetReadDeadline(time.Now().Add(2 * time.Second)); err != nil {
+		t.Fatalf("failed to set websocket read deadline: %v", err)
 	}
 
 	var message wsMessage
-	if err := websocket.JSON.Receive(conn, &message); err != nil {
+	if err := conn.ReadJSON(&message); err != nil {
 		t.Fatalf("failed to read websocket message: %v", err)
 	}
 
@@ -467,15 +501,15 @@ func readWSMessage(t *testing.T, conn *websocket.Conn) wsMessage {
 func expectNoWSMessage(t *testing.T, conn *websocket.Conn) {
 	t.Helper()
 
-	if err := conn.SetDeadline(time.Now().Add(500 * time.Millisecond)); err != nil {
-		t.Fatalf("failed to set websocket deadline: %v", err)
+	if err := conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond)); err != nil {
+		t.Fatalf("failed to set websocket read deadline: %v", err)
 	}
 	defer func() {
-		_ = conn.SetDeadline(time.Time{})
+		_ = conn.SetReadDeadline(time.Time{})
 	}()
 
 	var message wsMessage
-	if err := websocket.JSON.Receive(conn, &message); err == nil {
+	if err := conn.ReadJSON(&message); err == nil {
 		t.Fatalf("expected no websocket message, got %+v", message)
 	} else if !isTimeoutError(err) {
 		t.Fatalf("expected timeout while waiting for no websocket message, got %v", err)
