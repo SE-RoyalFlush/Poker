@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrInvalidMaxPlayers = errors.New("invalid max players")
+	ErrInvalidMaxPlayers  = errors.New("invalid max players")
+	ErrInvalidRoomStatus  = errors.New("invalid room status")
 )
 
 // CreateParams defines the persisted room attributes required for creation.
@@ -77,7 +78,11 @@ func FindByCode(database *gorm.DB, code string) (*models.Room, error) {
 
 // List returns persisted room metadata matching the supplied filters.
 func List(database *gorm.DB, params ListParams) ([]models.Room, error) {
-	query := database.Preload("HostUser").Order("created_at DESC")
+	if params.Status != "" && !IsValidStatus(params.Status) {
+		return nil, ErrInvalidRoomStatus
+	}
+
+	query := database.Order("created_at DESC")
 	if params.Status != "" {
 		query = query.Where("status = ?", params.Status)
 	}
@@ -88,6 +93,16 @@ func List(database *gorm.DB, params ListParams) ([]models.Room, error) {
 	}
 
 	return rooms, nil
+}
+
+// IsValidStatus reports whether s is a known RoomStatus constant.
+func IsValidStatus(s models.RoomStatus) bool {
+	switch s {
+	case models.RoomStatusOpen, models.RoomStatusClosed, models.RoomStatusInGame:
+		return true
+	default:
+		return false
+	}
 }
 
 func createWithGeneratedCode(database *gorm.DB, room *models.Room, generator codeGenerator) (*models.Room, error) {

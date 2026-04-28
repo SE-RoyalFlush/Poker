@@ -200,7 +200,7 @@ var _ = Describe("Room Handlers", func() {
 		Expect(body.Code).To(Equal("JOIN01"))
 	})
 
-	It("returns 400 for malformed join codes and 409 for closed rooms", func() {
+	It("returns 400 for malformed join codes and 404 for non-open rooms", func() {
 		database, err := db.GetDB()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(database.Create(&models.Room{
@@ -215,7 +215,7 @@ var _ = Describe("Room Handlers", func() {
 			status int
 		}{
 			{body: `{"code":"BAD"}`, status: http.StatusBadRequest},
-			{body: `{"code":"NOJOIN"}`, status: http.StatusConflict},
+			{body: `{"code":"NOJOIN"}`, status: http.StatusNotFound},
 		}
 
 		for _, tc := range cases {

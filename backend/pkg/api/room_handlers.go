@@ -112,7 +112,7 @@ func JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if roomModel.Status != models.RoomStatusOpen {
-		sendError(w, "Conflict", "Room is not open", http.StatusConflict)
+		sendError(w, "Not Found", "Room not found", http.StatusNotFound)
 		return
 	}
 
@@ -156,7 +156,7 @@ func listRooms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
-	if status != "" && !isValidRoomStatus(status) {
+	if status != "" && !room.IsValidStatus(models.RoomStatus(status)) {
 		sendError(w, "Bad Request", "Invalid room status", http.StatusBadRequest)
 		return
 	}
@@ -249,11 +249,3 @@ func buildRoomResponse(roomModel *models.Room) roomResponse {
 	}
 }
 
-func isValidRoomStatus(status string) bool {
-	switch models.RoomStatus(status) {
-	case models.RoomStatusOpen, models.RoomStatusClosed, models.RoomStatusInGame:
-		return true
-	default:
-		return false
-	}
-}
