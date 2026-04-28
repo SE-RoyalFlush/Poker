@@ -215,7 +215,7 @@ var _ = Describe("Room Handlers", func() {
 			status int
 		}{
 			{body: `{"code":"BAD"}`, status: http.StatusBadRequest},
-			{body: `{"code":"NOJOIN"}`, status: http.StatusNotFound},
+		{body: `{"code":"NOJOIN"}`, status: http.StatusNotFound},
 		}
 
 		for _, tc := range cases {
