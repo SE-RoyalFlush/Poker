@@ -42,10 +42,12 @@ export const routes: Routes = [
       {
         path: 'lobby/:code',
         loadComponent: () => import('./pages/lobby/lobby').then((m) => m.Lobby),
+        canActivate: [authGuard],
       },
       {
         path: 'table/:id',
         loadComponent: () => import('./pages/table/table').then((m) => m.Table),
+        canActivate: [authGuard],
       },
     ],
   },
