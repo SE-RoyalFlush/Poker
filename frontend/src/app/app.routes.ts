@@ -30,11 +30,6 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.DashboardComponent),
         canActivate: [authGuard],
       },
-      {
-        path: 'room/:code',
-        loadComponent: () => import('./pages/room/room').then((m) => m.RoomComponent),
-        canActivate: [authGuard],
-      },
     ],
   },
 
@@ -45,7 +40,7 @@ export const routes: Routes = [
       import('./layouts/protected-shell/protected-shell').then((m) => m.ProtectedShell),
     children: [
       {
-        path: 'lobby',
+        path: 'lobby/:code',
         loadComponent: () => import('./pages/lobby/lobby').then((m) => m.Lobby),
       },
       {

@@ -27,7 +27,7 @@ describe('Lobby Page', () => {
     cy.intercept('GET', '**/api/me', { ID: 1, username: 'ace' }).as('getMe');
     cy.intercept('GET', '**/api/csrf', { csrfToken: 'test-csrf' }).as('getCsrf');
 
-    cy.visit('/lobby?code=AB12CD');
+    cy.visit('/lobby/AB12CD');
   });
 
   it('should display the room code in the heading', () => {
@@ -54,7 +54,7 @@ describe('Lobby - Ready Button & Chat UI', () => {
     // Install the WebSocket stub via onBeforeLoad so it's in place before
     // Angular bootstraps — stubs set after cy.visit() apply to the replaced
     // window and won't intercept the app's WS constructor calls.
-    cy.visit('/lobby?code=AB12CD', {
+    cy.visit('/lobby/AB12CD', {
       onBeforeLoad(win) {
         const fakeWs = {
           readyState: WebSocket.OPEN,

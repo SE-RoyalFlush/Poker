@@ -67,7 +67,7 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
   ) {}
 
   ngOnInit(): void {
-    this.roomCode = this.route.snapshot.queryParamMap.get('code') ?? '';
+    this.roomCode = this.route.snapshot.paramMap.get('code') ?? '';
 
     if (!this.roomCode) {
       this.router.navigate(['/dashboard']);

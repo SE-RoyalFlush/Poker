@@ -23,7 +23,7 @@ describe('Dashboard - Create & Join Room', () => {
   });
 
   describe('Create Room', () => {
-    it('should call API and navigate to /room/code on success', () => {
+    it('should call API and navigate to /lobby/code on success', () => {
       cy.intercept('POST', '**/api/rooms', mockRoom).as('createRoom');
 
       cy.get('app-create-room').within(() => {
@@ -32,7 +32,7 @@ describe('Dashboard - Create & Join Room', () => {
       });
 
       cy.wait('@createRoom');
-      cy.url().should('include', '/room/AB12CD');
+      cy.url().should('include', '/lobby/AB12CD');
     });
 
     it('should show validation error when room name is empty', () => {
@@ -44,7 +44,7 @@ describe('Dashboard - Create & Join Room', () => {
   });
 
   describe('Join Room', () => {
-    it('should call API and navigate to /room/code on success', () => {
+    it('should call API and navigate to /lobby/code on success', () => {
       cy.intercept('POST', '**/api/rooms/join', mockRoom).as('joinRoom');
 
       cy.get('app-join-room').within(() => {
@@ -53,7 +53,7 @@ describe('Dashboard - Create & Join Room', () => {
       });
 
       cy.wait('@joinRoom');
-      cy.url().should('include', '/room/AB12CD');
+      cy.url().should('include', '/lobby/AB12CD');
     });
 
     it('should show validation error for invalid code format', () => {

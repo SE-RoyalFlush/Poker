@@ -72,12 +72,12 @@ describe('JoinRoomComponent', () => {
     expect(roomSpy.joinRoom).toHaveBeenCalledWith('AB12CD', undefined);
   });
 
-  it('should navigate to /room/code on success', () => {
+  it('should navigate to /lobby/code on success', () => {
     component.joinForm.patchValue({ roomCode: 'AB12CD' });
 
     component.onJoinRoom();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/room', mockRoom.code]);
+    expect(router.navigate).toHaveBeenCalledWith(['/lobby', mockRoom.code]);
   });
 
   it('should reveal password field on 403 response', () => {
