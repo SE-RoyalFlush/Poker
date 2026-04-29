@@ -1,11 +1,74 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+import { CardComponent } from '../../shared/card/card.component';
+import { AuthService } from '../../core/services/auth.service';
+import { GameStateService } from '../../core/services/game-state.service';
+import { GameState, Card, PlayerSeat } from '../../core/models/game-state.model';
 
 @Component({
   selector: 'app-table',
-  imports: [],
+  standalone: true,
+  imports: [CommonModule, CardComponent],
   templateUrl: './table.html',
   styleUrl: './table.scss',
 })
-export class Table {
+export class Table implements OnInit, OnDestroy {
+  private readonly destroy$ = new Subject<void>();
 
+  tableId = '';
+  gameState: GameState | null = null;
+
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly authService: AuthService,
+    private readonly gameStateService: GameStateService,
+  ) {}
+
+  ngOnInit(): void {
+    this.tableId = this.route.snapshot.paramMap.get('id') ?? '';
+
+    this.gameStateService.gameState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(state => { this.gameState = state; });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  get currentUsername(): string {
+    return this.authService.getCurrentUser()?.username ?? '';
+  }
+
+  get visibleCommunityCards(): Card[] {
+    const phase = this.gameState?.phase;
+    const all = this.gameState?.communityCards ?? [];
+    if (phase === 'flop')    return all.slice(0, 3);
+    if (phase === 'turn')    return all.slice(0, 4);
+    if (phase === 'river' || phase === 'showdown') return all.slice(0, 5);
+    return [];
+  }
+
+  get communityCardSlots(): Array<Card | null> {
+    const visible = this.visibleCommunityCards;
+    return Array.from({ length: 5 }, (_, i) => visible[i] ?? null);
+  }
+
+  get currentUserSeat(): PlayerSeat | undefined {
+    return this.gameState?.seats.find(s => s.isCurrentUser);
+  }
+
+  get opponentSeats(): PlayerSeat[] {
+    return this.gameState?.seats.filter(s => !s.isCurrentUser) ?? [];
+  }
+
+  get holeCardSlots(): Array<Card | null> {
+    const cards = this.currentUserSeat?.holeCards ?? [];
+    return Array.from({ length: 2 }, (_, i) => cards[i] ?? null);
+  }
 }

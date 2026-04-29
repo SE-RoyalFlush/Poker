@@ -1,0 +1,317 @@
+@use 'sass:map';
+
+:host {
+  display: block;
+
+  --rf-gold:        #C9A84C;
+  --rf-gold-light:  #E8C97A;
+  --rf-gold-dim:    #8A6D2F;
+  --rf-bg:          #0A0A0F;
+  --rf-bg-card:     #12121A;
+  --rf-bg-surface:  #1A1A26;
+  --rf-bg-hover:    #1F1F30;
+  --rf-text:        #F0EDE6;
+  --rf-text-muted:  #9A9385;
+  --rf-text-hint:   #5A5550;
+  --rf-border:      rgba(201, 168, 76, 0.15);
+  --rf-border-em:   rgba(201, 168, 76, 0.35);
+  --rf-radius:      12px;
+  --rf-radius-sm:   8px;
+  --rf-felt:        #1A4A2E;
+  --rf-felt-rim:    #0F2E1A;
+  --rf-felt-shadow: rgba(0, 0, 0, 0.6);
+}
+
+// ── Root ─────────────────────────────────────────────────────────────────────
+
+.rf-table {
+  min-height: 100vh;
+  background: var(--rf-bg);
+  color: var(--rf-text);
+  display: flex;
+  flex-direction: column;
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -5%, rgba(201, 168, 76, 0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 90% 80%, rgba(26, 157, 117, 0.04) 0%, transparent 50%);
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+
+.rf-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  background: rgba(10, 10, 15, 0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 0.5px solid var(--rf-border);
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--rf-gold);
+    letter-spacing: 0.02em;
+  }
+
+  &__badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--rf-gold) 0%, var(--rf-gold-dim) 100%);
+    color: #0A0A0F;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(201, 168, 76, 0.18);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    color: var(--rf-gold);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__username {
+    font-size: 14px;
+    color: var(--rf-text-muted);
+  }
+}
+
+// ── Arena ─────────────────────────────────────────────────────────────────────
+
+.rf-table__arena {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px 0;
+  gap: 24px;
+}
+
+// ── Felt (oval table) ─────────────────────────────────────────────────────────
+
+.rf-table__felt {
+  position: relative;
+  width: min(860px, 92vw);
+  aspect-ratio: 2 / 1;
+  background:
+    radial-gradient(ellipse 80% 80% at 50% 50%, #1f5a37 0%, var(--rf-felt) 60%, #0f2e1a 100%);
+  border: 8px solid var(--rf-felt-rim);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.35),
+    0 0 0 14px rgba(201, 168, 76, 0.14),
+    0 24px 80px var(--rf-felt-shadow);
+}
+
+// ── Community cards (center of felt) ──────────────────────────────────────────
+
+.rf-table__community {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rf-table__community-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ── Pot & phase info ──────────────────────────────────────────────────────────
+
+.rf-table__info {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 15%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rf-table__pot {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rf-gold);
+  letter-spacing: 0.04em;
+}
+
+.rf-table__phase-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rf-text-muted);
+  letter-spacing: 0.1em;
+  background: rgba(0, 0, 0, 0.35);
+  border: 0.5px solid var(--rf-border);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+// ── Empty card slot placeholder ────────────────────────────────────────────────
+
+.rf-table__card-slot {
+  width: 70px;
+  height: 100px;
+  border-radius: 8px;
+  border: 1.5px dashed rgba(201, 168, 76, 0.25);
+  background: rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+// ── Opponent seats ─────────────────────────────────────────────────────────────
+
+// Positions derived from ellipse parametric equations for a 2:1 oval.
+$seat-positions: (
+  0: (t:  2%, l: 50%),
+  1: (t:  8%, l: 75%),
+  2: (t: 30%, l: 93%),
+  3: (t: 70%, l: 84%),
+  4: (t: 88%, l: 67%),
+  5: (t: 88%, l: 33%),
+  6: (t: 70%, l: 16%),
+  7: (t: 30%, l:  7%),
+  8: (t:  8%, l: 25%),
+);
+
+.rf-seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  @each $i, $pos in $seat-positions {
+    &[data-seat='#{$i}'] {
+      top:  map.get($pos, t);
+      left: map.get($pos, l);
+    }
+  }
+
+  &__cards {
+    display: flex;
+    gap: 4px;
+
+    app-card {
+      --rf-card-w: 36px;
+      --rf-card-h: 51px;
+    }
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    background: rgba(10, 10, 15, 0.75);
+    border: 0.5px solid var(--rf-border);
+    border-radius: var(--rf-radius-sm);
+    padding: 3px 8px;
+    max-width: 90px;
+  }
+
+  &__username {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--rf-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+  }
+
+  &__chips {
+    font-size: 10px;
+    color: var(--rf-gold);
+    font-weight: 500;
+  }
+}
+
+// ── Player zone (current user, bottom bar) ────────────────────────────────────
+
+.rf-table__player-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 32px;
+}
+
+.rf-table__hole-cards {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.rf-table__player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.rf-table__player-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rf-text);
+}
+
+.rf-table__player-chips {
+  font-size: 13px;
+  color: var(--rf-gold);
+  font-weight: 500;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+
+@media (max-width: 600px) {
+  .rf-table__felt {
+    width: 98vw;
+  }
+
+  .rf-seat__cards app-card {
+    --rf-card-w: 28px;
+    --rf-card-h: 40px;
+  }
+
+  .rf-table__card-slot {
+    width: 52px;
+    height: 74px;
+  }
+}
