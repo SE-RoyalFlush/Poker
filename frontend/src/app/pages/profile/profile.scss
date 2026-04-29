@@ -1,4 +1,3 @@
-// ── Tokens (same root vars as landing) ─────────────────────────
 :host {
   display: block;
   --rf-gold:       #C9A84C;
@@ -10,12 +9,13 @@
   --rf-text-hint:  #5A5550;
   --rf-border:     rgba(201,168,76,0.15);
   --rf-border-em:  rgba(201,168,76,0.35);
+  --rf-green:      #1A9D75;
+  --rf-red:        #C94C4C;
   --rf-radius:     12px;
   --rf-radius-sm:  8px;
 }
 
-// ── Host ────────────────────────────────────────────────────────
-.rf-dash {
+.rf-profile {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -39,42 +39,133 @@
     z-index: 1;
     flex: 1;
     padding: 100px 48px 80px;
-    max-width: 1100px;
+    max-width: 900px;
     margin: 0 auto;
     width: 100%;
 
     @media (max-width: 600px) { padding: 88px 20px 60px; }
   }
 
-  &__header {
-    margin-bottom: 48px;
+  &__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding-top: 80px;
   }
 
-  &__greeting {
-    font-size: clamp(32px, 5vw, 52px);
+  &__loading-text {
+    color: var(--rf-text-muted);
+    font-size: 15px;
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding-top: 80px;
+    text-align: center;
+  }
+
+  &__empty-icon {
+    font-size: 56px;
+    color: var(--rf-text-hint);
+    line-height: 1;
+  }
+
+  &__empty-msg {
+    font-size: 17px;
+    color: var(--rf-text-muted);
+    margin: 0;
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  &__avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.18);
+    color: var(--rf-gold);
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--rf-border-em);
+  }
+
+  &__title {
+    font-size: clamp(28px, 4vw, 42px);
     font-weight: 800;
     letter-spacing: -0.025em;
-    line-height: 1.1;
-    margin: 0 0 10px;
+    margin: 0;
     color: var(--rf-text);
-
-    &--accent { color: var(--rf-gold); }
   }
 
-  &__sub {
-    font-size: 16px;
+  &__subtitle {
+    font-size: 14px;
     color: var(--rf-text-muted);
-    font-weight: 300;
     margin: 0;
+    font-family: 'Courier New', monospace;
   }
 
   &__cards {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    align-items: start;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
 
-    @media (max-width: 800px) { grid-template-columns: 1fr; }
+    @media (max-width: 640px) { grid-template-columns: 1fr; }
+  }
+
+  &__back-btn {
+    margin-top: 8px;
+  }
+}
+
+// ── Stat cards ───────────────────────────────────────────────────
+.rf-stat-card {
+  background: var(--rf-bg-card);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s;
+
+  &:hover { border-color: var(--rf-border-em); }
+
+  &--wide {
+    grid-column: 1 / -1;
+    align-items: center;
+    text-align: center;
+    padding: 32px;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rf-text-muted);
+  }
+
+  &__value {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: var(--rf-gold);
+
+    &--positive { color: var(--rf-green); }
+    &--negative { color: var(--rf-red); }
   }
 }
 
@@ -120,42 +211,11 @@
     letter-spacing: 0.03em;
   }
 
-  &__user {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  &__username {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--rf-text-muted);
-
-    @media (max-width: 480px) { display: none; }
-  }
-
-  &__avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: rgba(201,168,76,0.18);
-    color: var(--rf-gold);
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background 0.2s;
-
-    &:hover { background: rgba(201,168,76,0.30); }
-  }
-
-  &__logout {
-    font-size: 13px !important;
-    border-color: var(--rf-border) !important;
+  &__back {
+    font-size: 13px;
     color: var(--rf-text-muted) !important;
+    border-color: var(--rf-border) !important;
+    text-decoration: none;
 
     &:hover { border-color: var(--rf-border-em) !important; color: var(--rf-text) !important; }
   }
@@ -179,8 +239,10 @@
   &__suits { font-size: 16px; letter-spacing: 8px; color: var(--rf-text-hint); }
 }
 
-// ── Material theme overrides ─────────────────────────────────────
-.rf-dash {
+// ── Material spinner override ────────────────────────────────────
+.rf-profile {
+  mat-spinner circle { stroke: var(--rf-gold) !important; }
+
   .mat-mdc-outlined-button {
     border-color: var(--rf-border-em) !important;
     color: var(--rf-gold) !important;

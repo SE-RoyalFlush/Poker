@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: User Stats Profile Page (Issue #92)](https://github.com/SE-RoyalFlush/Poker/issues/92)
+    - Added `StatsService` at `frontend/src/app/core/services/stats.service.ts` with `getUserStats(userId): Observable<UserStats>` calling `GET /api/users/:id/stats`
+    - Defined `UserStats` interface: `handsPlayed`, `wins`, `losses`, `winRate`, `totalEarnings`
+    - Created `ProfileComponent` at `frontend/src/app/pages/profile/` with loading spinner, stat cards, error/empty state, and toast on API failure
+    - Route `/profile/:id` added with `AuthGuard` (unauthenticated users redirected to `/`)
+    - Dashboard avatar updated to link to the current user's profile at `/profile/:id`
+    - Added 4 `StatsService` unit tests (endpoint URL, success, error propagation) and 8 `ProfileComponent` unit tests (loading, success, error states)
+    - Exported `StatsService` and `UserStats` from core services barrel (`core/services/index.ts`)
 - [Frontend: Game State Visualization — Pot, Active Player, Phase Badge & Winner Overlay (Issue #74)](https://github.com/SE-RoyalFlush/Poker/issues/74)
     - Pot display (`[data-cy="pot-display"]`) updates reactively on every `PLAYER_ACTION` and `PHASE_CHANGE` event via `GameStateService.gameState$`
     - Active opponent seat highlighted with a gold ring/glow (`rf-seat--active` class) driven by `PlayerSeat.isActive`; current-user zone gains `rf-player-zone--active` with a pulsing chip count and "Your turn" label

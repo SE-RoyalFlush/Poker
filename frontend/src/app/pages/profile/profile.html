@@ -1,0 +1,83 @@
+<div class="rf-profile">
+
+  <!-- ── NAV ── -->
+  <nav class="rf-nav" role="navigation" aria-label="App navigation">
+    <a class="rf-nav__logo" routerLink="/dashboard" aria-label="Royal Flush dashboard">
+      <span class="rf-nav__logo-badge" aria-hidden="true">RF</span>
+      <span class="rf-nav__logo-text">Royal Flush</span>
+    </a>
+    <a class="rf-nav__back" routerLink="/dashboard" mat-stroked-button aria-label="Back to dashboard">
+      ← Dashboard
+    </a>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="rf-profile__main" role="main">
+
+    <!-- Loading -->
+    <div class="rf-profile__loading" *ngIf="isLoading" aria-live="polite" aria-label="Loading stats">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p class="rf-profile__loading-text">Loading stats…</p>
+    </div>
+
+    <!-- Error / empty state -->
+    <div class="rf-profile__empty" *ngIf="!isLoading && hasError" role="alert">
+      <span class="rf-profile__empty-icon" aria-hidden="true">♠</span>
+      <p class="rf-profile__empty-msg">Stats unavailable. Try again later.</p>
+      <a routerLink="/dashboard" mat-stroked-button class="rf-profile__back-btn">Back to Dashboard</a>
+    </div>
+
+    <!-- Stats content -->
+    <ng-container *ngIf="!isLoading && !hasError && stats">
+
+      <header class="rf-profile__header">
+        <div class="rf-profile__avatar" aria-hidden="true">
+          {{ userId[0]?.toUpperCase() ?? '?' }}
+        </div>
+        <h1 class="rf-profile__title">Player Stats</h1>
+        <p class="rf-profile__subtitle">ID: {{ userId }}</p>
+      </header>
+
+      <div class="rf-profile__cards" aria-label="Player statistics">
+
+        <div class="rf-stat-card">
+          <span class="rf-stat-card__label">Hands Played</span>
+          <span class="rf-stat-card__value">{{ stats.handsPlayed | number }}</span>
+        </div>
+
+        <div class="rf-stat-card">
+          <span class="rf-stat-card__label">Wins</span>
+          <span class="rf-stat-card__value rf-stat-card__value--positive">{{ stats.wins | number }}</span>
+        </div>
+
+        <div class="rf-stat-card">
+          <span class="rf-stat-card__label">Losses</span>
+          <span class="rf-stat-card__value rf-stat-card__value--negative">{{ stats.losses | number }}</span>
+        </div>
+
+        <div class="rf-stat-card">
+          <span class="rf-stat-card__label">Win Rate</span>
+          <span class="rf-stat-card__value">{{ stats.winRate | number: '1.1-1' }}%</span>
+        </div>
+
+        <div class="rf-stat-card rf-stat-card--wide">
+          <span class="rf-stat-card__label">Total Earnings</span>
+          <span class="rf-stat-card__value"
+                [class.rf-stat-card__value--positive]="stats.totalEarnings >= 0"
+                [class.rf-stat-card__value--negative]="stats.totalEarnings < 0">
+            {{ stats.totalEarnings >= 0 ? '+' : '' }}{{ stats.totalEarnings | number: '1.2-2' }}
+          </span>
+        </div>
+
+      </div>
+    </ng-container>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="rf-footer" role="contentinfo">
+    <span class="rf-footer__copy">© 2025 Royal Flush · Play responsibly · 18+</span>
+    <span class="rf-footer__suits" aria-hidden="true">♥ ♠ ♦ ♣</span>
+  </footer>
+
+</div>
