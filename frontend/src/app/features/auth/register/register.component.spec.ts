@@ -2,28 +2,27 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { of, throwError } from 'rxjs';
-import { AuthService } from '../../../core/services';
+import { AuthService, ToastNotificationService } from '../../../core/services';
 import { RegisterComponent } from './register.component';
 
 describe('RegisterComponent', () => {
   let fixture: ComponentFixture<RegisterComponent>;
   let component: RegisterComponent;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+  let toastSpy: jasmine.SpyObj<ToastNotificationService>;
   let router: Router;
 
   beforeEach(async () => {
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['register', 'login']);
-    snackBarSpy = jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
+    toastSpy = jasmine.createSpyObj<ToastNotificationService>('ToastNotificationService', ['show', 'dismiss']);
 
     await TestBed.configureTestingModule({
       imports: [RegisterComponent, NoopAnimationsModule],
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: authServiceSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: ToastNotificationService, useValue: toastSpy },
       ],
     }).compileComponents();
 

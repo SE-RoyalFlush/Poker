@@ -1,9 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
-import { AuthService, RoomService } from '../../core/services';
+import { AuthService, RoomService, ToastNotificationService } from '../../core/services';
 import { HomeComponent } from './home.component';
 
 const mockRoom = {
@@ -25,13 +24,13 @@ describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let authSpy: jasmine.SpyObj<AuthService>;
   let roomSpy: jasmine.SpyObj<RoomService>;
-  let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+  let toastSpy: jasmine.SpyObj<ToastNotificationService>;
   let router: Router;
 
   beforeEach(async () => {
     authSpy = jasmine.createSpyObj<AuthService>('AuthService', ['login', 'register', 'isAuthenticated']);
     roomSpy = jasmine.createSpyObj<RoomService>('RoomService', ['joinRoom']);
-    snackBarSpy = jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
+    toastSpy = jasmine.createSpyObj<ToastNotificationService>('ToastNotificationService', ['show', 'dismiss']);
 
     authSpy.login.and.returnValue(of({ id: 1, username: 'ace' }));
     authSpy.register.and.returnValue(of({ id: 2, username: 'shark' }));
@@ -43,7 +42,7 @@ describe('HomeComponent', () => {
         provideRouter([]),
         { provide: AuthService, useValue: authSpy },
         { provide: RoomService, useValue: roomSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: ToastNotificationService, useValue: toastSpy },
       ],
     }).compileComponents();
 
