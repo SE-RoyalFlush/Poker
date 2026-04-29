@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Game Controls Component (Issue #72)](https://github.com/SE-RoyalFlush/Poker/issues/72)
+    - Added `GameControlsComponent` at `frontend/src/app/features/table/game-controls/` with Check, Call, Raise, and Fold action buttons
+    - All buttons disabled (greyed out) when `isActivePlayer === false`; pointer-events blocked via CSS for the inactive state
+    - Raise button toggles an amount input panel with reactive form validation: `min` = `callAmount` (or 1 if zero), optional `max` = `maxRaise`
+    - Emits typed `GameAction` events `{ type: 'CHECK' | 'CALL' | 'RAISE' | 'FOLD', amount?: number }` via `(action)` output
+    - `GameControlsComponent` integrated into the `Table` page player zone (`frontend/src/app/pages/table/`)
+    - Added 18 unit tests covering disabled states, action emissions, raise panel toggle, form validation (min/max), and post-raise cleanup
 - [Frontend: Poker Table Layout Component (Issue #71)](https://github.com/SE-RoyalFlush/Poker/issues/71)
     - Replaced stub `TableComponent` with a full Texas Hold'em layout at `/table/:id`
     - Added `GameStateService` in `frontend/src/app/core/services/` exposing a `BehaviorSubject<GameState>` with `gameState$` observable and `patchState()` method for future WebSocket integration
