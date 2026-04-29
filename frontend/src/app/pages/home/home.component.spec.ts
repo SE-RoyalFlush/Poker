@@ -6,6 +6,20 @@ import { of } from 'rxjs';
 import { AuthService, RoomService } from '../../core/services';
 import { HomeComponent } from './home.component';
 
+const mockRoom = {
+  id: 'r1',
+  code: 'AB12CD',
+  name: 'Test Table',
+  gameType: 'NLH',
+  smallBlind: 1,
+  bigBlind: 2,
+  maxPlayers: 9,
+  currentPlayers: 4,
+  isPrivate: false,
+  isFull: false,
+  seats: 5,
+};
+
 describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
@@ -71,5 +85,16 @@ describe('HomeComponent', () => {
 
     expect(component.activePanel).toBe('login');
     expect(roomSpy.joinRoom).not.toHaveBeenCalled();
+  });
+
+  it('should navigate to /lobby/code when an authenticated user joins a room', () => {
+    authSpy.isAuthenticated.and.returnValue(true);
+    roomSpy.joinRoom.and.returnValue(of(mockRoom));
+    component.joinForm.setValue({ roomCode: 'ab12cd' });
+
+    component.onJoinRoom();
+
+    expect(roomSpy.joinRoom).toHaveBeenCalledWith('AB12CD');
+    expect(router.navigate).toHaveBeenCalledWith(['/lobby', mockRoom.code]);
   });
 });

@@ -79,7 +79,7 @@ export class JoinRoomComponent implements OnInit {
     this.roomService.joinRoom(normalizeRoomCode(roomCode), joinPassword || undefined).subscribe({
       next: (room) => {
         this.joinLoading = false;
-        this.router.navigate(['/room', room.code]);
+        this.router.navigate(['/lobby', room.code]);
       },
       error: (err) => {
         this.joinLoading = false;
