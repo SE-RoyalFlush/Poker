@@ -11,9 +11,10 @@
       <span class="rf-nav__username" aria-label="Logged in as {{ currentUser.username }}">
         {{ currentUser.username }}
       </span>
-      <div class="rf-nav__avatar" aria-hidden="true">
+      <a class="rf-nav__avatar" [routerLink]="['/profile', currentUser.id]"
+         aria-label="View my profile">
         {{ currentUser.username[0].toUpperCase() }}
-      </div>
+      </a>
       <button mat-stroked-button class="rf-nav__logout"
               (click)="onLogout()" aria-label="Log out">
         Log Out
