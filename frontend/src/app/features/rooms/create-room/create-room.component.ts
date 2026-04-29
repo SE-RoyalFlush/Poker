@@ -71,7 +71,7 @@ export class CreateRoomComponent implements OnInit {
     this.roomService.createRoom(payload).subscribe({
       next: (room) => {
         this.createLoading = false;
-        this.router.navigate(['/room', room.code]);
+        this.router.navigate(['/lobby', room.code]);
       },
       error: (err) => {
         this.createLoading = false;
