@@ -7,6 +7,12 @@
       <span class="rf-nav__logo-text">Royal Flush</span>
     </a>
 
+    <div class="rf-nav__links">
+      <a class="rf-nav__link" routerLink="/leaderboard" mat-stroked-button aria-label="View leaderboard">
+        Leaderboard
+      </a>
+    </div>
+
     <div class="rf-nav__user" *ngIf="currentUser">
       <span class="rf-nav__username" aria-label="Logged in as {{ currentUser.username }}">
         {{ currentUser.username }}

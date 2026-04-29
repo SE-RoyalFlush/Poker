@@ -14,3 +14,4 @@ export * from './websocket.service';
 export * from './game-state.service';
 export * from './toast.service';
 export * from './stats.service';
+export * from './leaderboard.service';

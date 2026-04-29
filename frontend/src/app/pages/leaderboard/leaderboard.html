@@ -1,0 +1,132 @@
+<div class="rf-lb">
+
+  <!-- ── NAV ── -->
+  <nav class="rf-nav" role="navigation" aria-label="App navigation">
+    <a class="rf-nav__logo" routerLink="/home" aria-label="Royal Flush home">
+      <span class="rf-nav__logo-badge" aria-hidden="true">RF</span>
+      <span class="rf-nav__logo-text">Royal Flush</span>
+    </a>
+    <div class="rf-nav__links">
+      <a class="rf-nav__link" routerLink="/dashboard" mat-stroked-button>Dashboard</a>
+      <a class="rf-nav__link rf-nav__link--active" routerLink="/leaderboard" mat-stroked-button aria-current="page">Leaderboard</a>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="rf-lb__main" role="main">
+
+    <header class="rf-lb__header">
+      <h1 class="rf-lb__title">Leaderboard</h1>
+      <p class="rf-lb__subtitle">Top players ranked by total earnings</p>
+    </header>
+
+    <!-- Loading skeleton -->
+    <div class="rf-lb__loading" *ngIf="isLoading" aria-live="polite" aria-label="Loading leaderboard">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p class="rf-lb__loading-text">Loading leaderboard…</p>
+    </div>
+
+    <!-- Error / empty state -->
+    <div class="rf-lb__empty" *ngIf="!isLoading && hasError" role="alert">
+      <span class="rf-lb__empty-icon" aria-hidden="true">♠</span>
+      <p class="rf-lb__empty-msg">Leaderboard unavailable. Try again later.</p>
+      <a routerLink="/dashboard" mat-stroked-button class="rf-lb__back-btn">Back to Dashboard</a>
+    </div>
+
+    <!-- Empty state (no data) -->
+    <div class="rf-lb__empty" *ngIf="!isLoading && !hasError && sortedEntries.length === 0">
+      <span class="rf-lb__empty-icon" aria-hidden="true">♦</span>
+      <p class="rf-lb__empty-msg">No players ranked yet. Be the first!</p>
+    </div>
+
+    <!-- Table -->
+    <ng-container *ngIf="!isLoading && !hasError && sortedEntries.length > 0">
+
+      <!-- Sort hint -->
+      <p class="rf-lb__sort-hint" aria-live="polite">
+        Sorted by:
+        <strong>{{ activeSortField === 'totalEarnings' ? 'Total Earnings' : activeSortField === 'winRate' ? 'Win Rate' : 'Wins' }}</strong>
+        — click a column header to cycle the sort
+      </p>
+
+      <div class="rf-lb__table-wrap" role="region" aria-label="Player leaderboard">
+        <table class="rf-lb__table" aria-label="Leaderboard">
+          <thead>
+            <tr>
+              <th class="rf-lb__th rf-lb__th--rank" scope="col">Rank</th>
+              <th class="rf-lb__th" scope="col">Username</th>
+              <th class="rf-lb__th" scope="col">Hands Played</th>
+              <th class="rf-lb__th rf-lb__th--sortable"
+                  [class.rf-lb__th--active]="isSortActive('wins')"
+                  (click)="onSortClick('wins')"
+                  scope="col"
+                  tabindex="0"
+                  (keydown.enter)="onSortClick('wins')"
+                  (keydown.space)="onSortClick('wins')"
+                  role="button"
+                  aria-label="Sort by wins">
+                Wins <span class="rf-lb__sort-icon" aria-hidden="true">{{ isSortActive('wins') ? '▼' : '⇅' }}</span>
+              </th>
+              <th class="rf-lb__th rf-lb__th--sortable"
+                  [class.rf-lb__th--active]="isSortActive('winRate')"
+                  (click)="onSortClick('winRate')"
+                  scope="col"
+                  tabindex="0"
+                  (keydown.enter)="onSortClick('winRate')"
+                  (keydown.space)="onSortClick('winRate')"
+                  role="button"
+                  aria-label="Sort by win rate">
+                Win Rate <span class="rf-lb__sort-icon" aria-hidden="true">{{ isSortActive('winRate') ? '▼' : '⇅' }}</span>
+              </th>
+              <th class="rf-lb__th rf-lb__th--sortable"
+                  [class.rf-lb__th--active]="isSortActive('totalEarnings')"
+                  (click)="onSortClick('totalEarnings')"
+                  scope="col"
+                  tabindex="0"
+                  (keydown.enter)="onSortClick('totalEarnings')"
+                  (keydown.space)="onSortClick('totalEarnings')"
+                  role="button"
+                  aria-label="Sort by total earnings">
+                Total Earnings <span class="rf-lb__sort-icon" aria-hidden="true">{{ isSortActive('totalEarnings') ? '▼' : '⇅' }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of sortedEntries; let i = index"
+                class="rf-lb__row"
+                [ngClass]="rankClass(i)">
+              <td class="rf-lb__td rf-lb__td--rank">
+                <span class="rf-lb__rank-badge" [attr.aria-label]="'Rank ' + (i + 1)">
+                  {{ i + 1 }}
+                </span>
+              </td>
+              <td class="rf-lb__td">
+                <a class="rf-lb__username-link"
+                   [routerLink]="['/profile', entry.userId]"
+                   [attr.aria-label]="'View profile for ' + entry.username">
+                  {{ entry.username }}
+                </a>
+              </td>
+              <td class="rf-lb__td">{{ entry.handsPlayed | number }}</td>
+              <td class="rf-lb__td">{{ entry.wins | number }}</td>
+              <td class="rf-lb__td">{{ entry.winRate | number: '1.1-1' }}%</td>
+              <td class="rf-lb__td"
+                  [class.rf-lb__td--positive]="entry.totalEarnings >= 0"
+                  [class.rf-lb__td--negative]="entry.totalEarnings < 0">
+                {{ entry.totalEarnings >= 0 ? '+' : '' }}{{ entry.totalEarnings | number: '1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="rf-footer" role="contentinfo">
+    <span class="rf-footer__copy">© 2025 Royal Flush · Play responsibly · 18+</span>
+    <span class="rf-footer__suits" aria-hidden="true">♥ ♠ ♦ ♣</span>
+  </footer>
+
+</div>
