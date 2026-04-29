@@ -7,7 +7,7 @@ import { takeUntil } from 'rxjs/operators';
 import { CardComponent } from '../../shared/card/card.component';
 import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
-import { GameState, Card, PlayerSeat } from '../../core/models/game-state.model';
+import { GameState, Card, PlayerSeat, WinnerInfo } from '../../core/models/game-state.model';
 import { GameControlsComponent, GameAction } from '../../features/table/game-controls/game-controls.component';
 
 @Component({
@@ -22,6 +22,7 @@ export class Table implements OnInit, OnDestroy {
 
   tableId = '';
   gameState: GameState | null = null;
+  winner: WinnerInfo | null = null;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -35,6 +36,10 @@ export class Table implements OnInit, OnDestroy {
     this.gameStateService.gameState$
       .pipe(takeUntil(this.destroy$))
       .subscribe(state => { this.gameState = state; });
+
+    this.gameStateService.winner$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(winner => { this.winner = winner; });
   }
 
   ngOnDestroy(): void {
@@ -75,6 +80,22 @@ export class Table implements OnInit, OnDestroy {
 
   get isActivePlayer(): boolean {
     return this.currentUserSeat?.isActive ?? false;
+  }
+
+  get phasLabel(): string {
+    const labels: Record<string, string> = {
+      'waiting':  'Waiting',
+      'pre-flop': 'Pre-Flop',
+      'flop':     'Flop',
+      'turn':     'Turn',
+      'river':    'River',
+      'showdown': 'Showdown',
+    };
+    return labels[this.gameState?.phase ?? 'waiting'] ?? 'Waiting';
+  }
+
+  dismissWinner(): void {
+    this.winner = null;
   }
 
   get callAmount(): number {

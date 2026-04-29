@@ -35,13 +35,14 @@
       <!-- Pot & phase info -->
       <div class="rf-table__info">
         <span class="rf-table__pot" data-cy="pot-display">Pot: ${{ gameState?.pot ?? 0 }}</span>
-        <span class="rf-table__phase-badge" data-cy="phase-badge">{{ (gameState?.phase ?? 'waiting') | uppercase }}</span>
+        <span class="rf-table__phase-badge" data-cy="phase-badge">{{ phasLabel }}</span>
       </div>
 
       <!-- Opponent seats -->
       <div
         *ngFor="let seat of opponentSeats"
         class="rf-seat"
+        [class.rf-seat--active]="seat.isActive"
         [attr.data-seat]="seat.seatIndex"
         data-cy="opponent-seat"
       >
@@ -58,7 +59,11 @@
     </div><!-- .rf-table__felt -->
 
     <!-- Current user's zone -->
-    <div class="rf-table__player-zone" data-cy="player-zone">
+    <div
+      class="rf-table__player-zone"
+      [class.rf-player-zone--active]="isActivePlayer"
+      data-cy="player-zone"
+    >
       <div class="rf-table__hole-cards">
         <ng-container *ngFor="let slot of holeCardSlots">
           <app-card
@@ -87,4 +92,31 @@
     </div>
 
   </main>
+
+  <!-- Winner overlay -->
+  <div
+    *ngIf="winner"
+    class="rf-winner-overlay"
+    data-cy="winner-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Game over"
+  >
+    <div class="rf-winner-overlay__card">
+      <div class="rf-winner-overlay__trophy">🏆</div>
+      <h2 class="rf-winner-overlay__title" data-cy="winner-title">
+        {{ winner.username }} wins!
+      </h2>
+      <p class="rf-winner-overlay__pot" data-cy="winner-pot">
+        ${{ winner.pot }} pot
+      </p>
+      <button
+        class="rf-winner-overlay__btn"
+        data-cy="winner-dismiss"
+        (click)="dismissWinner()"
+      >
+        Continue
+      </button>
+    </div>
+  </div>
 </div>

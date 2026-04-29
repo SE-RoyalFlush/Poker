@@ -224,6 +224,15 @@ $seat-positions: (
     }
   }
 
+  &--active {
+    .rf-seat__info {
+      border-color: var(--rf-gold);
+      box-shadow:
+        0 0 0 2px rgba(201, 168, 76, 0.45),
+        0 0 14px rgba(201, 168, 76, 0.30);
+    }
+  }
+
   &__cards {
     display: flex;
     gap: 4px;
@@ -244,6 +253,7 @@ $seat-positions: (
     border-radius: var(--rf-radius-sm);
     padding: 3px 8px;
     max-width: 90px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   &__username {
@@ -296,6 +306,108 @@ $seat-positions: (
   font-size: 13px;
   color: var(--rf-gold);
   font-weight: 500;
+}
+
+// ── Active player zone (current user) ────────────────────────────────────────
+
+.rf-player-zone--active {
+  .rf-table__player-info {
+    position: relative;
+
+    &::before {
+      content: 'Your turn';
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--rf-gold);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+  }
+
+  .rf-table__player-chips {
+    animation: rf-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes rf-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+// ── Winner overlay ────────────────────────────────────────────────────────────
+
+.rf-winner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: var(--rf-bg-surface);
+    border: 1px solid var(--rf-border-em);
+    border-radius: var(--rf-radius);
+    padding: 40px 48px;
+    box-shadow:
+      0 0 0 1px rgba(201, 168, 76, 0.1),
+      0 32px 80px rgba(0, 0, 0, 0.6);
+    animation: rf-winner-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  &__trophy {
+    font-size: 48px;
+    line-height: 1;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--rf-gold);
+    letter-spacing: 0.02em;
+    text-align: center;
+  }
+
+  &__pot {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--rf-text-muted);
+  }
+
+  &__btn {
+    margin-top: 8px;
+    padding: 10px 32px;
+    background: linear-gradient(135deg, var(--rf-gold) 0%, var(--rf-gold-dim) 100%);
+    color: #0A0A0F;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: var(--rf-radius-sm);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: opacity 0.15s ease;
+
+    &:hover { opacity: 0.88; }
+    &:active { opacity: 0.75; }
+  }
+}
+
+@keyframes rf-winner-in {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 // ── Responsive ────────────────────────────────────────────────────────────────

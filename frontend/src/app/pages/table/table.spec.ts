@@ -6,7 +6,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Table } from './table';
 import { GameStateService } from '../../core/services/game-state.service';
 import { AuthService } from '../../core/services/auth.service';
-import { GameState, GamePhase, PlayerSeat, Card } from '../../core/models/game-state.model';
+import { GameState, GamePhase, PlayerSeat, Card, WinnerInfo } from '../../core/models/game-state.model';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ function buildSeats(count: number, currentUserId: number): PlayerSeat[] {
     chipCount: 1000,
     holeCards: [],
     isCurrentUser: i + 1 === currentUserId,
-    isActive: true,
+    isActive: false,
     isDealer: i === 0,
   }));
 }
@@ -49,14 +49,17 @@ describe('Table', () => {
   let component: Table;
   let fixture: ComponentFixture<Table>;
   let stateSubject: BehaviorSubject<GameState>;
+  let winnerSubject: BehaviorSubject<WinnerInfo | null>;
   let gssSpy: jasmine.SpyObj<GameStateService>;
   let authSpy: jasmine.SpyObj<AuthService>;
 
   beforeEach(async () => {
     stateSubject = new BehaviorSubject<GameState>(makeState());
+    winnerSubject = new BehaviorSubject<WinnerInfo | null>(null);
 
     gssSpy = jasmine.createSpyObj<GameStateService>('GameStateService', ['getSnapshot', 'patchState', 'sendAction']);
     (gssSpy as unknown as { gameState$: unknown }).gameState$ = stateSubject.asObservable();
+    (gssSpy as unknown as { winner$: unknown }).winner$ = winnerSubject.asObservable();
 
     authSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUser']);
     authSpy.getCurrentUser.and.returnValue({ id: 1, username: 'ace' });
@@ -94,6 +97,148 @@ describe('Table', () => {
     component.ngOnDestroy();
     stateSubject.next(makeState({ phase: 'river' }));
     expect(component.gameState?.phase).toBe(phaseBefore);
+  });
+
+  // ── Pot display ───────────────────────────────────────────────────────────
+
+  describe('pot display', () => {
+    it('renders $0 initially', () => {
+      const el: HTMLElement = fixture.nativeElement.querySelector('[data-cy="pot-display"]');
+      expect(el.textContent).toContain('0');
+    });
+
+    it('updates reactively when pot$ emits new value', () => {
+      stateSubject.next(makeState({ pot: 750 }));
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement.querySelector('[data-cy="pot-display"]');
+      expect(el.textContent).toContain('750');
+    });
+  });
+
+  // ── Phase badge ───────────────────────────────────────────────────────────
+
+  describe('phase badge', () => {
+    const phases: Array<{ phase: GamePhase; label: string }> = [
+      { phase: 'waiting',  label: 'Waiting'   },
+      { phase: 'pre-flop', label: 'Pre-Flop'  },
+      { phase: 'flop',     label: 'Flop'      },
+      { phase: 'turn',     label: 'Turn'       },
+      { phase: 'river',    label: 'River'      },
+      { phase: 'showdown', label: 'Showdown'  },
+    ];
+
+    phases.forEach(({ phase, label }) => {
+      it(`shows "${label}" label for phase "${phase}"`, () => {
+        stateSubject.next(makeState({ phase }));
+        fixture.detectChanges();
+        const el: HTMLElement = fixture.nativeElement.querySelector('[data-cy="phase-badge"]');
+        expect(el.textContent?.trim()).toBe(label);
+      });
+    });
+  });
+
+  // ── Active seat highlighting ──────────────────────────────────────────────
+
+  describe('active seat highlighting', () => {
+    it('applies rf-seat--active class to an active opponent seat', () => {
+      const seats = buildSeats(3, 1);
+      seats[1].isActive = true;
+      stateSubject.next(makeState({ seats }));
+      fixture.detectChanges();
+      const seatEls: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('[data-cy="opponent-seat"]');
+      expect(seatEls[0].classList).toContain('rf-seat--active');
+    });
+
+    it('does not apply rf-seat--active to inactive seats', () => {
+      const seats = buildSeats(3, 1);
+      stateSubject.next(makeState({ seats }));
+      fixture.detectChanges();
+      const seatEls: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('[data-cy="opponent-seat"]');
+      seatEls.forEach(el => expect(el.classList).not.toContain('rf-seat--active'));
+    });
+
+    it('applies rf-player-zone--active to player zone when current user is active', () => {
+      const seats = buildSeats(2, 1);
+      seats[0].isActive = true;
+      stateSubject.next(makeState({ seats }));
+      fixture.detectChanges();
+      const zone: HTMLElement = fixture.nativeElement.querySelector('[data-cy="player-zone"]');
+      expect(zone.classList).toContain('rf-player-zone--active');
+    });
+
+    it('does not apply rf-player-zone--active when current user is inactive', () => {
+      const seats = buildSeats(2, 1);
+      seats[0].isActive = false;
+      stateSubject.next(makeState({ seats }));
+      fixture.detectChanges();
+      const zone: HTMLElement = fixture.nativeElement.querySelector('[data-cy="player-zone"]');
+      expect(zone.classList).not.toContain('rf-player-zone--active');
+    });
+  });
+
+  // ── Chip counts ───────────────────────────────────────────────────────────
+
+  describe('chip count display', () => {
+    it('shows chip count on opponent seats', () => {
+      stateSubject.next(makeState({ seats: buildSeats(2, 1) }));
+      fixture.detectChanges();
+      const chipsEl: HTMLElement = fixture.nativeElement.querySelector('[data-cy="seat-chips"]');
+      expect(chipsEl?.textContent).toContain('1000');
+    });
+
+    it('updates chip count after each action', () => {
+      const seats = buildSeats(2, 1);
+      stateSubject.next(makeState({ seats }));
+      fixture.detectChanges();
+
+      const updatedSeats = buildSeats(2, 1);
+      updatedSeats[1].chipCount = 600;
+      stateSubject.next(makeState({ seats: updatedSeats }));
+      fixture.detectChanges();
+
+      const chipsEl: HTMLElement = fixture.nativeElement.querySelector('[data-cy="seat-chips"]');
+      expect(chipsEl?.textContent).toContain('600');
+    });
+  });
+
+  // ── Winner overlay ────────────────────────────────────────────────────────
+
+  describe('winner overlay', () => {
+    it('does not render overlay when winner is null', () => {
+      const overlay = fixture.nativeElement.querySelector('[data-cy="winner-overlay"]');
+      expect(overlay).toBeNull();
+    });
+
+    it('renders overlay when winner$ emits', () => {
+      winnerSubject.next({ username: 'alice', pot: 500 });
+      fixture.detectChanges();
+      const overlay = fixture.nativeElement.querySelector('[data-cy="winner-overlay"]');
+      expect(overlay).not.toBeNull();
+    });
+
+    it('shows correct winner name in overlay', () => {
+      winnerSubject.next({ username: 'alice', pot: 500 });
+      fixture.detectChanges();
+      const title: HTMLElement = fixture.nativeElement.querySelector('[data-cy="winner-title"]');
+      expect(title.textContent).toContain('alice');
+    });
+
+    it('shows correct pot amount in overlay', () => {
+      winnerSubject.next({ username: 'alice', pot: 500 });
+      fixture.detectChanges();
+      const pot: HTMLElement = fixture.nativeElement.querySelector('[data-cy="winner-pot"]');
+      expect(pot.textContent).toContain('500');
+    });
+
+    it('dismisses overlay on button click', () => {
+      winnerSubject.next({ username: 'alice', pot: 500 });
+      fixture.detectChanges();
+      const btn: HTMLElement = fixture.nativeElement.querySelector('[data-cy="winner-dismiss"]');
+      btn.click();
+      fixture.detectChanges();
+      const overlay = fixture.nativeElement.querySelector('[data-cy="winner-overlay"]');
+      expect(overlay).toBeNull();
+    });
   });
 
   // ── Community card slots ──────────────────────────────────────────────────
