@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - Replaced stub `TableComponent` with a full Texas Hold'em layout at `/table/:id`
     - Added `GameStateService` in `frontend/src/app/core/services/` exposing a `BehaviorSubject<GameState>` with `gameState$` observable and `patchState()` method for future WebSocket integration
     - Added `GameState`, `PlayerSeat`, `Card`, and `GamePhase` interfaces in `frontend/src/app/core/models/game-state.model.ts`
-    - Community cards area (centre of oval felt): 5 card slot positions — face-down placeholders pre-flop, revealed on flop (3), turn (4), and river/showdown (5)
+    - Community cards area (centre of oval felt): 5 card slot positions — empty dashed placeholders pre-flop, revealed on flop (3), turn (4), and river/showdown (5)
     - Current user hole cards rendered face-up in the bottom player zone; 2 empty placeholders shown when no cards have been dealt
     - Up to 9 opponent seats positioned around the oval felt using pre-calculated ellipse coordinates; each seat shows username, chip count, and 2 face-down `CardComponent`s
     - Oval green felt surface styled with CSS `border-radius: 50%` and `aspect-ratio: 2/1`; seat positions derived from parametric ellipse equations, requiring no JavaScript layout calculations
