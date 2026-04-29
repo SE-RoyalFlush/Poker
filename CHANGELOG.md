@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Game State Service & WebSocket Integration (Issue #73)](https://github.com/SE-RoyalFlush/Poker/issues/73)
+    - Expanded `GameStateService` with individual `BehaviorSubject`-backed observables: `players$`, `communityCards$`, `holeCards$`, `pot$`, `activePlayerId$`, `phase$`
+    - Service subscribes to `WebSocketService.messages$` and handles `GAME_STARTED`, `CARDS_DEALT`, `PLAYER_ACTION`, `PHASE_CHANGE`, and `GAME_OVER` events, updating all state streams on each event
+    - On `GAME_STARTED`, navigates automatically from lobby to `/table/:tableId` via Angular `Router`
+    - `getActivePlayer()` uses Lodash `_.find(players, { playerId: activePlayerId })` to resolve the active player object
+    - `sendAction(type, amount?)` dispatches typed player actions (`CHECK`, `CALL`, `RAISE`, `FOLD`) via `WebSocketService.sendMessage()`
+    - `gameState$` combined observable retained for backward compatibility with `Table` component
+    - `Table.onGameAction()` wired to `GameStateService.sendAction()` instead of `console.log`
+    - Added game event type constants (`GameServerMessageType`, `GameClientMessageType`) and payload interfaces (`GameStartedPayload`, `CardsDealtPayload`, `PlayerActionPayload`, `PhaseChangePayload`, `GameOverPayload`, `RaisePayload`) to `ws-message.model.ts`
+    - Added 29 unit tests in `game-state.service.spec.ts` covering state updates for all event types, `_.find()` active player lookup, navigation trigger, and all four action sends
 - [Frontend: Game Controls Component (Issue #72)](https://github.com/SE-RoyalFlush/Poker/issues/72)
     - Added `GameControlsComponent` at `frontend/src/app/features/table/game-controls/` with Check, Call, Raise, and Fold action buttons
     - All buttons disabled (greyed out) when `isActivePlayer === false`; pointer-events blocked via CSS for the inactive state

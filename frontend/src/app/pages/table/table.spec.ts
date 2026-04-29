@@ -55,7 +55,7 @@ describe('Table', () => {
   beforeEach(async () => {
     stateSubject = new BehaviorSubject<GameState>(makeState());
 
-    gssSpy = jasmine.createSpyObj<GameStateService>('GameStateService', ['getSnapshot', 'patchState']);
+    gssSpy = jasmine.createSpyObj<GameStateService>('GameStateService', ['getSnapshot', 'patchState', 'sendAction']);
     (gssSpy as unknown as { gameState$: unknown }).gameState$ = stateSubject.asObservable();
 
     authSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUser']);
