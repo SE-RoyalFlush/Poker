@@ -326,13 +326,13 @@ describe('GameStateService', () => {
 
   describe('GAME_OVER event', () => {
     const finalSeats = [
-      makeSeat({ playerId: 1, chipCount: 2000 }),
-      makeSeat({ playerId: 2, chipCount: 0, isCurrentUser: false }),
+      makeSeat({ playerId: 1, username: 'alice', chipCount: 2000 }),
+      makeSeat({ playerId: 2, username: 'bob', chipCount: 0, isCurrentUser: false }),
     ];
 
     const gameOverMsg: WsMessage = {
       type: 'GAME_OVER',
-      payload: { winnerId: 1, pot: 0, seats: finalSeats },
+      payload: { winnerId: 1, pot: 500, seats: finalSeats },
     };
 
     beforeEach(() => {
@@ -353,9 +353,9 @@ describe('GameStateService', () => {
       });
     });
 
-    it('should set pot$ to 0', (done) => {
+    it('should set pot$ to 500', (done) => {
       service.pot$.pipe(take(1)).subscribe(pot => {
-        expect(pot).toBe(0);
+        expect(pot).toBe(500);
         done();
       });
     });
@@ -363,6 +363,52 @@ describe('GameStateService', () => {
     it('should sync showdown phase into gameState$', (done) => {
       service.gameState$.pipe(take(1)).subscribe(state => {
         expect(state.phase).toBe('showdown');
+        done();
+      });
+    });
+
+    it('should emit winner$ with correct username and pot', (done) => {
+      service.winner$.pipe(take(1)).subscribe(winner => {
+        expect(winner).not.toBeNull();
+        expect(winner?.username).toBe('alice');
+        expect(winner?.pot).toBe(500);
+        done();
+      });
+    });
+
+    it('should emit winner$ as null when winnerId has no matching seat', (done) => {
+      messagesSubject.next({
+        type: 'GAME_OVER',
+        payload: { winnerId: 99, pot: 100, seats: finalSeats },
+      });
+      service.winner$.pipe(take(1)).subscribe(winner => {
+        expect(winner).toBeNull();
+        done();
+      });
+    });
+  });
+
+  describe('GAME_STARTED resets winner$', () => {
+    it('clears winner$ when a new game starts', (done) => {
+      const seats = [makeSeat({ playerId: 1 })];
+      messagesSubject.next({
+        type: 'GAME_OVER',
+        payload: { winnerId: 1, pot: 300, seats },
+      });
+      messagesSubject.next({
+        type: 'GAME_STARTED',
+        payload: {
+          tableId: 't1',
+          seats,
+          phase: 'pre-flop',
+          pot: 0,
+          currentBet: 0,
+          activePlayerId: 1,
+          currentUserId: 1,
+        },
+      });
+      service.winner$.pipe(take(1)).subscribe(winner => {
+        expect(winner).toBeNull();
         done();
       });
     });

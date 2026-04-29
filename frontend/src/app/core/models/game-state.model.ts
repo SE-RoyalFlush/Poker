@@ -24,3 +24,8 @@ export interface GameState {
   currentBet: number;
   currentUserId: number;
 }
+
+export interface WinnerInfo {
+  username: string;
+  pot: number;
+}

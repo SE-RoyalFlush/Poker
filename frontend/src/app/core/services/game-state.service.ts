@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { find } from 'lodash-es';
 
 import { WebSocketService } from './websocket.service';
-import { GameState, GamePhase, Card, PlayerSeat } from '../models/game-state.model';
+import { GameState, GamePhase, Card, PlayerSeat, WinnerInfo } from '../models/game-state.model';
 import {
   WsMessage,
   GameServerMessageType,
@@ -43,6 +43,9 @@ export class GameStateService implements OnDestroy {
   readonly activePlayerId$: Observable<number> = this.activePlayerIdSubject.asObservable();
   readonly phase$: Observable<GamePhase> = this.phaseSubject.asObservable();
 
+  private readonly winnerSubject = new BehaviorSubject<WinnerInfo | null>(null);
+  readonly winner$: Observable<WinnerInfo | null> = this.winnerSubject.asObservable();
+
   private readonly stateSubject = new BehaviorSubject<GameState>(INITIAL_GAME_STATE);
   readonly gameState$: Observable<GameState> = this.stateSubject.asObservable();
 
@@ -76,6 +79,7 @@ export class GameStateService implements OnDestroy {
   }
 
   private onGameStarted(payload: GameStartedPayload): void {
+    this.winnerSubject.next(null);
     this.playersSubject.next(payload.seats);
     this.phaseSubject.next(payload.phase);
     this.potSubject.next(payload.pot);
@@ -132,6 +136,8 @@ export class GameStateService implements OnDestroy {
       pot: payload.pot,
       phase: 'showdown',
     });
+    const winner = find(payload.seats, { playerId: payload.winnerId }) as PlayerSeat | undefined;
+    this.winnerSubject.next(winner ? { username: winner.username, pot: payload.pot } : null);
   }
 
   private syncState(partial: Partial<GameState>): void {
