@@ -8,11 +8,12 @@ import { CardComponent } from '../../shared/card/card.component';
 import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
 import { GameState, Card, PlayerSeat } from '../../core/models/game-state.model';
+import { GameControlsComponent, GameAction } from '../../features/table/game-controls/game-controls.component';
 
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, CardComponent],
+  imports: [CommonModule, CardComponent, GameControlsComponent],
   templateUrl: './table.html',
   styleUrl: './table.scss',
 })
@@ -70,5 +71,21 @@ export class Table implements OnInit, OnDestroy {
   get holeCardSlots(): Array<Card | null> {
     const cards = this.currentUserSeat?.holeCards ?? [];
     return Array.from({ length: 2 }, (_, i) => cards[i] ?? null);
+  }
+
+  get isActivePlayer(): boolean {
+    return this.currentUserSeat?.isActive ?? false;
+  }
+
+  get callAmount(): number {
+    return this.gameState?.currentBet ?? 0;
+  }
+
+  get maxRaise(): number {
+    return this.currentUserSeat?.chipCount ?? 0;
+  }
+
+  onGameAction(action: GameAction): void {
+    console.log('Game action:', action);
   }
 }

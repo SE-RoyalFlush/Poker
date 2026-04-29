@@ -1,0 +1,54 @@
+.game-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+
+  &--inactive {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  &__btn {
+    min-width: 90px;
+
+    &--check {
+      background-color: var(--rf-color-success, #4caf50);
+      color: #fff;
+    }
+
+    &--call {
+      background-color: var(--rf-color-primary, #1976d2);
+      color: #fff;
+    }
+
+    &--raise {
+      background-color: var(--rf-color-warning, #ff9800);
+      color: #fff;
+    }
+  }
+
+  &__raise-panel {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    form {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  }
+
+  &__raise-field {
+    width: 160px;
+  }
+}
