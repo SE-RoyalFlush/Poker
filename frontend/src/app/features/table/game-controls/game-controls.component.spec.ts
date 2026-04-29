@@ -1,15 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { GameControlsComponent, GameAction } from './game-controls.component';
+import { SoundEffectsService } from '../../../core/services/sound-effects.service';
 
 describe('GameControlsComponent', () => {
   let component: GameControlsComponent;
   let fixture: ComponentFixture<GameControlsComponent>;
+  let soundSpy: jasmine.SpyObj<SoundEffectsService>;
 
   beforeEach(async () => {
+    soundSpy = jasmine.createSpyObj<SoundEffectsService>('SoundEffectsService', [
+      'playChipsClink',
+      'playCardFlip',
+      'playWinFanfare',
+      'toggleMute',
+    ]);
+
     await TestBed.configureTestingModule({
       imports: [GameControlsComponent],
-      providers: [provideNoopAnimations()],
+      providers: [
+        provideNoopAnimations(),
+        { provide: SoundEffectsService, useValue: soundSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GameControlsComponent);
@@ -92,6 +104,11 @@ describe('GameControlsComponent', () => {
       expect(emitted).toEqual([{ type: 'CALL', amount: 10 }]);
     });
 
+    it('should call playChipsClink() on CALL', () => {
+      component.onCall();
+      expect(soundSpy.playChipsClink).toHaveBeenCalled();
+    });
+
     it('should emit FOLD action on Fold click', () => {
       const emitted: GameAction[] = [];
       component.action.subscribe((a) => emitted.push(a));
@@ -121,6 +138,13 @@ describe('GameControlsComponent', () => {
       component.raiseForm.patchValue({ amount: 50 });
       component.onRaiseSubmit();
       expect(emitted).toEqual([{ type: 'RAISE', amount: 50 }]);
+    });
+
+    it('should call playChipsClink() on valid RAISE', () => {
+      component.onRaiseToggle();
+      component.raiseForm.patchValue({ amount: 50 });
+      component.onRaiseSubmit();
+      expect(soundSpy.playChipsClink).toHaveBeenCalled();
     });
 
     it('should not emit RAISE when raise amount is below minimum', () => {
