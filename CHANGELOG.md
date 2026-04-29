@@ -37,6 +37,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - Dashboard avatar updated to link to the current user's profile at `/profile/:id`
     - Added 4 `StatsService` unit tests (endpoint URL, success, error propagation) and 8 `ProfileComponent` unit tests (loading, success, error states)
     - Exported `StatsService` and `UserStats` from core services barrel (`core/services/index.ts`)
+- [Documentation: API Contract Baseline Refresh (Issue #60)](https://github.com/SE-RoyalFlush/Poker/issues/60)
+    - Refreshed root, backend, and frontend READMEs to reflect the current session-cookie auth, CSRF, room API, admin API, and WebSocket lobby implementation
+    - Expanded `docs/api/openapi.yaml` with current auth, room, admin, CSRF, and WebSocket handshake contracts
+    - Updated deployment notes from stale JWT configuration to signed `SESSION_KEY` session-cookie configuration
 - [Frontend: Game State Visualization — Pot, Active Player, Phase Badge & Winner Overlay (Issue #74)](https://github.com/SE-RoyalFlush/Poker/issues/74)
     - Pot display (`[data-cy="pot-display"]`) updates reactively on every `PLAYER_ACTION` and `PHASE_CHANGE` event via `GameStateService.gameState$`
     - Active opponent seat highlighted with a gold ring/glow (`rf-seat--active` class) driven by `PlayerSeat.isActive`; current-user zone gains `rf-player-zone--active` with a pulsing chip count and "Your turn" label
@@ -87,13 +91,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - Bootstrapped Cypress E2E infrastructure (`cypress.config.ts`, `cypress/support/e2e.ts`) and added `e2e` / `e2e:headless` npm scripts
     - Added `.claude/` and `CLAUDE.md` to `.gitignore`
 - [Backend: Lobby Logic & Broadcasting (Issue #18)](https://github.com/SE-RoyalFlush/Poker/issues/18)
-    - Implemented room-scoped WebSocket lobby state in `backend/pkg/api/ws_runtime.go` with per-room client membership and broadcasts
+    - Implemented room-scoped WebSocket lobby state in `Backend/pkg/api/ws_runtime.go` with per-room client membership and broadcasts
     - Added `JOIN_ROOM`, `LEAVE_ROOM`, `ROOM_STATE`, `PLAYER_JOINED`, and `PLAYER_LEFT` message handling for lobby presence updates
     - `JOIN_ROOM` now returns a room snapshot to the joining client and broadcasts `PLAYER_JOINED` only to the other clients in that room
     - Disconnects and explicit `LEAVE_ROOM` events now remove the client from the room and notify remaining members with `PLAYER_LEFT`
     - Added backend tests covering room isolation, join broadcast semantics, explicit leave, and reconnect-ready-state reset
 - [Frontend: Lobby Component & State (Issue #21)](https://github.com/SE-RoyalFlush/Poker/issues/21)
-    - Implemented `Lobby` at `frontend/src/app/pages/lobby/lobby.ts` — reads `roomCode` from `?code=` query param, connects via `WebSocketService`, sends `JOIN_ROOM` on open, handles `PLAYER_JOINED` (with `_.uniqBy` deduplication by id) and `PLAYER_LEFT` messages, sorts players host-first via `_.orderBy`
+    - Implemented `Lobby` at `frontend/src/app/pages/lobby/lobby.ts` — reads the room code from `/lobby/:code`, connects via `WebSocketService`, sends `JOIN_ROOM` on open, handles `PLAYER_JOINED` (with `_.uniqBy` deduplication by id) and `PLAYER_LEFT` messages, sorts players host-first via `_.orderBy`
     - Added `Player` interface (`{ id, username, isHost }`) at `frontend/src/app/core/models/player.model.ts` and exported from models barrel
     - Added template at `frontend/src/app/pages/lobby/lobby.html` — room code heading, live player count, player list with avatar initials and "Host" badge
     - Added BEM card-layout styles at `frontend/src/app/pages/lobby/lobby.scss` using `--rf-*` design tokens
@@ -101,11 +105,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - Added Cypress E2E tests in `frontend/cypress/e2e/lobby.cy.ts` covering initial render; WS message injection deferred — no native Cypress 14 WS intercept support; covered by unit tests instead
     - First lodash usage in frontend: `uniqBy` and `orderBy` for player list management
 - [Frontend: Create & Join Room UI (Issue #20)](https://github.com/SE-RoyalFlush/Poker/issues/20)
-    - Extracted `CreateRoomComponent` into `frontend/src/app/features/rooms/create-room/` — room name/players/blinds/privacy form; navigates to `/room/:code` on success
-    - Extracted `JoinRoomComponent` into `frontend/src/app/features/rooms/join-room/` — 6-char alphanumeric code input with live rooms browser, 403 password reveal, and `quickJoin`; navigates to `/room/:code` on success
-    - Updated frontend room-code validation from legacy `RF-XXXX` to `^[A-Z0-9]{6}$` for the new join flow and `/room/:code` routing convention
+    - Extracted `CreateRoomComponent` into `frontend/src/app/features/rooms/create-room/` — room name/players/blinds/privacy form; navigates to `/lobby/:code` on success
+    - Extracted `JoinRoomComponent` into `frontend/src/app/features/rooms/join-room/` — 6-char alphanumeric code input with live rooms browser, 403 password reveal, and `quickJoin`; navigates to `/lobby/:code` on success
+    - Updated frontend room-code validation from legacy `RF-XXXX` to `^[A-Z0-9]{6}$` for the new join flow and `/lobby/:code` routing convention
     - Fixed post-join navigation to use `room.code` instead of `room.id`
-    - Added `room/:code` protected route and placeholder `RoomComponent` at `frontend/src/app/pages/room/`
+    - Added `/lobby/:code` protected routing for the room lobby flow
     - Refactored `DashboardComponent` to embed `<app-create-room>` and `<app-join-room>`, removing all inline form logic
     - Added 13 unit tests covering validation, API calls, navigation, 403 handling, and `quickJoin` behaviour
     - Added Cypress E2E tests in `frontend/cypress/e2e/dashboard.cy.ts` for create flow, join flow, validation, and password reveal
