@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Game State Visualization — Pot, Active Player, Phase Badge & Winner Overlay (Issue #74)](https://github.com/SE-RoyalFlush/Poker/issues/74)
+    - Pot display (`[data-cy="pot-display"]`) updates reactively on every `PLAYER_ACTION` and `PHASE_CHANGE` event via `GameStateService.gameState$`
+    - Active opponent seat highlighted with a gold ring/glow (`rf-seat--active` class) driven by `PlayerSeat.isActive`; current-user zone gains `rf-player-zone--active` with a pulsing chip count and "Your turn" label
+    - Chip count rendered per player seat (`[data-cy="seat-chips"]`), updated after each action via reactive state
+    - Phase badge (`[data-cy="phase-badge"]`) displays human-readable labels: Waiting / Pre-Flop / Flop / Turn / River / Showdown
+    - Winner overlay (`[data-cy="winner-overlay"]`) appears on `GAME_OVER` with "Player X wins! $Y pot" and a dismiss button; cleared on next `GAME_STARTED`
+    - `WinnerInfo` interface added to `game-state.model.ts`; `winner$` observable added to `GameStateService` populated in `onGameOver()` and reset in `onGameStarted()`
+    - Added 15 new unit tests: pot reactivity, all 6 phase badge labels, active-seat class binding (opponent + current user), chip count updates, winner overlay render / content / dismiss
 - [Frontend: Game State Service & WebSocket Integration (Issue #73)](https://github.com/SE-RoyalFlush/Poker/issues/73)
     - Expanded `GameStateService` with individual `BehaviorSubject`-backed observables: `players$`, `communityCards$`, `holeCards$`, `pot$`, `activePlayerId$`, `phase$`
     - Service subscribes to `WebSocketService.messages$` and handles `GAME_STARTED`, `CARDS_DEALT`, `PLAYER_ACTION`, `PHASE_CHANGE`, and `GAME_OVER` events, updating all state streams on each event
