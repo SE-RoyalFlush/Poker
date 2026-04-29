@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Leaderboard Page (Issue #93)](https://github.com/SE-RoyalFlush/Poker/issues/93)
+    - Created `LeaderboardService` at `frontend/src/app/core/services/leaderboard.service.ts` with `getLeaderboard(): Observable<LeaderboardEntry[]>` calling `GET /api/leaderboard`
+    - Defined `LeaderboardEntry` interface: `rank`, `userId`, `username`, `handsPlayed`, `wins`, `winRate`, `totalEarnings`
+    - Created `LeaderboardComponent` at `frontend/src/app/pages/leaderboard/` with sortable table, gold/silver/bronze top-3 highlights, loading spinner, error/empty states, and toast on API failure
+    - Client-side sorting via Lodash-es `orderBy`; clicking a column header cycles the active sort field through `totalEarnings → winRate → wins`
+    - Route `/leaderboard` added as a public route (no `AuthGuard` required)
+    - Usernames in the table link to `/profile/:id` for individual player pages
+    - Leaderboard navigation link added to the Dashboard nav bar
+    - Exported `LeaderboardService` and `LeaderboardEntry` from core services barrel (`core/services/index.ts`)
+    - Added 4 `LeaderboardService` unit tests and 13 `LeaderboardComponent` unit tests covering sorting correctness, rank classes, sort cycling, error toast, and username link generation
 - [Frontend: User Stats Profile Page (Issue #92)](https://github.com/SE-RoyalFlush/Poker/issues/92)
     - Added `StatsService` at `frontend/src/app/core/services/stats.service.ts` with `getUserStats(userId): Observable<UserStats>` calling `GET /api/users/:id/stats`
     - Defined `UserStats` interface: `handsPlayed`, `wins`, `losses`, `winRate`, `totalEarnings`

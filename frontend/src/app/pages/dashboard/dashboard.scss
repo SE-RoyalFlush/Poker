@@ -152,6 +152,21 @@
     &:hover { background: rgba(201,168,76,0.30); }
   }
 
+  &__links {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__link {
+    font-size: 13px;
+    color: var(--rf-text-muted) !important;
+    border-color: var(--rf-border) !important;
+    text-decoration: none;
+
+    &:hover { border-color: var(--rf-border-em) !important; color: var(--rf-text) !important; }
+  }
+
   &__logout {
     font-size: 13px !important;
     border-color: var(--rf-border) !important;
