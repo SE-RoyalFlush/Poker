@@ -5,6 +5,7 @@ import { take } from 'rxjs/operators';
 
 import { GameStateService } from './game-state.service';
 import { WebSocketService } from './websocket.service';
+import { SoundEffectsService } from './sound-effects.service';
 import { WsMessage } from '../models/ws-message.model';
 import { PlayerSeat, Card, GamePhase } from '../models/game-state.model';
 
@@ -46,6 +47,7 @@ describe('GameStateService', () => {
   let messagesSubject: Subject<WsMessage>;
   let wsSpy: jasmine.SpyObj<WebSocketService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let soundSpy: jasmine.SpyObj<SoundEffectsService>;
 
   beforeEach(() => {
     messagesSubject = new Subject<WsMessage>();
@@ -59,11 +61,19 @@ describe('GameStateService', () => {
 
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
 
+    soundSpy = jasmine.createSpyObj<SoundEffectsService>('SoundEffectsService', [
+      'playChipsClink',
+      'playCardFlip',
+      'playWinFanfare',
+      'toggleMute',
+    ]);
+
     TestBed.configureTestingModule({
       providers: [
         GameStateService,
         { provide: WebSocketService, useValue: wsSpy },
         { provide: Router, useValue: routerSpy },
+        { provide: SoundEffectsService, useValue: soundSpy },
       ],
     });
 
@@ -213,6 +223,10 @@ describe('GameStateService', () => {
         expect(state.seats).toEqual(updatedSeats);
         done();
       });
+    });
+
+    it('should call playCardFlip() on SoundEffectsService', () => {
+      expect(soundSpy.playCardFlip).toHaveBeenCalled();
     });
   });
 

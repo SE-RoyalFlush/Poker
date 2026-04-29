@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { SoundEffectsService } from '../../../core/services/sound-effects.service';
 
 export type ActionType = 'CHECK' | 'CALL' | 'RAISE' | 'FOLD';
 
@@ -34,7 +35,7 @@ export class GameControlsComponent implements OnChanges {
   showRaiseInput = false;
   raiseForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private soundEffects: SoundEffectsService) {
     this.raiseForm = this.fb.group({
       amount: [null, [Validators.required, Validators.min(0)]],
     });
@@ -62,6 +63,7 @@ export class GameControlsComponent implements OnChanges {
 
   onCall(): void {
     if (!this.isActivePlayer) return;
+    this.soundEffects.playChipsClink();
     this.action.emit({ type: 'CALL', amount: this.callAmount });
   }
 
@@ -80,6 +82,7 @@ export class GameControlsComponent implements OnChanges {
 
   onRaiseSubmit(): void {
     if (!this.isActivePlayer || this.raiseForm.invalid) return;
+    this.soundEffects.playChipsClink();
     this.action.emit({ type: 'RAISE', amount: this.raiseForm.value.amount });
     this.showRaiseInput = false;
     this.raiseForm.reset();

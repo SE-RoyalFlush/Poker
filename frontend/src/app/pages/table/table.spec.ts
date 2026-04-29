@@ -6,6 +6,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Table } from './table';
 import { GameStateService } from '../../core/services/game-state.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SoundEffectsService } from '../../core/services/sound-effects.service';
 import { GameState, GamePhase, PlayerSeat, Card, WinnerInfo } from '../../core/models/game-state.model';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ describe('Table', () => {
   let winnerSubject: BehaviorSubject<WinnerInfo | null>;
   let gssSpy: jasmine.SpyObj<GameStateService>;
   let authSpy: jasmine.SpyObj<AuthService>;
+  let soundSpy: jasmine.SpyObj<SoundEffectsService>;
 
   beforeEach(async () => {
     stateSubject = new BehaviorSubject<GameState>(makeState());
@@ -64,12 +66,22 @@ describe('Table', () => {
     authSpy = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUser']);
     authSpy.getCurrentUser.and.returnValue({ id: 1, username: 'ace' });
 
+    soundSpy = jasmine.createSpyObj<SoundEffectsService>('SoundEffectsService', [
+      'playChipsClink',
+      'playCardFlip',
+      'playWinFanfare',
+      'toggleMute',
+    ]);
+    const mutedSubject = new BehaviorSubject<boolean>(false);
+    (soundSpy as unknown as { isMuted$: unknown }).isMuted$ = mutedSubject.asObservable();
+
     await TestBed.configureTestingModule({
       imports: [Table],
       providers: [
         provideNoopAnimations(),
         { provide: GameStateService, useValue: gssSpy },
         { provide: AuthService, useValue: authSpy },
+        { provide: SoundEffectsService, useValue: soundSpy },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: convertToParamMap({ id: 'table-42' }) } },
@@ -198,6 +210,37 @@ describe('Table', () => {
 
       const chipsEl: HTMLElement = fixture.nativeElement.querySelector('[data-cy="seat-chips"]');
       expect(chipsEl?.textContent).toContain('600');
+    });
+  });
+
+  // ── Mute button ───────────────────────────────────────────────────────────
+
+  describe('mute button', () => {
+    it('renders the mute button', () => {
+      const btn = fixture.nativeElement.querySelector('[data-cy="mute-btn"]');
+      expect(btn).not.toBeNull();
+    });
+
+    it('calls toggleMute() when mute button is clicked', () => {
+      const btn: HTMLElement = fixture.nativeElement.querySelector('[data-cy="mute-btn"]');
+      btn.click();
+      expect(soundSpy.toggleMute).toHaveBeenCalled();
+    });
+  });
+
+  // ── Win fanfare ───────────────────────────────────────────────────────────
+
+  describe('win fanfare', () => {
+    it('calls playWinFanfare() when winner$ emits a winner', () => {
+      winnerSubject.next({ username: 'alice', pot: 500 });
+      fixture.detectChanges();
+      expect(soundSpy.playWinFanfare).toHaveBeenCalled();
+    });
+
+    it('does not call playWinFanfare() when winner$ emits null', () => {
+      winnerSubject.next(null);
+      fixture.detectChanges();
+      expect(soundSpy.playWinFanfare).not.toHaveBeenCalled();
     });
   });
 

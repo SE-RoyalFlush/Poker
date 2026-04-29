@@ -104,6 +104,23 @@
     font-size: 14px;
     color: var(--rf-text-muted);
   }
+
+  &__mute-btn {
+    background: none;
+    border: 1px solid var(--rf-border);
+    border-radius: var(--rf-radius-sm);
+    color: var(--rf-text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px 8px;
+    transition: border-color 0.15s, color 0.15s;
+
+    &:hover {
+      border-color: var(--rf-border-em);
+      color: var(--rf-text);
+    }
+  }
 }
 
 // ── Arena ─────────────────────────────────────────────────────────────────────

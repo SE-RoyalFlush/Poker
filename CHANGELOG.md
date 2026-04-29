@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Sound Effects Service (Issue #94)](https://github.com/SE-RoyalFlush/Poker/issues/94)
+    - Created `SoundEffectsService` at `frontend/src/app/core/services/sound-effects.service.ts` (`providedIn: 'root'`) with methods `playChipsClink()`, `playCardFlip()`, and `playWinFanfare()`
+    - Audio assets loaded lazily from `assets/sounds/chips-clink.mp3`, `card-flip.mp3`, and `win-fanfare.mp3`; placeholder files added to `frontend/public/assets/sounds/`
+    - Audio preloaded on first user interaction (`document click`) to satisfy browser autoplay policy
+    - Mute toggle via `toggleMute()` and `isMuted$: Observable<boolean>`; preference persisted to and restored from `localStorage` key `rfx_sound_muted`
+    - Mute/unmute button (🔊/🔇 speaker icon) added to `TableComponent` nav bar (`data-cy="mute-btn"`)
+    - `playChipsClink()` called from `GameControlsComponent` on confirmed CALL and RAISE actions
+    - `playCardFlip()` called from `GameStateService.onCardsDealt()` on `CARDS_DEALT` WebSocket events
+    - `playWinFanfare()` called from `TableComponent` winner$ subscription on `GAME_OVER` events
+    - Exported `SoundEffectsService` from core services barrel (`core/services/index.ts`)
+    - Added 14 `SoundEffectsService` unit tests covering `isMuted$` default/toggle, localStorage persistence/restore, and `play*()` methods skipping `audio.play()` when muted
+    - Updated `GameStateService`, `GameControlsComponent`, and `Table` specs to mock `SoundEffectsService`; added integration tests for sound calls and mute button click
 - [Frontend: Leaderboard Page (Issue #93)](https://github.com/SE-RoyalFlush/Poker/issues/93)
     - Created `LeaderboardService` at `frontend/src/app/core/services/leaderboard.service.ts` with `getLeaderboard(): Observable<LeaderboardEntry[]>` calling `GET /api/leaderboard`
     - Defined `LeaderboardEntry` interface: `rank`, `userId`, `username`, `handsPlayed`, `wins`, `winRate`, `totalEarnings`

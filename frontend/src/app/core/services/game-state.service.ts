@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { find } from 'lodash-es';
 
 import { WebSocketService } from './websocket.service';
+import { SoundEffectsService } from './sound-effects.service';
 import { GameState, GamePhase, Card, PlayerSeat, WinnerInfo } from '../models/game-state.model';
 import {
   WsMessage,
@@ -52,6 +53,7 @@ export class GameStateService implements OnDestroy {
   constructor(
     private readonly wsService: WebSocketService,
     private readonly router: Router,
+    private readonly soundEffects: SoundEffectsService,
   ) {
     this.wsService.messages$
       .pipe(takeUntil(this.destroy$))
@@ -101,6 +103,7 @@ export class GameStateService implements OnDestroy {
     this.playersSubject.next(payload.seats);
     this.holeCardsSubject.next(payload.holeCards);
     this.syncState({ seats: payload.seats });
+    this.soundEffects.playCardFlip();
   }
 
   private onPlayerAction(payload: PlayerActionPayload): void {

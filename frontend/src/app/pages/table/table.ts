@@ -1,12 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { CardComponent } from '../../shared/card/card.component';
 import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
+import { SoundEffectsService } from '../../core/services/sound-effects.service';
 import { GameState, Card, PlayerSeat, WinnerInfo } from '../../core/models/game-state.model';
 import { GameControlsComponent, GameAction } from '../../features/table/game-controls/game-controls.component';
 
@@ -23,12 +24,16 @@ export class Table implements OnInit, OnDestroy {
   tableId = '';
   gameState: GameState | null = null;
   winner: WinnerInfo | null = null;
+  readonly isMuted$: Observable<boolean>;
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly authService: AuthService,
     private readonly gameStateService: GameStateService,
-  ) {}
+    private readonly soundEffects: SoundEffectsService,
+  ) {
+    this.isMuted$ = this.soundEffects.isMuted$;
+  }
 
   ngOnInit(): void {
     this.tableId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -39,7 +44,10 @@ export class Table implements OnInit, OnDestroy {
 
     this.gameStateService.winner$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(winner => { this.winner = winner; });
+      .subscribe(winner => {
+        this.winner = winner;
+        if (winner) this.soundEffects.playWinFanfare();
+      });
   }
 
   ngOnDestroy(): void {
@@ -96,6 +104,10 @@ export class Table implements OnInit, OnDestroy {
 
   dismissWinner(): void {
     this.winner = null;
+  }
+
+  onToggleMute(): void {
+    this.soundEffects.toggleMute();
   }
 
   get callAmount(): number {
