@@ -76,6 +76,14 @@
         <span class="rf-table__player-name">{{ currentUserSeat?.username ?? currentUsername }}</span>
         <span class="rf-table__player-chips" *ngIf="currentUserSeat">${{ currentUserSeat.chipCount }}</span>
       </div>
+
+      <app-game-controls
+        [isActivePlayer]="isActivePlayer"
+        [callAmount]="callAmount"
+        [maxRaise]="maxRaise"
+        (action)="onGameAction($event)"
+        data-cy="game-controls"
+      ></app-game-controls>
     </div>
 
   </main>

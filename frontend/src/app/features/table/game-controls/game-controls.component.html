@@ -1,0 +1,79 @@
+<div class="game-controls" [class.game-controls--inactive]="!isActivePlayer">
+  <div class="game-controls__actions">
+    <button
+      mat-raised-button
+      class="game-controls__btn game-controls__btn--check"
+      [disabled]="!isActivePlayer"
+      (click)="onCheck()"
+      data-testid="btn-check"
+    >
+      Check
+    </button>
+
+    <button
+      mat-raised-button
+      class="game-controls__btn game-controls__btn--call"
+      [disabled]="!isActivePlayer"
+      (click)="onCall()"
+      data-testid="btn-call"
+    >
+      Call<span *ngIf="callAmount > 0"> ({{ callAmount }})</span>
+    </button>
+
+    <button
+      mat-raised-button
+      class="game-controls__btn game-controls__btn--raise"
+      [disabled]="!isActivePlayer"
+      (click)="onRaiseToggle()"
+      data-testid="btn-raise"
+    >
+      Raise
+    </button>
+
+    <button
+      mat-raised-button
+      color="warn"
+      class="game-controls__btn game-controls__btn--fold"
+      [disabled]="!isActivePlayer"
+      (click)="onFold()"
+      data-testid="btn-fold"
+    >
+      Fold
+    </button>
+  </div>
+
+  <div *ngIf="showRaiseInput" class="game-controls__raise-panel" data-testid="raise-panel">
+    <form [formGroup]="raiseForm" (ngSubmit)="onRaiseSubmit()">
+      <mat-form-field appearance="outline" class="game-controls__raise-field">
+        <mat-label>Raise amount</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="amount"
+          [min]="raiseMin"
+          [max]="maxRaise > 0 ? maxRaise : null"
+          data-testid="raise-input"
+        />
+        <mat-error *ngIf="raiseForm.get('amount')?.hasError('required')">
+          Amount is required
+        </mat-error>
+        <mat-error *ngIf="raiseForm.get('amount')?.hasError('min')">
+          Minimum raise is {{ raiseMin }}
+        </mat-error>
+        <mat-error *ngIf="raiseForm.get('amount')?.hasError('max')">
+          Maximum raise is {{ maxRaise }}
+        </mat-error>
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="raiseForm.invalid"
+        data-testid="btn-raise-confirm"
+      >
+        Confirm Raise
+      </button>
+    </form>
+  </div>
+</div>
