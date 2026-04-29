@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { EMPTY, TimeoutError, catchError, finalize, switchMap, timeout } from 'rxjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 // Angular Material
 import { MatCardModule } from '@angular/material/card';
@@ -14,7 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { normalizeRoomCode, ROOM_CODE_EXAMPLE, roomCodeValidator } from '../../core/models';
-import { AuthService, RoomService } from '../../core/services';
+import { AuthService, RoomService, ToastNotificationService } from '../../core/services';
 
 export type ActivePanel = 'login' | 'register' | null;
 
@@ -65,7 +64,7 @@ export class HomeComponent implements OnInit {
     private authService: AuthService,
     private roomService: RoomService,
     private router:      Router,
-    private snackBar:    MatSnackBar,
+    private toast:       ToastNotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -155,12 +154,7 @@ export class HomeComponent implements OnInit {
         timeout(8000),
         catchError(() => {
           this.registerError = 'Account created. Please log in.';
-          this.snackBar.open('Account created successfully. Please log in.', 'Dismiss', {
-            duration: 3500,
-            panelClass: ['rf-toast', 'rf-toast--success'],
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
+          this.toast.show('Account created successfully. Please log in.', 'success');
           this.activePanel = null;
           this.registerForm.reset();
           void this.router.navigate(['/login']);
@@ -172,12 +166,7 @@ export class HomeComponent implements OnInit {
       })
     ).subscribe({
       next: () => {
-        this.snackBar.open('User created successfully. Logged in.', 'Dismiss', {
-          duration: 3000,
-          panelClass: ['rf-toast', 'rf-toast--success'],
-          horizontalPosition: 'right',
-          verticalPosition: 'top',
-        });
+        this.toast.show('User created successfully. Logged in.', 'success');
         this.activePanel = null;
         this.registerForm.reset();
         void this.router.navigate(['/dashboard']);
@@ -187,12 +176,7 @@ export class HomeComponent implements OnInit {
           setTimeout(() => {
             this.registerError = 'Request timed out. Please try again.';
           });
-          this.snackBar.open('Request timed out. Please try again.', 'Dismiss', {
-            duration: 3500,
-            panelClass: ['rf-toast', 'rf-toast--error'],
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
+          this.toast.show('Request timed out. Please try again.', 'error');
           return;
         }
 
@@ -204,23 +188,13 @@ export class HomeComponent implements OnInit {
           setTimeout(() => {
             this.registerError = 'Username taken';
           });
-          this.snackBar.open('Username already exists.', 'Dismiss', {
-            duration: 3500,
-            panelClass: ['rf-toast', 'rf-toast--error'],
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
+          this.toast.show('Username already exists.', 'error');
         } else {
           const message = apiError?.message ?? 'Registration failed. Please try again.';
           setTimeout(() => {
             this.registerError = message;
           });
-          this.snackBar.open(message, 'Dismiss', {
-            duration: 3500,
-            panelClass: ['rf-toast', 'rf-toast--error'],
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
+          this.toast.show(message, 'error');
         }
       },
     });

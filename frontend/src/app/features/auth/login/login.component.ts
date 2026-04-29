@@ -9,8 +9,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthService } from '../../../core/services';
+import { AuthService, ToastNotificationService } from '../../../core/services';
 import { LoginCredentials } from '../../../core/models';
 
 @Component({
@@ -33,7 +32,7 @@ export class LoginComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastNotificationService);
 
   readonly loginForm = this.formBuilder.nonNullable.group({
     username: ['', [Validators.required, Validators.minLength(3)]],
@@ -73,33 +72,18 @@ export class LoginComponent {
         catchError((error: unknown) => {
           if (error instanceof TimeoutError) {
             this.submitError = 'Request timed out. Please try again.';
-            this.snackBar.open(this.submitError, 'Dismiss', {
-              duration: 3500,
-              panelClass: ['rf-toast', 'rf-toast--error'],
-              horizontalPosition: 'right',
-              verticalPosition: 'top',
-            });
+            this.toast.show(this.submitError, 'error');
             return EMPTY;
           }
 
           if (error instanceof HttpErrorResponse && error.status === 401) {
             this.submitError = 'Invalid username or password.';
-            this.snackBar.open('Invalid username or password.', 'Dismiss', {
-              duration: 3500,
-              panelClass: ['rf-toast', 'rf-toast--error'],
-              horizontalPosition: 'right',
-              verticalPosition: 'top',
-            });
+            this.toast.show(this.submitError, 'error');
             return EMPTY;
           }
 
           this.submitError = 'Server error. Please try again later.';
-          this.snackBar.open(this.submitError, 'Dismiss', {
-            duration: 3500,
-            panelClass: ['rf-toast', 'rf-toast--error'],
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
+          this.toast.show(this.submitError, 'error');
           return EMPTY;
         }),
         finalize(() => (this.isSubmitting = false))
