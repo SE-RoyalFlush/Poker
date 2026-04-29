@@ -41,7 +41,7 @@ describe('Lobby', () => {
           provide: ActivatedRoute,
           useValue: {
             snapshot: {
-              queryParamMap: convertToParamMap({ code: 'AB12CD' }),
+              paramMap: convertToParamMap({ code: 'AB12CD' }),
             },
           },
         },
@@ -66,7 +66,7 @@ describe('Lobby', () => {
   });
 
   // --- Room code ---
-  it('should read roomCode from query params', () => {
+  it('should read roomCode from route params', () => {
     expect(component.roomCode).toBe('AB12CD');
   });
 
@@ -174,7 +174,7 @@ describe('Lobby', () => {
 });
 
 describe('Lobby (missing code param)', () => {
-  it('should redirect to /dashboard when code query param is missing', async () => {
+  it('should redirect to /dashboard when code route param is missing', async () => {
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
@@ -188,7 +188,7 @@ describe('Lobby (missing code param)', () => {
         },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+          useValue: { snapshot: { paramMap: convertToParamMap({}) } },
         },
       ],
     }).compileComponents();

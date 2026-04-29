@@ -247,7 +247,7 @@ export class HomeComponent implements OnInit {
     this.roomService.joinRoom(normalizeRoomCode(roomCode)).subscribe({
       next: (room) => {
         this.joinLoading = false;
-        this.router.navigate(['/room', room.id]);
+        this.router.navigate(['/lobby', room.code]);
       },
       error: (err) => {
         this.joinLoading = false;

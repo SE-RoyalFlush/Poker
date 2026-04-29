@@ -79,7 +79,7 @@ describe('CreateRoomComponent', () => {
     expect(roomSpy.createRoom).toHaveBeenCalled();
   });
 
-  it('should navigate to /room/code on success', () => {
+  it('should navigate to /lobby/code on success', () => {
     component.createForm.patchValue({
       roomName: 'My Table',
       maxPlayers: 6,
@@ -90,7 +90,7 @@ describe('CreateRoomComponent', () => {
 
     component.onCreateRoom();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/room', mockRoom.code]);
+    expect(router.navigate).toHaveBeenCalledWith(['/lobby', mockRoom.code]);
   });
 
   it('should display createError on API failure', () => {
