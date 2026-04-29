@@ -28,3 +28,13 @@ body {
   --mdc-snackbar-container-color: #311722;
   border-color: rgba(241, 108, 122, 0.6);
 }
+
+.mat-mdc-snack-bar-container.rf-toast--info {
+  --mdc-snackbar-container-color: #0f1a3b;
+  border-color: rgba(100, 160, 240, 0.5);
+}
+
+.mat-mdc-snack-bar-container.rf-toast--warning {
+  --mdc-snackbar-container-color: #2b1f08;
+  border-color: rgba(240, 190, 80, 0.55);
+}
