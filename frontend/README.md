@@ -106,7 +106,7 @@ The authentication system manages user login, registration, session state, and p
 - **Location**: `src/app/core/services/auth.service.ts`
 - **State Management**: RxJS BehaviorSubject pattern
 - **Observable API**: `currentUser$` for components to subscribe to
-- **Session Handling**: HttpOnly cookies (via withCredentials: true)
+- **Session Handling**: HttpOnly signed session cookies (frontend requests use `withCredentials: true`)
 
 ### Key Methods
 
@@ -154,6 +154,7 @@ login(username: string, password: string) {
    - `checkSession()` is called before app fully loads
    - Validates existing session cookie via GET /api/me
    - Restores user state if valid
+   - Routed unauthenticated `/api/me` requests return `401`; the service treats that as guest state
 
 2. **Login**
    - POST credentials to /api/login
@@ -163,8 +164,9 @@ login(username: string, password: string) {
 
 3. **Register**
    - POST registration data to /api/register
-  - Backend creates user and returns created user payload
-  - Does not assume an authenticated session is created
+   - Backend creates user and returns created user payload
+   - The backend does not auto-create a session
+   - The current register UI then performs a follow-up login request and navigates on success
 
 4. **Logout**
    - POST to /api/logout (backend clears cookie)
@@ -193,7 +195,7 @@ Run tests with:
 npm test -- --watch=false --browsers=ChromeHeadless
 ```
 
-All 29 tests pass ✅
+The auth service has dedicated unit coverage in `src/app/core/services/auth.service.spec.ts`.
 
 ### Models
 
@@ -258,13 +260,13 @@ TestBed.configureTestingModule({
 });
 ```
 
-See `src/app/core/services/websocket.service.spec.ts` for full examples (17 tests).
+See `src/app/core/services/websocket.service.spec.ts` for full examples.
 
 ### Backend contract
 
 | Endpoint | Status |
 |----------|--------|
-| `ws://localhost:8080/ws` | Pending — backend implementation in a future sprint |
+| `ws://localhost:8080/ws` | Implemented and protected by the same session cookie used for HTTP requests |
 
 ### Models
 
@@ -285,9 +287,9 @@ Use this checklist whenever auth service behavior or backend auth endpoints chan
 | Contract Area | Source of Truth | Expected Behavior | Frontend Verification |
 | --- | --- | --- | --- |
 | User JSON shape from backend | `backend/pkg/models/user.go`, `docs/api/openapi.yaml` | Backend returns `ID`, `CreatedAt`, `UpdatedAt`, `username` | `AuthService` maps to frontend `User` (`id`, `createdAt`, `updatedAt`) in `src/app/core/services/auth.service.ts` |
-| Session restore (`GET /api/me`) | Backend `/api/me` handler + OpenAPI | `401`: unauthenticated guest; non-`401`: do not force logout on transient failures | `checkSession()` tests in `src/app/core/services/auth.service.spec.ts` |
+| Session restore (`GET /api/me`) | Routed backend `/api/me` endpoint + OpenAPI | `401`: unauthenticated guest; non-`401`: do not force logout on transient failures | `checkSession()` tests in `src/app/core/services/auth.service.spec.ts` |
 | Login flow | Backend `/api/login` + `/api/me` | Login sets session, then `/me` resolves current user | `login()` tests in `src/app/core/services/auth.service.spec.ts` |
-| Register flow | `backend/pkg/api/auth.go` `RegisterHandler` | Register creates user payload; does not imply authenticated session | `register()` tests in `src/app/core/services/auth.service.spec.ts` (no implicit `/me`) |
+| Register flow | `backend/pkg/api/auth.go` `RegisterHandler` plus register UI | Register creates user payload; backend does not imply authenticated session; UI may perform a separate login | `register()` tests in `src/app/core/services/auth.service.spec.ts` (no implicit `/me`) |
 | Logout flow | Backend `/api/logout` | Logout clears backend session; frontend clears local user state even if backend call fails | `logout()` tests in `src/app/core/services/auth.service.spec.ts` |
 
 Quick contract regression run:
