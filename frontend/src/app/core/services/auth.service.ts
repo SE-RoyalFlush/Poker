@@ -103,10 +103,6 @@ export class AuthService {
         this.currentUserSubject.next(user);
       }),
       catchError((error: HttpErrorResponse) => {
-        // Only 401 means user is unauthenticated.
-        // For transient server/network failures, preserve current local state.
-        console.error('Session check failed:', error);
-
         if (error.status === 401 || error.status === 204) {
           this.currentUserSubject.next(null);
           return of(null);
@@ -169,7 +165,6 @@ export class AuthService {
         return throwError(() => new Error('Login completed but no authenticated user session was found.'));
       }),
       catchError(error => {
-        console.error('Login failed:', error);
         this.isLoadingSubject.next(false);
         return throwError(() => error);
       })
@@ -199,7 +194,6 @@ export class AuthService {
         return of(user);
       }),
       catchError(error => {
-        console.error('Registration failed:', error);
         return throwError(() => error);
       }),
       finalize(() => {
@@ -228,11 +222,9 @@ export class AuthService {
         // Clear local user state
         this.currentUserSubject.next(null);
       }),
-      catchError(error => {
-        console.error('Logout failed:', error);
-        // Even if logout fails on backend, clear local state
+      catchError(() => {
         this.currentUserSubject.next(null);
-        return of(void 0); // Don't throw, just clean up locally
+        return of(void 0);
       }),
       finalize(() => {
         this.isLoadingSubject.next(false);

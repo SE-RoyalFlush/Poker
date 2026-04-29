@@ -154,14 +154,13 @@ describe('WebSocketService', () => {
       mockSocket.simulateMessage(msg2);
     });
 
-    it('should not throw on malformed (non-JSON) messages — logs error instead', () => {
+    it('should not throw on malformed (non-JSON) messages', () => {
       service.connect();
       mockSocket.simulateOpen();
 
-      const consoleSpy = spyOn(console, 'error');
-      mockSocket.onmessage?.(new MessageEvent('message', { data: 'not-json{{' }));
-
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(() => {
+        mockSocket.onmessage?.(new MessageEvent('message', { data: 'not-json{{' }));
+      }).not.toThrow();
     });
   });
 
@@ -189,22 +188,15 @@ describe('WebSocketService', () => {
       );
     });
 
-    it('should warn and NOT throw when socket is not connected', () => {
-      const warnSpy = spyOn(console, 'warn');
-
+    it('should not throw when socket is not connected', () => {
       expect(() => service.sendMessage('JOIN_ROOM', {})).not.toThrow();
-      expect(warnSpy).toHaveBeenCalled();
     });
 
     it('should not call send when socket is in CONNECTING state', () => {
       service.connect();
       // socket is CONNECTING — simulateOpen() never called
-      const warnSpy = spyOn(console, 'warn');
-
       service.sendMessage('JOIN_ROOM', {});
-
       expect(mockSocket.send).not.toHaveBeenCalled();
-      expect(warnSpy).toHaveBeenCalled();
     });
   });
 

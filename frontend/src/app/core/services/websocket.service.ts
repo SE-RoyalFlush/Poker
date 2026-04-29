@@ -81,13 +81,12 @@ export class WebSocketService {
       try {
         const message: WsMessage = JSON.parse(event.data as string);
         this.messagesSubject.next(message);
-      } catch (e) {
-        console.error('[WebSocketService] Failed to parse message:', event.data, e);
+      } catch {
+        // Silently drop malformed frames
       }
     };
 
-    this.socket.onerror = (event: Event) => {
-      console.error('[WebSocketService] Connection error:', event);
+    this.socket.onerror = () => {
       this.connectedSubject.next(false);
     };
 
@@ -107,7 +106,6 @@ export class WebSocketService {
    */
   private scheduleReconnect(url: string): void {
     if (this.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
-      console.error('[WebSocketService] Max reconnect attempts reached, giving up');
       return;
     }
 
@@ -116,11 +114,6 @@ export class WebSocketService {
       30000
     );
     this.reconnectAttempts++;
-
-    console.warn(
-      `[WebSocketService] Reconnecting in ${delay}ms` +
-        ` (attempt ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS})`
-    );
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
@@ -138,7 +131,6 @@ export class WebSocketService {
    */
   sendMessage(type: string, payload: unknown = {}): void {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.warn('[WebSocketService] sendMessage called but socket is not open');
       return;
     }
     this.socket.send(JSON.stringify({ type, payload } as WsMessage));
