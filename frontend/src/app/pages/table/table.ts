@@ -86,6 +86,6 @@ export class Table implements OnInit, OnDestroy {
   }
 
   onGameAction(action: GameAction): void {
-    console.log('Game action:', action);
+    this.gameStateService.sendAction(action.type, action.amount);
   }
 }
