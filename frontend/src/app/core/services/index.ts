@@ -15,3 +15,4 @@ export * from './game-state.service';
 export * from './toast.service';
 export * from './stats.service';
 export * from './leaderboard.service';
+export * from './sound-effects.service';
