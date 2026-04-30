@@ -15,27 +15,25 @@ import (
 )
 
 // MeHandler handles GET /api/me requests to return the current authenticated user.
-// Returns 204 No Content if not authenticated (instead of 401) to allow frontend silent session check.
+// In production this handler sits behind AuthMiddleware (which returns 401 first),
+// but it also handles auth errors defensively so it can be called in isolation.
 func MeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	user, err := auth.AuthenticatedUserFromRequest(r)
 	if err != nil {
 		if errors.Is(err, auth.ErrMissingSession) || errors.Is(err, auth.ErrInvalidSession) || errors.Is(err, auth.ErrUnauthenticated) {
-			w.WriteHeader(http.StatusNoContent)
+			sendError(w, "Unauthorized", "Authentication required", http.StatusUnauthorized)
 			return
 		}
-
 		if errors.Is(err, db.ErrNotInitialized) {
 			sendError(w, "Internal Server Error", "Database not initialized", http.StatusInternalServerError)
 			return
 		}
-
 		sendError(w, "Internal Server Error", "Database error", http.StatusInternalServerError)
 		return
 	}
 
-	// Return the public user payload expected by the frontend.
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(user.ToResponse()); err != nil {
 		log.Printf("Failed to encode user response: %v", err)

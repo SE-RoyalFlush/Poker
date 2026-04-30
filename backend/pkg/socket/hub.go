@@ -1,11 +1,13 @@
 package socket
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"sync"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/game"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
@@ -19,6 +21,7 @@ type Message = protocol.Envelope[any]
 type roomState struct {
 	lobby   *room.Lobby
 	clients map[*Client]bool
+	game    *game.Game // nil when no game is in progress
 }
 
 type Hub struct {
@@ -49,7 +52,6 @@ func RoomOccupancy(roomCode string) int {
 func (h *Hub) Reset() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-
 	h.rooms = make(map[string]*roomState)
 }
 
@@ -68,7 +70,6 @@ func (h *Hub) Occupancy(roomCode string) int {
 			uniquePlayers[client.user.ID] = struct{}{}
 		}
 	}
-
 	return len(uniquePlayers)
 }
 
@@ -256,5 +257,176 @@ func (h *Hub) HandleRoomMessage(client *Client, messageType string) error {
 		member.trySend(message)
 	}
 
+	// After a ready toggle, auto-start if all players (≥2) are ready.
+	if messageType == protocol.ClientMsgToggleReady {
+		h.MaybeStartGame(roomCode)
+	}
+
 	return nil
+}
+
+// MaybeStartGame starts a Texas Hold'em hand if all players (≥2) are ready
+// and no game is currently in progress.
+func (h *Hub) MaybeStartGame(roomCode string) {
+	h.mu.Lock()
+	state, ok := h.rooms[roomCode]
+	if !ok || state.game != nil {
+		h.mu.Unlock()
+		return
+	}
+
+	players := state.lobby.Players()
+	if len(players) < 2 || !state.lobby.AllReady() {
+		h.mu.Unlock()
+		return
+	}
+
+	g := game.NewGame(players, roomCode)
+	state.game = g
+	clients := make([]*Client, 0, len(state.clients))
+	for c := range state.clients {
+		clients = append(clients, c)
+	}
+	h.mu.Unlock()
+
+	events := g.Start()
+	h.dispatchGameEvents(roomCode, clients, events)
+}
+
+// HandleGameAction processes a CHECK/CALL/RAISE/FOLD from a player.
+func (h *Hub) HandleGameAction(client *Client, action string, amount int) {
+	if client == nil {
+		return
+	}
+
+	roomCode := client.roomCodeValue()
+	if roomCode == "" {
+		return
+	}
+
+	h.mu.Lock()
+	state, ok := h.rooms[roomCode]
+	if !ok || state.game == nil {
+		h.mu.Unlock()
+		client.sendError("NO_GAME", "no active game in this room")
+		return
+	}
+
+	g := state.game
+	events, err := g.Act(client.user.ID, action, amount)
+	if err != nil {
+		h.mu.Unlock()
+		client.sendError("ACTION_FAILED", err.Error())
+		return
+	}
+
+	// If GAME_OVER is among the events, clear game state and reset lobby.
+	gameOver := false
+	var winnerID uint
+	var pot int
+	for _, ev := range events {
+		if ev.Type == "GAME_OVER" {
+			gameOver = true
+			if p, ok2 := ev.Payload.(game.GameOverPayload); ok2 {
+				winnerID = p.WinnerID
+				pot = p.Pot
+			}
+			break
+		}
+	}
+	if gameOver {
+		state.game = nil
+		state.lobby.ResetReady()
+	}
+
+	clients := make([]*Client, 0, len(state.clients))
+	for c := range state.clients {
+		clients = append(clients, c)
+	}
+	h.mu.Unlock()
+
+	h.dispatchGameEvents(roomCode, clients, events)
+
+	if gameOver {
+		h.persistResult(roomCode, winnerID, pot)
+	}
+}
+
+// HandleChatMessage broadcasts a chat message to everyone in the room.
+func (h *Hub) HandleChatMessage(client *Client, rawPayload json.RawMessage) {
+	if client == nil {
+		return
+	}
+	roomCode := client.roomCodeValue()
+	if roomCode == "" {
+		return
+	}
+
+	var payload protocol.ChatInPayload
+	if err := json.Unmarshal(rawPayload, &payload); err != nil || payload.Text == "" {
+		return
+	}
+
+	h.BroadcastToRoom(roomCode, Message{
+		Type: protocol.ServerMsgChat,
+		Payload: protocol.ChatPayload{
+			SenderID: client.user.ID,
+			Username: client.user.Username,
+			Text:     payload.Text,
+		},
+	})
+}
+
+// dispatchGameEvents routes each GameEvent to the correct client(s).
+func (h *Hub) dispatchGameEvents(_ string, clients []*Client, events []game.GameEvent) {
+	for _, ev := range events {
+		if ev.Personalized {
+			for _, c := range clients {
+				if payload, ok := ev.Payloads[c.user.ID]; ok {
+					c.trySend(Message{Type: ev.Type, Payload: payload})
+				}
+			}
+		} else {
+			msg := Message{Type: ev.Type, Payload: ev.Payload}
+			for _, c := range clients {
+				c.trySend(msg)
+			}
+		}
+	}
+}
+
+func (h *Hub) persistResult(roomCode string, winnerID uint, pot int) {
+	if err := db.WithDB(func(database *gorm.DB) error {
+		return game.SaveGameResult(database, models.GameResult{
+			WinnerID: winnerID,
+			PotSize:  pot,
+			GameType: models.DefaultGameType,
+		})
+	}); err != nil {
+		log.Printf("failed to persist game result for room %s: %v", roomCode, err)
+	}
+}
+
+// BroadcastToRoom sends a message to all connected clients in the given room.
+func (h *Hub) BroadcastToRoom(roomCode string, message Message) {
+	h.mu.RLock()
+	state, ok := h.rooms[roomCode]
+	if !ok {
+		h.mu.RUnlock()
+		return
+	}
+
+	recipients := make([]*Client, 0, len(state.clients))
+	for member := range state.clients {
+		recipients = append(recipients, member)
+	}
+	h.mu.RUnlock()
+
+	for _, member := range recipients {
+		member.trySend(message)
+	}
+}
+
+func (h *Hub) activePlayerCount(roomCode string) int {
+	return h.Occupancy(roomCode)
 }

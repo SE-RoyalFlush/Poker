@@ -14,15 +14,24 @@
 //	LEAVE_ROOM    {}
 //	TOGGLE_READY  {}
 //	FOLD          {}
+//	CHECK         {}
+//	CALL          {}
+//	RAISE         { amount: number }
+//	CHAT_MESSAGE  { text: string }
 //
 // # Server → Client events
 //
-//	ROOM_STATE    { roomCode: string, players: Player[] }   (sent on join)
-//	PLAYER_JOINED { id, username, isHost, isReady }         (broadcast to others)
-//	PLAYER_LEFT   { id }                                    (broadcast to others)
-//	PLAYER_UPDATE { id, username, isHost, isReady }         (broadcast to all)
-//	GAME_OVER     { winnerId: number, pot: number, seats: Player[] }
-//	ERROR         { code: string, message: string }
+//	ROOM_STATE     { roomCode: string, players: Player[] }
+//	PLAYER_JOINED  { id, username, isHost, isReady }
+//	PLAYER_LEFT    { id }
+//	PLAYER_UPDATE  { id, username, isHost, isReady }
+//	GAME_STARTED   { tableId, seats, phase, pot, currentBet, activePlayerId, currentUserId }
+//	CARDS_DEALT    { seats, holeCards }
+//	PLAYER_ACTION  { playerId, action, amount, pot, currentBet, seats, activePlayerId }
+//	PHASE_CHANGE   { phase, communityCards, pot, currentBet, activePlayerId }
+//	GAME_OVER      { winnerId, pot, seats }
+//	CHAT_MESSAGE   { senderId, username, text }
+//	ERROR          { code: string, message: string }
 package protocol
 
 // Client-to-server message type constants.
@@ -31,6 +40,10 @@ const (
 	ClientMsgLeaveRoom   = "LEAVE_ROOM"
 	ClientMsgToggleReady = "TOGGLE_READY"
 	ClientMsgFold        = "FOLD"
+	ClientMsgCheck       = "CHECK"
+	ClientMsgCall        = "CALL"
+	ClientMsgRaise       = "RAISE"
+	ClientMsgChat        = "CHAT_MESSAGE"
 )
 
 // Server-to-client message type constants.
@@ -39,7 +52,12 @@ const (
 	ServerMsgPlayerLeft   = "PLAYER_LEFT"
 	ServerMsgPlayerUpdate = "PLAYER_UPDATE"
 	ServerMsgRoomState    = "ROOM_STATE"
+	ServerMsgGameStarted  = "GAME_STARTED"
+	ServerMsgCardsDealt   = "CARDS_DEALT"
+	ServerMsgPlayerAction = "PLAYER_ACTION"
+	ServerMsgPhaseChange  = "PHASE_CHANGE"
 	ServerMsgGameOver     = "GAME_OVER"
+	ServerMsgChat         = "CHAT_MESSAGE"
 	ServerMsgError        = "ERROR"
 )
 
@@ -49,7 +67,7 @@ type Envelope[T any] struct {
 	Payload T      `json:"payload"`
 }
 
-// Player is the public player state transmitted over the wire.
+// Player is the public lobby player state transmitted over the wire.
 type Player struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
@@ -73,11 +91,21 @@ type RoomStatePayload struct {
 	Players  []Player `json:"players"`
 }
 
-// GameOverPayload is broadcast when a hand is completed.
-type GameOverPayload struct {
-	WinnerID uint     `json:"winnerId"`
-	Pot      int      `json:"pot"`
-	Seats    []Player `json:"seats,omitempty"`
+// RaisePayload is sent by the client to raise.
+type RaisePayload struct {
+	Amount int `json:"amount"`
+}
+
+// ChatInPayload is sent by the client to send a chat message.
+type ChatInPayload struct {
+	Text string `json:"text"`
+}
+
+// ChatPayload is broadcast by the server with a chat message.
+type ChatPayload struct {
+	SenderID uint   `json:"senderId"`
+	Username string `json:"username"`
+	Text     string `json:"text"`
 }
 
 // ErrorPayload is sent by the server when a client message cannot be processed.

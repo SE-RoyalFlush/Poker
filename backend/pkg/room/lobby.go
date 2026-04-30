@@ -130,6 +130,17 @@ func (l *Lobby) Players() []Player {
 	return players
 }
 
+// ResetReady marks all players as not ready (called after a game ends).
+func (l *Lobby) ResetReady() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	for id, p := range l.players {
+		p.IsReady = false
+		l.players[id] = p
+	}
+}
+
 // AllReady reports whether every tracked player is marked ready.
 func (l *Lobby) AllReady() bool {
 	l.mu.RLock()

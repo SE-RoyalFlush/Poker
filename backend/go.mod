@@ -3,7 +3,6 @@ module github.com/SE-RoyalFlush/Poker/backend
 go 1.25.6
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/csrf v1.7.2
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/securecookie v1.1.2

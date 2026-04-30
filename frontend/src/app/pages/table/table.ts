@@ -7,6 +7,7 @@ import { takeUntil } from 'rxjs/operators';
 import { CardComponent } from '../../shared/card/card.component';
 import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
+import { WebSocketService } from '../../core/services/websocket.service';
 import { SoundEffectsService } from '../../core/services/sound-effects.service';
 import { GameState, Card, PlayerSeat, WinnerInfo } from '../../core/models/game-state.model';
 import { GameControlsComponent, GameAction } from '../../features/table/game-controls/game-controls.component';
@@ -31,12 +32,16 @@ export class Table implements OnInit, OnDestroy {
     private readonly authService: AuthService,
     private readonly gameStateService: GameStateService,
     private readonly soundEffects: SoundEffectsService,
+    private readonly wsService: WebSocketService,
   ) {
     this.isMuted$ = this.soundEffects.isMuted$;
   }
 
   ngOnInit(): void {
     this.tableId = this.route.snapshot.paramMap.get('id') ?? '';
+
+    // Reconnect the WebSocket if the user lands directly on the table URL.
+    this.wsService.connect();
 
     this.gameStateService.gameState$
       .pipe(takeUntil(this.destroy$))

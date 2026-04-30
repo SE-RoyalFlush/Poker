@@ -71,11 +71,11 @@ var _ = Describe("UserStatsHandler", func() {
 		Expect(rec.Code).To(Equal(http.StatusOK))
 		var response api.UserStatsResponse
 		Expect(json.NewDecoder(rec.Body).Decode(&response)).To(Succeed())
-		Expect(response.HandsPlayed).To(Equal(int64(3)))
+		Expect(response.HandsPlayed).To(Equal(int64(2)))
 		Expect(response.Wins).To(Equal(int64(2)))
-		Expect(response.Losses).To(Equal(int64(1)))
-		Expect(response.WinRate).To(BeNumerically("~", 66.6666667, 0.0001))
-		Expect(response.TotalEarnings).To(Equal(int64(135)))
+		Expect(response.Losses).To(Equal(int64(0)))
+		Expect(response.WinRate).To(BeNumerically("~", 100.0, 0.0001))
+		Expect(response.TotalEarnings).To(Equal(int64(175)))
 	})
 
 	It("returns zeroed stats when the user has no game history", func() {

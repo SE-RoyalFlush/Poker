@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, tap, catchError, of, switchMap, throwError
 import { API_URL } from '../config/endpoints';
 
 export interface User {
-  id: number | string;
+  id: number;
   username: string;
   email?: string;
   createdAt?: string;

@@ -87,19 +87,19 @@ var _ = Describe("Auth API", func() {
 			Expect(resp.PasswordHash).To(BeEmpty()) // Should not be present in JSON
 		})
 
-		It("should return 204 for missing session", func() {
+		It("should return 401 for missing session", func() {
 			req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
 			rec := httptest.NewRecorder()
 			api.MeHandler(rec, req)
-			Expect(rec.Code).To(Equal(http.StatusNoContent))
+			Expect(rec.Code).To(Equal(http.StatusUnauthorized))
 		})
 
-		It("should return 204 for invalid session cookie", func() {
+		It("should return 401 for invalid session cookie", func() {
 			req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
 			req.AddCookie(&http.Cookie{Name: "session-id", Value: "invalid-value"})
 			rec := httptest.NewRecorder()
 			api.MeHandler(rec, req)
-			Expect(rec.Code).To(Equal(http.StatusNoContent))
+			Expect(rec.Code).To(Equal(http.StatusUnauthorized))
 		})
 	})
 

@@ -2,8 +2,6 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { find } from 'lodash-es';
-
 import { WebSocketService } from './websocket.service';
 import { SoundEffectsService } from './sound-effects.service';
 import { GameState, GamePhase, Card, PlayerSeat, WinnerInfo } from '../models/game-state.model';
@@ -139,7 +137,7 @@ export class GameStateService implements OnDestroy {
       pot: payload.pot,
       phase: 'showdown',
     });
-    const winner = find(payload.seats, { playerId: payload.winnerId }) as PlayerSeat | undefined;
+    const winner = payload.seats.find(s => s.playerId === payload.winnerId);
     this.winnerSubject.next(winner ? { username: winner.username, pot: payload.pot } : null);
   }
 
@@ -152,7 +150,7 @@ export class GameStateService implements OnDestroy {
    */
   getActivePlayer(): PlayerSeat | undefined {
     const activeId = this.activePlayerIdSubject.value;
-    return find(this.playersSubject.value, { playerId: activeId }) as PlayerSeat | undefined;
+    return this.playersSubject.value.find(s => s.playerId === activeId);
   }
 
   sendAction(type: string, amount?: number): void {
