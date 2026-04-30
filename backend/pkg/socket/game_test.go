@@ -3,12 +3,15 @@ package socket
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func TestCompleteHandPersistsGameResult(t *testing.T) {
@@ -133,6 +136,72 @@ func TestCompleteFoldPersistsAndBroadcastsWinner(t *testing.T) {
 	}
 }
 
+func TestLeaveRemovesEmptyRoomAndMarksPersistedRoomInactive(t *testing.T) {
+	database := setupHubCleanupTestDB(t)
+	user := createHubCleanupUser(t, database, "cleanup-host")
+	roomModel := createHubCleanupRoom(t, database, "CLEAN1", user.ID)
+
+	hub := NewHub()
+	client := &Client{
+		user: user,
+		send: make(chan Message, 1),
+	}
+	if _, err := hub.Join(roomModel, client); err != nil {
+		t.Fatalf("failed to join room: %v", err)
+	}
+
+	hub.Leave(client)
+
+	if got := hub.Occupancy(roomModel.Code); got != 0 {
+		t.Fatalf("expected empty room occupancy 0, got %d", got)
+	}
+	if _, ok := hub.rooms[roomModel.Code]; ok {
+		t.Fatal("expected empty room to be removed from hub")
+	}
+	if got := client.roomCodeValue(); got != "" {
+		t.Fatalf("expected client room code to be cleared, got %q", got)
+	}
+
+	var persisted models.Room
+	if err := database.Where("code = ?", roomModel.Code).First(&persisted).Error; err != nil {
+		t.Fatalf("failed to reload room: %v", err)
+	}
+	if persisted.IsActive {
+		t.Fatal("expected persisted room to be marked inactive")
+	}
+}
+
+func TestRepeatedJoinLeaveCyclesDoNotRetainRooms(t *testing.T) {
+	database := setupHubCleanupTestDB(t)
+	user := createHubCleanupUser(t, database, "cleanup-cycle")
+	hub := NewHub()
+
+	for i, code := range []string{"CYC001", "CYC002", "CYC003"} {
+		roomModel := createHubCleanupRoom(t, database, code, user.ID)
+		client := &Client{
+			user: user,
+			send: make(chan Message, 1),
+		}
+		if _, err := hub.Join(roomModel, client); err != nil {
+			t.Fatalf("cycle %d failed to join room: %v", i, err)
+		}
+
+		hub.Leave(client)
+	}
+
+	if len(hub.rooms) != 0 {
+		t.Fatalf("expected no retained rooms, got %d", len(hub.rooms))
+	}
+
+	var activeCount int64
+	if err := database.Model(&models.Room{}).Where("is_active = ?", true).Count(&activeCount).Error; err != nil {
+		t.Fatalf("failed to count active rooms: %v", err)
+	}
+	if activeCount != 0 {
+		t.Fatalf("expected no active rooms after repeated cleanup, got %d", activeCount)
+	}
+}
+
 func setupCompleteHandTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -145,4 +214,56 @@ func setupCompleteHandTestDB(t *testing.T) *gorm.DB {
 	}
 
 	return database
+}
+
+func setupHubCleanupTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+
+	tempDir := t.TempDir()
+	db.ResetForTesting()
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	database, err := db.Connect(&db.Config{
+		DatabasePath:    filepath.Join(tempDir, "hub-cleanup-test.db"),
+		MaxOpenConns:    5,
+		MaxIdleConns:    2,
+		ConnMaxLifetime: time.Minute,
+		LogLevel:        logger.Silent,
+	})
+	if err != nil {
+		t.Fatalf("failed to connect database: %v", err)
+	}
+
+	return database
+}
+
+func createHubCleanupUser(t *testing.T, database *gorm.DB, username string) *models.User {
+	t.Helper()
+
+	user := &models.User{
+		Username:     username,
+		PasswordHash: "hash",
+	}
+	if err := database.Create(user).Error; err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+
+	return user
+}
+
+func createHubCleanupRoom(t *testing.T, database *gorm.DB, code string, hostUserID uint) *models.Room {
+	t.Helper()
+
+	roomModel, err := room.Create(database, room.CreateParams{
+		Code:       code,
+		HostUserID: hostUserID,
+		MaxPlayers: 6,
+	})
+	if err != nil {
+		t.Fatalf("failed to create room %s: %v", code, err)
+	}
+
+	return roomModel
 }

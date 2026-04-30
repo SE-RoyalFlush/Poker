@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrInvalidMaxPlayers  = errors.New("invalid max players")
-	ErrInvalidRoomStatus  = errors.New("invalid room status")
+	ErrInvalidMaxPlayers = errors.New("invalid max players")
+	ErrInvalidRoomStatus = errors.New("invalid room status")
 )
 
 // CreateParams defines the persisted room attributes required for creation.
@@ -23,7 +23,8 @@ type CreateParams struct {
 
 // ListParams defines filters for persisted room lookup.
 type ListParams struct {
-	Status models.RoomStatus
+	Status          models.RoomStatus
+	IncludeInactive bool
 }
 
 // Create inserts a room row and returns the persisted record.
@@ -38,6 +39,7 @@ func Create(database *gorm.DB, params CreateParams) (*models.Room, error) {
 		Status:     params.Status,
 		MaxPlayers: maxPlayers,
 		IsPrivate:  params.IsPrivate,
+		IsActive:   true,
 	}
 
 	if room.Status == "" {
@@ -83,6 +85,9 @@ func List(database *gorm.DB, params ListParams) ([]models.Room, error) {
 	}
 
 	query := database.Order("created_at DESC")
+	if !params.IncludeInactive {
+		query = query.Where("is_active = ?", true)
+	}
 	if params.Status != "" {
 		query = query.Where("status = ?", params.Status)
 	}
@@ -93,6 +98,19 @@ func List(database *gorm.DB, params ListParams) ([]models.Room, error) {
 	}
 
 	return rooms, nil
+}
+
+// MarkInactive marks a room as no longer joinable after its live socket state is empty.
+func MarkInactive(database *gorm.DB, code string) error {
+	normalizedCode, err := validateAndNormalizeCode(code)
+	if err != nil {
+		return err
+	}
+
+	return database.Model(&models.Room{}).
+		Where("code = ?", normalizedCode).
+		Update("is_active", false).
+		Error
 }
 
 // IsValidStatus reports whether s is a known RoomStatus constant.

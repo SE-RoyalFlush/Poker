@@ -444,6 +444,7 @@ func setupWebSocketTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to set GO_ENV: %v", err)
 	}
 
+	tempDir := t.TempDir()
 	db.ResetForTesting()
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -461,7 +462,7 @@ func setupWebSocketTestDB(t *testing.T) *gorm.DB {
 	})
 
 	cfg := &db.Config{
-		DatabasePath:    filepath.Join(t.TempDir(), "ws-test.db"),
+		DatabasePath:    filepath.Join(tempDir, "ws-test.db"),
 		MaxOpenConns:    10,
 		MaxIdleConns:    2,
 		ConnMaxLifetime: time.Minute,

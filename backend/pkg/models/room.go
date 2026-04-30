@@ -24,4 +24,5 @@ type Room struct {
 	Status     RoomStatus `gorm:"type:text;not null;default:open;index"`
 	MaxPlayers int        `gorm:"not null;default:6;check:max_players_range,max_players > 0 AND max_players <= 10"`
 	IsPrivate  bool       `gorm:"not null;default:false"`
+	IsActive   bool       `gorm:"not null;default:true;index"`
 }
