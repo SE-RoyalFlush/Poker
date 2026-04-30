@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -40,6 +41,7 @@ export class JoinRoomComponent implements OnInit {
   liveRooms:       Room[] = [];
   liveRoomsLoading = false;
 
+  private readonly destroyRef  = inject(DestroyRef);
   private fb          = inject(FormBuilder);
   private roomService = inject(RoomService);
   private router      = inject(Router);
@@ -54,7 +56,7 @@ export class JoinRoomComponent implements OnInit {
 
   loadLiveRooms(): void {
     this.liveRoomsLoading = true;
-    this.roomService.getLiveRooms().subscribe({
+    this.roomService.getLiveRooms().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (rooms) => {
         this.liveRooms        = rooms;
         this.liveRoomsLoading = false;
@@ -76,7 +78,7 @@ export class JoinRoomComponent implements OnInit {
     const { roomCode, joinPassword } = this.joinForm.value;
     this.joinLoading = true;
 
-    this.roomService.joinRoom(normalizeRoomCode(roomCode), joinPassword || undefined).subscribe({
+    this.roomService.joinRoom(normalizeRoomCode(roomCode), joinPassword || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (room) => {
         this.joinLoading = false;
         this.router.navigate(['/lobby', room.code]);

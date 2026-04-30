@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -59,6 +60,8 @@ export class HomeComponent implements OnInit {
   registerForm!: FormGroup;
   joinForm!:     FormGroup;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private fb:          FormBuilder,
     private authService: AuthService,
@@ -115,7 +118,7 @@ export class HomeComponent implements OnInit {
     this.loginLoading = true;
     const { username, password } = this.loginForm.value;
 
-    this.authService.login({ username, password }).subscribe({
+    this.authService.login({ username, password }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.loginLoading = false;
         this.router.navigate(['/dashboard']);
@@ -150,6 +153,7 @@ export class HomeComponent implements OnInit {
 
     this.authService.register({ username, password }).pipe(
       timeout(8000),
+      takeUntilDestroyed(this.destroyRef),
       switchMap(() => this.authService.login({ username, password }).pipe(
         timeout(8000),
         catchError(() => {
@@ -218,7 +222,7 @@ export class HomeComponent implements OnInit {
     }
 
     this.joinLoading = true;
-    this.roomService.joinRoom(normalizeRoomCode(roomCode)).subscribe({
+    this.roomService.joinRoom(normalizeRoomCode(roomCode)).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (room) => {
         this.joinLoading = false;
         this.router.navigate(['/lobby', room.code]);
