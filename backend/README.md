@@ -104,6 +104,7 @@ Client-to-server events currently handled:
 - `JOIN_ROOM` with `{ "roomCode": "AB12CD" }`
 - `LEAVE_ROOM` with `{}`
 - `TOGGLE_READY` with `{}`
+- `FOLD` with `{}`
 
 Server-to-client events currently emitted:
 
@@ -111,6 +112,5 @@ Server-to-client events currently emitted:
 - `PLAYER_JOINED` with a player payload
 - `PLAYER_LEFT` with `{ "id": 1 }`
 - `PLAYER_UPDATE` with a player payload
+- `GAME_OVER` with `{ "winnerId": 1, "pot": 0, "seats": [...] }`
 - `ERROR` with `{ "code": "...", "message": "..." }`
-
-Poker gameplay WebSocket events are not handled by the backend yet.

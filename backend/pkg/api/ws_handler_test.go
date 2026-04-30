@@ -343,6 +343,58 @@ func TestWebSocketHandlerBroadcastShape(t *testing.T) {
 	}
 }
 
+func TestWebSocketHandlerPersistsGameResultWhenHandEndsOnFold(t *testing.T) {
+	database := setupWebSocketTestDB(t)
+	resetWebSocketStateForTesting()
+
+	host := createWebSocketUser(t, database, "fold-host")
+	createWebSocketUser(t, database, "fold-guest")
+	roomModel, err := room.Create(database, room.CreateParams{
+		Code:       "FOLDWS",
+		HostUserID: host.ID,
+		MaxPlayers: 6,
+	})
+	if err != nil {
+		t.Fatalf("failed to create room: %v", err)
+	}
+
+	server := httptest.NewServer(NewRouter())
+	defer server.Close()
+
+	hostConn := dialWebSocket(t, server.URL, sessionCookieForTest(t, "fold-host"))
+	defer hostConn.Close()
+	guestConn := dialWebSocket(t, server.URL, sessionCookieForTest(t, "fold-guest"))
+	defer guestConn.Close()
+
+	writeWSMessage(t, hostConn, wsMessage{Type: protocol.ClientMsgJoinRoom, Payload: protocol.JoinRoomPayload{RoomCode: roomModel.Code}})
+	_ = readWSMessage(t, hostConn)
+	writeWSMessage(t, guestConn, wsMessage{Type: protocol.ClientMsgJoinRoom, Payload: protocol.JoinRoomPayload{RoomCode: roomModel.Code}})
+	_ = readWSMessage(t, guestConn)
+	_ = readWSMessage(t, hostConn)
+
+	writeWSMessage(t, guestConn, wsMessage{Type: protocol.ClientMsgFold, Payload: map[string]any{}})
+
+	hostGameOver := decodeGameOver(t, readWSMessage(t, hostConn).Payload)
+	if hostGameOver.WinnerID != host.ID {
+		t.Fatalf("winner ID = %d, want %d", hostGameOver.WinnerID, host.ID)
+	}
+	guestGameOver := decodeGameOver(t, readWSMessage(t, guestConn).Payload)
+	if guestGameOver.WinnerID != host.ID {
+		t.Fatalf("guest saw winner ID = %d, want %d", guestGameOver.WinnerID, host.ID)
+	}
+
+	var results []models.GameResult
+	if err := database.Find(&results).Error; err != nil {
+		t.Fatalf("failed to query game results: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 game result, got %d", len(results))
+	}
+	if results[0].WinnerID != host.ID {
+		t.Fatalf("persisted winner ID = %d, want %d", results[0].WinnerID, host.ID)
+	}
+}
+
 func TestWebSocketHandlerRespondsToPing(t *testing.T) {
 	database := setupWebSocketTestDB(t)
 	resetWebSocketStateForTesting()
@@ -577,6 +629,20 @@ func decodeErrorPayload(t *testing.T, payload interface{}) protocol.ErrorPayload
 	return protocol.ErrorPayload{
 		Code:    payloadMap["code"].(string),
 		Message: payloadMap["message"].(string),
+	}
+}
+
+func decodeGameOver(t *testing.T, payload interface{}) protocol.GameOverPayload {
+	t.Helper()
+
+	payloadMap, ok := payload.(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected map payload for game over, got %T", payload)
+	}
+
+	return protocol.GameOverPayload{
+		WinnerID: uint(payloadMap["winnerId"].(float64)),
+		Pot:      int(payloadMap["pot"].(float64)),
 	}
 }
 
