@@ -28,7 +28,7 @@ This guide covers deploying the RoyalFlush poker app using:
 2. Connect your GitHub repository (select `SE-RoyalFlush/Poker`)
 3. Fill in deployment details:
    - **Name**: `poker-backend`
-   - **Root Directory**: `backend` (if prompted)
+   - **Root Directory**: `Backend` (if prompted)
    - **Runtime**: `Go`
    - **Build Command**: `go build -o server ./cmd/server`
    - **Start Command**: `./server`
@@ -46,7 +46,9 @@ Wait for the service to be created, then:
    GO_ENV = production
    PORT = 8080
    CSRF_AUTH_KEY = <random 32-byte string>
-   JWT_SECRET = <random secret string>
+   SESSION_KEY = <random 32-byte or 64-byte string>
+   ADMIN_USERNAME = <admin username>
+   ADMIN_PASSWORD = <admin password>
    FRONTEND_URL = (leave blank for now, update after Frontend deployment)
    ```
 
@@ -55,8 +57,8 @@ Wait for the service to be created, then:
    # For CSRF_AUTH_KEY (32 bytes = 32 chars):
    openssl rand -hex 16
    
-   # For JWT_SECRET:
-   openssl rand -hex 32
+   # For SESSION_KEY (32 bytes = 32 chars):
+   openssl rand -hex 16
    ```
 
 4. Click **"Save"** and wait for redeployment
@@ -93,15 +95,7 @@ Copy this URL — you'll need it for the frontend.
 
 ### 2.3 Configure Environment Variables
 
-Before clicking "Deploy" or in **Settings** → **Environment Variables**:
-
-1. Add this variable:
-   ```
-   NG_API_BASE_URL = https://poker-backend-xxxx.onrender.com
-   ```
-   (Replace with your actual Render backend URL)
-
-2. Click **"Save and Redeploy"**
+The current frontend code uses `http://localhost:8080/api` only when running on localhost. In production it uses same-origin `/api` and same-origin `/ws`. If deploying frontend and backend to separate hosts, configure a Vercel rewrite/proxy from `/api/*` and `/ws` to the Render backend, or update `frontend/src/app/core/config/endpoints.ts` before deployment to support a build-time backend origin.
 
 ### 2.4 Note Frontend URL
 
@@ -126,15 +120,9 @@ Copy this URL.
    ```
 4. Click **"Save"** (service will redeploy automatically)
 
-### 3.2 Update Frontend API Base URL
+### 3.2 Configure Frontend API Routing
 
-1. Go to Vercel **poker-frontend** project
-2. Go to **Settings** → **Environment Variables**
-3. Set (or update) the API URL:
-   ```
-   NG_API_BASE_URL = https://poker-backend-xxxx.onrender.com
-   ```
-4. Click **"Save and Redeploy"**
+The current frontend does not read `NG_API_BASE_URL`. For a separate Vercel frontend and Render backend, configure Vercel rewrites so browser requests to `/api/*` and `/ws` reach the Render service, or change the frontend endpoint config before deploying.
 
 ---
 
@@ -155,7 +143,7 @@ Copy this URL.
 - Check browser console for exact error message
 
 ### 404 on API Calls
-- Verify `NG_API_BASE_URL` in Vercel frontend matches your Render backend URL
+- Verify Vercel rewrites route `/api/*` to your Render backend, or verify frontend endpoint config if you changed it
 - Check Render logs for backend errors: **Logs** tab in Render dashboard
 
 ### SQLite Database Issues
@@ -164,7 +152,8 @@ Copy this URL.
 - To enable: Upgrade to Render's paid tier or use PostgreSQL
 
 ### Cannot Login
-- Check that backend JWT_SECRET and CSRF_AUTH_KEY are set (non-empty)
+- Check that backend SESSION_KEY and CSRF_AUTH_KEY are set correctly
+- SESSION_KEY must be exactly 32 or 64 bytes
 - Review Render logs for application errors
 
 ---
@@ -180,7 +169,7 @@ Copy this URL.
   2. Update backend `db/config.go` to use PostgreSQL driver
   3. Run migrations on PostgreSQL database
 
-See `backend/pkg/db/client.go` for database configuration.
+See `Backend/pkg/db/client.go` for database configuration.
 
 ---
 
@@ -212,13 +201,15 @@ See `backend/pkg/db/client.go` for database configuration.
 | `GO_ENV` | `production` | Set to production |
 | `PORT` | `8080` | Don't change |
 | `CSRF_AUTH_KEY` | (32-byte random) | Required, should be random |
-| `JWT_SECRET` | (random string) | Required for JWT signing |
+| `SESSION_KEY` | (32-byte or 64-byte random) | Required for signed session cookies |
+| `ADMIN_USERNAME` | `admin-user` | Required for admin Basic Auth outside development |
+| `ADMIN_PASSWORD` | (random string) | Required for admin Basic Auth outside development |
 | `FRONTEND_URL` | `https://poker-frontend-xxx.vercel.app` | Your Vercel frontend URL |
 
 ### Frontend (Vercel)
 | Variable | Example | Notes |
 |----------|---------|-------|
-| `NG_API_BASE_URL` | `https://poker-backend-xxx.onrender.com` | Your Render backend URL |
+| n/a | n/a | Current frontend uses same-origin `/api` and `/ws` in production; use Vercel rewrites or update endpoint config |
 
 ---
 
