@@ -15,6 +15,7 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
 	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 )
 
 const (
@@ -126,6 +127,8 @@ func (c *Client) ReadPump() {
 			if err := c.hub.HandleRoomMessage(c, message.Type); err != nil {
 				c.sendError("ROOM_ACTION_FAILED", err.Error())
 			}
+		case protocol.ClientMsgFold:
+			c.handleFoldMessage()
 		default:
 			c.sendError("UNKNOWN_TYPE", fmt.Sprintf("unrecognized message type: %q", message.Type))
 		}
@@ -186,6 +189,16 @@ func (c *Client) handleJoinRoomMessage(payload json.RawMessage) error {
 	return nil
 }
 
+func (c *Client) handleFoldMessage() {
+	database, err := db.GetDB()
+	if err != nil {
+		c.hub.CompleteFold(nil, c)
+		return
+	}
+
+	c.hub.CompleteFold(database, c)
+}
+
 func (c *Client) sendError(code, msg string) {
 	c.trySend(Message{
 		Type: protocol.ServerMsgError,
@@ -216,7 +229,15 @@ func loadRoomByCode(code string) (*models.Room, error) {
 		return nil, err
 	}
 
-	return room.FindByCode(database, code)
+	roomModel, err := room.FindByCode(database, code)
+	if err != nil {
+		return nil, err
+	}
+	if !roomModel.IsActive {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return roomModel, nil
 }
 
 func allowedOrigins() []string {

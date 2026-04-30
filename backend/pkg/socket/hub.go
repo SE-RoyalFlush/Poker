@@ -2,11 +2,14 @@ package socket
 
 import (
 	"errors"
+	"log"
 	"sync"
 
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
+	"gorm.io/gorm"
 )
 
 var errMissingRoomCode = errors.New("missing room code")
@@ -185,17 +188,30 @@ func (h *Hub) Leave(client *Client) {
 		}
 	}
 
-	if len(state.clients) == 0 {
+	shouldCleanupRoom := len(state.clients) == 0
+	if shouldCleanupRoom {
 		delete(h.rooms, roomCode)
 	}
 
 	client.setRoomCode("")
 	h.mu.Unlock()
 
+	if shouldCleanupRoom {
+		h.markRoomInactive(roomCode)
+	}
+
 	if !hasActiveConnection {
 		for _, member := range recipients {
 			member.trySend(leftMessage)
 		}
+	}
+}
+
+func (h *Hub) markRoomInactive(roomCode string) {
+	if err := db.WithDB(func(database *gorm.DB) error {
+		return room.MarkInactive(database, roomCode)
+	}); err != nil {
+		log.Printf("failed to mark room %s inactive: %v", roomCode, err)
 	}
 }
 

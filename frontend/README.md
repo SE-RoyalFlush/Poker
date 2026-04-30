@@ -1,366 +1,196 @@
 # Poker Frontend
 
-## Frontend Baseline Decisions
+Angular frontend for RoyalFlush. The app currently supports registration, login/logout, protected navigation, dashboard room creation/joining, lobby presence over WebSocket, ready toggling, and frontend game-state scaffolding.
 
-### Node policy
-- Required: **Node 20 LTS**
-- `.nvmrc` in repo root is the source of truth (`20`)
-- Enforced via:
-  - `package.json` engines: `"node": "20.x"`
-  - `.npmrc`: `engine-strict=true`
+## Runtime Policy
 
-Run:
+### Node
+
+- Required: Node 20 LTS
+- `.nvmrc` in the repo root is the source of truth
+- `package.json` engines require `"node": "20.x"`
+- `.npmrc` has `engine-strict=true`
+
+Run before npm commands:
 
 ```bash
 nvm use 20
 ```
 
-before any `npm` command.
+### Angular
 
-### Angular version policy
 - Angular packages are pinned to `21.1.4`
-- No floating (`^`) Angular versions are allowed
+- Angular Material, CDK, and animations are pinned to `21.1.4`
+- Floating Angular package versions are not used
 
-### UI library decision
-- Selected library: **Angular Material**
-- Installed packages:
-  - `@angular/material@21.1.4`
-  - `@angular/cdk@21.1.4`
-  - `@angular/animations@21.1.4`
-- Configured:
-  - Theme import in `src/styles.scss`
-  - Animations provider in `src/app/app.config.ts`
-- Verification component:
-  - `src/app/pages/login/login.html` uses `mat-card` and a Material button
+## Setup
 
-### Routing architecture
-- Public routes:
-  - `/login`
-  - `/register`
-- Protected-shell routes (guard intentionally deferred to auth story):
-  - `/dashboard`
-  - `/lobby`
-  - `/table/:id`
-- Redirects:
-  - `/` -> `/login`
-  - wildcard `**` -> `/login`
-- Route config: `src/app/app.routes.ts`
+```bash
+npm install
+npm run start
+```
 
-### Scope boundary
-- Placeholder-only baseline for setup and architecture
-- No authentication logic
-- No feature logic
+The dev server runs at `http://localhost:4200`. Local API calls target `http://localhost:8080/api`, and the local WebSocket endpoint is `ws://localhost:8080/ws`.
+
+## Routing
+
+Route config lives in `src/app/app.routes.ts`.
+
+| Route | Access | Component |
+| --- | --- | --- |
+| `/home` | Public | Home page |
+| `/login` | Public | Login page |
+| `/register` | Public | Registration page |
+| `/admin` | Public UI; backend uses Basic Auth | Admin page |
+| `/dashboard` | Protected by `authGuard` | Dashboard with create/join room UI |
+| `/lobby/:code` | Protected by `authGuard` | WebSocket lobby |
+| `/table/:id` | Protected by `authGuard` | Table shell/game-state integration target |
+| `/` | Redirect | `/home` |
+| `**` | Redirect | `/home` |
+
+`authGuard` checks the in-memory `AuthService` current user and redirects unauthenticated users to `/`.
+
+## API Configuration
+
+`src/app/core/config/endpoints.ts` defines endpoint selection:
+
+- Localhost frontend:
+  - `API_URL = http://localhost:8080/api`
+  - `WS_URL = ws://localhost:8080/ws`
+- Non-localhost frontend:
+  - `API_URL = /api`
+  - `WS_URL = ws(s)://<current-host>/ws`
+
+## Authentication
+
+`AuthService` lives at `src/app/core/services/auth.service.ts` and is the single source of truth for frontend user state.
+
+Current behavior:
+
+- `checkSession()` calls `GET /api/me` with credentials and restores the current user when the backend returns one.
+- `login()` posts username/password to `POST /api/login`, then calls `checkSession()` because login returns `204` and no body.
+- `register()` posts to `POST /api/register` and returns the created user; registration does not imply an authenticated session.
+- `logout()` posts to `POST /api/logout` and clears local user state even if the backend call fails.
+- `currentUser$` exposes user state to components.
+- `isAuthenticated()` and `getCurrentUser()` support guards and quick synchronous reads.
+
+The backend uses an HttpOnly signed `session-id` cookie. The frontend does not read or store JWTs.
+
+## CSRF and HTTP Interceptor
+
+`AuthInterceptor` lives at `src/app/core/interceptors/auth.interceptor.ts`.
+
+Current behavior:
+
+- Adds `withCredentials: true` to all HTTP requests.
+- For `POST`, `PUT`, `PATCH`, and `DELETE`, ensures a CSRF token by calling `GET /api/csrf` when needed.
+- Sends the token in the `X-CSRF-Token` header.
+- Clears cached CSRF token on `401`.
+- Redirects to `/login` on `401` except for session-check requests.
+
+## Room UI and Service
+
+`RoomService` lives at `src/app/core/services/room.service.ts`.
+
+| Method | Backend route | Notes |
+| --- | --- | --- |
+| `createRoom(payload)` | `POST /api/rooms` | Backend currently consumes `maxPlayers` and `isPrivate`; UI fields like room name, blinds, and password are frontend-only for now |
+| `joinRoom(code, password?)` | `POST /api/rooms/join` | Backend validates room existence/open/full state; password is ignored until private-room enforcement is implemented |
+| `getLiveRooms()` | `GET /api/rooms?status=open` | Returns persisted rooms plus current in-memory WebSocket occupancy counts |
+
+Room codes use the shared 6-character uppercase alphanumeric format, for example `AB12CD`.
+
+## WebSocket Service
+
+`WebSocketService` lives at `src/app/core/services/websocket.service.ts`.
+
+Current behavior:
+
+- Uses the browser `WebSocket` API.
+- Exposes `messages$` for incoming events.
+- Exposes `connected$` for connection state.
+- Sends messages as `{ type, payload }`.
+- Reconnects unexpected disconnects with exponential backoff, capped at 5 attempts.
+- Provides a `WS_FACTORY` injection token for unit tests.
+
+Browser WebSocket handshakes automatically include matching cookies when domain and SameSite rules allow it. There is no `withCredentials` flag for WebSocket.
+
+## Lobby
+
+The lobby page lives at `src/app/pages/lobby/`.
+
+Current behavior:
+
+- Reads the room code from `/lobby/:code`.
+- Connects to `/ws`.
+- Sends `JOIN_ROOM` after the socket opens.
+- Handles `ROOM_STATE`, `PLAYER_JOINED`, `PLAYER_LEFT`, and `PLAYER_UPDATE`.
+- Sorts host players first.
+- Sends `TOGGLE_READY` when the ready button changes.
+- Provides local chat UI and sends `CHAT_MESSAGE`, but backend chat broadcasting is not implemented yet.
+- Disconnects the WebSocket when leaving the lobby.
+
+## WebSocket Message Models
+
+Shared frontend message types live in `src/app/core/models/ws-message.model.ts`.
+
+Backend-supported lobby messages:
+
+- Client to server: `JOIN_ROOM`, `LEAVE_ROOM`, `TOGGLE_READY`
+- Server to client: `ROOM_STATE`, `PLAYER_JOINED`, `PLAYER_LEFT`, `PLAYER_UPDATE`, `ERROR`
+
+Frontend-only game scaffolding currently includes message models and `GameStateService` handling for:
+
+- `GAME_STARTED`
+- `CARDS_DEALT`
+- `PLAYER_ACTION`
+- `PHASE_CHANGE`
+- `GAME_OVER`
+- `CHECK`
+- `CALL`
+- `RAISE`
+- `FOLD`
+
+Those poker gameplay events are not handled by the backend yet.
 
 ## Testing
 
-### Unit Tests
-
-Run unit tests with Karma:
+Run unit tests:
 
 ```bash
 npm run test:unit
 ```
 
-### E2E Tests (Cypress)
+Run Cypress interactively:
 
-End-to-end tests are configured with Cypress for testing user workflows.
-
-#### Running Cypress Tests
-
-**Interactive mode** (recommended for development):
 ```bash
 npm run e2e
 ```
-This opens the Cypress UI where you can see tests running in real-time.
 
-**Headless mode** (recommended for CI/CD):
+Run Cypress headlessly:
+
 ```bash
 npm run e2e:headless
 ```
 
-#### Available Tests
+Cypress expects the Angular dev server at `http://localhost:4200`.
 
-- **Register Form Test** (`cypress/e2e/register.cy.ts`):
-  - Navigates to `/register`
-  - Fills in username: `newuser14`
-  - Fills in password: `TestPassword123` (8+ characters as required)
-  - Confirms password
-  - Submits the form
-  - Verifies successful submission by checking URL change
-
-#### Before Running E2E Tests
-
-Ensure the Angular development server is running:
-```bash
-npm run start
-```
-
-The test suite expects the app to be available at `http://localhost:4200`.
-
-## Authentication Service
-
-The authentication system manages user login, registration, session state, and provides observables for components.
-
-### Architecture
-
-- **Location**: `src/app/core/services/auth.service.ts`
-- **State Management**: RxJS BehaviorSubject pattern
-- **Observable API**: `currentUser$` for components to subscribe to
-- **Session Handling**: HttpOnly cookies (via withCredentials: true)
-
-### Key Methods
-
-```typescript
-// Check if user has valid session (calls GET /api/me)
-authService.checkSession(): Observable<User | null>
-
-// Login user (POST /api/login, then fetches user profile)
-authService.login(credentials): Observable<User | null>
-
-// Register new user (POST /api/register, returns created user)
-authService.register(data): Observable<User>
-
-// Logout user (POST /api/logout, clears local state)
-authService.logout(): Observable<void>
-
-// Synchronous accessors for route guards
-authService.isAuthenticated(): boolean
-authService.getCurrentUser(): User | null
-```
-
-### Usage in Components
-
-```typescript
-// Subscribe to user state
-currentUser$ = this.authService.currentUser$;
-
-// Login
-login(username: string, password: string) {
-  this.authService.login({ username, password }).subscribe({
-    next: (user) => this.router.navigate(['/dashboard']),
-    error: () => this.showError('Login failed')
-  });
-}
-
-// Template
-<div *ngIf="(currentUser$ | async) as user">
-  Welcome {{ user.username }}!
-</div>
-```
-
-### Session Flow
-
-1. **App Initialization** (via APP_INITIALIZER)
-   - `checkSession()` is called before app fully loads
-   - Validates existing session cookie via GET /api/me
-   - Restores user state if valid
-
-2. **Login**
-   - POST credentials to /api/login
-   - Backend validates and sets HttpOnly session cookie
-   - Automatically fetches user profile via checkSession()
-   - currentUser$ observable updated with user data
-
-3. **Register**
-   - POST registration data to /api/register
-  - Backend creates user and returns created user payload
-  - Does not assume an authenticated session is created
-
-4. **Logout**
-   - POST to /api/logout (backend clears cookie)
-   - Clears currentUser$ (sets to null)
-   - Components notified via observable
-
-### Security Features
-
-- ✅ **HttpOnly Cookies**: Token stored in secure cookie, not accessible from JavaScript
-- ✅ **CSRF Protection**: X-CSRF-Token automatically injected by AuthInterceptor
-- ✅ **Session Validation**: checkSession() validates token on app load
-- ✅ **Auto-Logout on 401**: AuthInterceptor redirects to login on unauthorized
-
-### Testing
-
-See `src/app/core/services/auth.service.spec.ts` for comprehensive unit tests covering:
-- State management updates
-- Login flow (no token extraction from body)
-- Register flow
-- Logout flow
-- Error handling and edge cases
-- Loading state tracking
-
-Run tests with:
-```bash
-npm test -- --watch=false --browsers=ChromeHeadless
-```
-
-All 29 tests pass ✅
-
-### Models
-
-User-related interfaces in `src/app/core/models/user.model.ts`.
-
-## WebSocket Service
-
-Manages the WebSocket connection to the game server for real-time gameplay events. WebSocket message envelope interfaces are defined in `src/app/core/models/ws-message.model.ts`.
-
-### Architecture
-
-- **Location**: `src/app/core/services/websocket.service.ts`
-- **State Management**: `connected$` via BehaviorSubject (current state on subscribe); `messages$` via Subject (events only)
-- **Testability**: `WS_FACTORY` InjectionToken swapped in tests for a `MockWebSocket`
-- **Credentials**: Browser sends session cookies automatically on the WS handshake (RFC 6455 §10.5) — no `withCredentials` flag needed unlike XHR
-
-### API
-
-```typescript
-// Open connection to ws://localhost:8080/ws (or custom URL)
-wsService.connect(url?: string): void
-
-// Observable stream of incoming server messages
-wsService.messages$: Observable<WsMessage>
-
-// Observable connection state (true = connected)
-wsService.connected$: Observable<boolean>
-
-// Send a typed message to the server
-wsService.sendMessage(type: string, payload?: unknown): void
-
-// Close the connection cleanly
-wsService.disconnect(): void
-```
-
-### WsMessage envelope
-
-All WebSocket traffic uses `{ type: string, payload: T }`:
-
-```typescript
-// Sending
-wsService.sendMessage('JOIN_ROOM', { roomCode: 'AB12CD' });
-
-// Receiving
-wsService.messages$.subscribe(msg => {
-  if (msg.type === 'PLAYER_JOINED') { ... }
-});
-```
-
-### Testing with MockWebSocket
-
-Override `WS_FACTORY` in `TestBed` to get a fully controllable mock:
-
-```typescript
-import { WS_FACTORY } from './websocket.service';
-
-TestBed.configureTestingModule({
-  providers: [{
-    provide: WS_FACTORY,
-    useValue: (url: string) => new MockWebSocket(url)
-  }]
-});
-```
-
-See `src/app/core/services/websocket.service.spec.ts` for full examples (17 tests).
-
-### Backend contract
-
-| Endpoint | Status |
-|----------|--------|
-| `ws://localhost:8080/ws` | Pending — backend implementation in a future sprint |
-
-### Models
-
-User-related interfaces defined in `src/app/core/models/user.model.ts`:
-- `User` - Authenticated user data (id, username, createdAt, updatedAt)
-  - Mapped from backend fields (ID, CreatedAt, UpdatedAt)
-- `LoginCredentials` - Login form data (username, password)
-- `RegisterData` - Registration form data (username, password, confirmPassword)
-
-### Further Documentation
-
-Authentication architecture, RxJS patterns, and design decisions are documented in this README and related in-code comments.
-
-### Backend/Frontend Contract Test Matrix
-
-Use this checklist whenever auth service behavior or backend auth endpoints change.
-
-| Contract Area | Source of Truth | Expected Behavior | Frontend Verification |
-| --- | --- | --- | --- |
-| User JSON shape from backend | `backend/pkg/models/user.go`, `docs/api/openapi.yaml` | Backend returns `ID`, `CreatedAt`, `UpdatedAt`, `username` | `AuthService` maps to frontend `User` (`id`, `createdAt`, `updatedAt`) in `src/app/core/services/auth.service.ts` |
-| Session restore (`GET /api/me`) | Backend `/api/me` handler + OpenAPI | `401`: unauthenticated guest; non-`401`: do not force logout on transient failures | `checkSession()` tests in `src/app/core/services/auth.service.spec.ts` |
-| Login flow | Backend `/api/login` + `/api/me` | Login sets session, then `/me` resolves current user | `login()` tests in `src/app/core/services/auth.service.spec.ts` |
-| Register flow | `backend/pkg/api/auth.go` `RegisterHandler` | Register creates user payload; does not imply authenticated session | `register()` tests in `src/app/core/services/auth.service.spec.ts` (no implicit `/me`) |
-| Logout flow | Backend `/api/logout` | Logout clears backend session; frontend clears local user state even if backend call fails | `logout()` tests in `src/app/core/services/auth.service.spec.ts` |
-
-Quick contract regression run:
+Useful focused runs:
 
 ```bash
 npm test -- --watch=false --browsers=ChromeHeadless --include='**/auth.service.spec.ts'
+npm test -- --watch=false --browsers=ChromeHeadless --include='**/websocket.service.spec.ts'
+npm test -- --watch=false --browsers=ChromeHeadless --include='**/lobby.spec.ts'
 ```
 
-## Setup and verification
+## Backend/Frontend Contract Matrix
 
-```bash
-nvm use 20
-npm install
-npm run build
-npm start
-```
-
-## Running Tests
-
-The frontend uses **Jasmine** as the testing framework with **Karma** as the test runner.
-
-### Run all tests
-```bash
-npm test
-```
-
-### Run tests in watch mode (re-runs on file changes)
-```bash
-npm test -- --watch
-```
-
-### Run tests with code coverage report
-```bash
-npm test -- --code-coverage
-```
-
-### Run tests for a specific file
-```bash
-npm test -- --include='**/auth.interceptor.spec.ts'
-```
-
-### Run tests without watch mode (CI mode)
-```bash
-npm test -- --watch=false
-```
-
-### Run unit tests independently
-```bash
-npm run test:unit
-```
-
-### Run tests in headless Chrome (for CI/CD pipelines)
-```bash
-npm test -- --watch=false --browsers=ChromeHeadless
-```
-
-### Run frontend-backend integration smoke test (register flow)
-This test verifies frontend API contract behavior against a live backend using CSRF + cookies.
-
-1. Start backend server (from repo root):
-```bash
-cd backend
-GO_ENV=development go run ./cmd/server
-```
-2. In another terminal run:
-```bash
-cd frontend
-npm run test:integration:backend
-```
-
-#### Testing Framework Details
-- **Jasmine**: BDD (Behavior-Driven Development) testing framework for unit tests
-- **Karma**: Test runner that launches browsers and runs tests
-- **Configuration**: `karma.conf.js` defines the testing setup, browser, reporters, and plugins
-
-> **Note:** These tests are automatically run on every pull request via the GitHub Actions workflow (`.github/workflows/pull_request_test.yaml`). The workflow ensures all frontend unit tests pass before merging.
+| Contract Area | Source of Truth | Expected Behavior | Frontend Verification |
+| --- | --- | --- | --- |
+| User JSON | `Backend/pkg/models/user.go`, `docs/api/openapi.yaml` | Backend returns `ID`, `CreatedAt`, `UpdatedAt`, `username` | `AuthService` maps to `User` |
+| Session restore | `GET /api/me` | `200` returns user; `401` means no session in the routed API | `checkSession()` tests |
+| Login | `POST /api/login` | `204`, sets HttpOnly session cookie | `login()` then `checkSession()` tests |
+| Register | `POST /api/register` | `201` returns created user; does not set session | `register()` tests |
+| Logout | `POST /api/logout` | `204`, clears backend cookie | `logout()` tests |
+| Rooms | `/api/rooms*` | Session-protected room metadata APIs | `room.service.spec.ts`, create/join component specs |
+| Lobby WebSocket | `/ws` | Session-protected socket with lobby messages | `websocket.service.spec.ts`, `lobby.spec.ts` |

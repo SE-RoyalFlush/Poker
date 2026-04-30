@@ -1,61 +1,35 @@
 openapi: 3.0.3
 info:
   title: Poker Backend API
-  version: 0.2.0
+  version: 0.3.0
   description: >
-    OpenAPI spec for the Poker backend (Go + Gorilla Mux).
-    Currently includes health check with database status and standardized JSON error format.
+    Current contract for the RoyalFlush Go backend. HTTP routes are served
+    under /api. Authentication uses a signed HttpOnly session-id cookie, not
+    bearer JWTs. Mutating requests are protected by Gorilla CSRF and should send
+    X-CSRF-Token. The WebSocket lobby endpoint is /ws and requires the same
+    session cookie before the upgrade.
 
 servers:
-  - url: http://localhost:8080/api
-    description: Local server
+  - url: http://localhost:8080
+    description: Local backend
 
 tags:
   - name: System
-    description: System/health endpoints
+    description: Health, CSRF, and standard error behavior
   - name: Authentication
-    description: User registration and login
+    description: Registration, login, logout, and session restore
+  - name: Rooms
+    description: Persistent room metadata and join validation
+  - name: Admin
+    description: Basic-auth protected user administration
+  - name: WebSocket
+    description: Authenticated lobby WebSocket upgrade and message contract
 
 paths:
-  /me:
-    get:
-      tags: [Authentication]
-      summary: Get current authenticated user
-      description: >
-        Returns the currently authenticated user. Requires valid credentials (Basic Auth for demo; session/cookie in production).
-      operationId: getCurrentUser
-      responses:
-        "200":
-          description: Authenticated user info
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "401":
-          description: Unauthorized (not logged in or invalid credentials)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: Unauthorized
-                message: Missing or invalid credentials
-                status: 401
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: Internal Server Error
-                message: Database not initialized
-                status: 500
-  /health:
+  /api/health:
     get:
       tags: [System]
       summary: Health check
-      description: Returns server liveness status and database connection status.
       operationId: getHealth
       responses:
         "200":
@@ -66,22 +40,44 @@ paths:
                 $ref: "#/components/schemas/HealthResponse"
               examples:
                 connected:
-                  summary: Database connected
                   value:
                     status: alive
                     database: connected
                 disconnected:
-                  summary: Database disconnected
                   value:
                     status: alive
                     database: disconnected
 
-  /register:
+  /api/csrf:
+    get:
+      tags: [System]
+      summary: Get CSRF token
+      description: >
+        Returns a CSRF token for mutating requests. The token is also exposed in
+        the X-CSRF-Token response header. The CSRF cookie is managed by the
+        server and is HttpOnly.
+      operationId: getCsrfToken
+      responses:
+        "200":
+          description: CSRF token
+          headers:
+            X-CSRF-Token:
+              description: CSRF token to echo on mutating requests
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CSRFResponse"
+
+  /api/register:
     post:
       tags: [Authentication]
       summary: Register a new user
-      description: Accepts a username and password, hashes the password, and creates a new user in the database.
+      description: Creates a user with a bcrypt password hash. Registration does not create an authenticated session.
       operationId: registerUser
+      security:
+        - csrfToken: []
       requestBody:
         required: true
         content:
@@ -90,32 +86,15 @@ paths:
               $ref: "#/components/schemas/RegisterRequest"
       responses:
         "201":
-          description: User created successfully
+          description: User created
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
         "400":
-          description: Bad Request (validation failed or invalid JSON)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                shortUsername:
-                  summary: Username too short
-                  value:
-                    error: Bad Request
-                    message: Username must be at least 3 characters
-                    status: 400
-                shortPassword:
-                  summary: Password too short
-                  value:
-                    error: Bad Request
-                    message: Password must be at least 6 characters
-                    status: 400
+          $ref: "#/components/responses/BadRequest"
         "409":
-          description: Conflict (username already exists)
+          description: Username already exists
           content:
             application/json:
               schema:
@@ -125,39 +104,407 @@ paths:
                 message: Username already exists
                 status: 409
         "500":
-          description: Internal Server Error
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/login:
+    post:
+      tags: [Authentication]
+      summary: Log in
+      description: Validates credentials and sets a signed HttpOnly session-id cookie. No token is returned in the response body.
+      operationId: loginUser
+      security:
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "204":
+          description: Login succeeded; session cookie was set
+          headers:
+            Set-Cookie:
+              description: Signed HttpOnly session-id cookie
+              schema:
+                type: string
+                example: session-id=...; Path=/; HttpOnly; SameSite=Lax
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid username or password
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                error: Internal Server Error
-                message: Database error
-                status: 500
+                error: Unauthorized
+                message: Invalid username or password
+                status: 401
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
-  # Note: OpenAPI can't truly describe "any unmatched route" behavior in `paths`,
-  # so we document the 404 response format and provide an example route.
-  /random:
-    get:
-      tags: [System]
-      summary: Example of standardized 404 response
-      description: >
-        This route is not implemented; it exists in this spec only to show the
-        structured JSON 404 error returned by the API for unknown routes.
-      operationId: getRandomExample404
+  /api/logout:
+    post:
+      tags: [Authentication]
+      summary: Log out
+      description: Clears the session-id cookie.
+      operationId: logoutUser
+      security:
+        - csrfToken: []
       responses:
+        "204":
+          description: Logout completed; session cookie was cleared
+
+  /api/me:
+    get:
+      tags: [Authentication]
+      summary: Get current authenticated user
+      description: >
+        Resolves the current user from the signed session-id cookie. The routed
+        API is protected by AuthMiddleware and returns 401 when the cookie is
+        missing, invalid, or maps to no user.
+      operationId: getCurrentUser
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/rooms:
+    get:
+      tags: [Rooms]
+      summary: List rooms
+      description: Lists persisted room metadata. Current player counts come from the in-memory WebSocket hub.
+      operationId: listRooms
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/RoomStatus"
+          description: Optional room status filter.
+      responses:
+        "200":
+          description: Room list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+        "400":
+          description: Invalid status filter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Bad Request
+                message: Invalid room status
+                status: 400
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Rooms]
+      summary: Create room
+      description: >
+        Creates persisted room metadata for the current user. Backend currently
+        consumes maxPlayers and isPrivate. Frontend fields such as roomName,
+        blind values, and roomPassword are ignored by the backend.
+      operationId: createRoom
+      security:
+        - cookieAuth: []
+          csrfToken: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoomRequest"
+      responses:
+        "201":
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          description: Invalid JSON or maxPlayers out of range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidJson:
+                  value:
+                    error: Bad Request
+                    message: Invalid JSON input
+                    status: 400
+                invalidMaxPlayers:
+                  value:
+                    error: Bad Request
+                    message: maxPlayers must be between 1 and 10
+                    status: 400
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/rooms/join:
+    post:
+      tags: [Rooms]
+      summary: Validate room join
+      description: >
+        Validates that a room code exists, is open, and is not full. Active
+        WebSocket membership is established later with JOIN_ROOM over /ws.
+        Passwords are currently ignored by the backend.
+      operationId: joinRoom
+      security:
+        - cookieAuth: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRoomRequest"
+      responses:
+        "200":
+          description: Room can be joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          description: Invalid JSON or room code format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidJson:
+                  value:
+                    error: Bad Request
+                    message: Invalid JSON input
+                    status: 400
+                invalidRoomCode:
+                  value:
+                    error: Bad Request
+                    message: Invalid room code
+                    status: 400
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Room is full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Forbidden
+                message: Room is full
+                status: 403
         "404":
-          description: Not Found (standard error format)
+          $ref: "#/components/responses/RoomNotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/rooms/{code}:
+    get:
+      tags: [Rooms]
+      summary: Get room by code
+      description: Looks up persisted metadata for an open room. Does not require an active WebSocket connection.
+      operationId: getRoom
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[A-Z0-9]{6}$"
+            example: AB12CD
+      responses:
+        "200":
+          description: Room metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          description: Invalid room code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Bad Request
+                message: Invalid room code
+                status: 400
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/RoomNotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List users
+      operationId: adminListUsers
+      security:
+        - basicAdminAuth: []
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "401":
+          description: Admin credentials required
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+                example: Basic realm="admin"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Unauthorized
+                message: Admin credentials required
+                status: 401
+        "403":
+          description: Admin credentials are not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Forbidden
+                message: Admin credentials not configured
+                status: 403
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/admin/users/{id}:
+    delete:
+      tags: [Admin]
+      summary: Delete user
+      operationId: adminDeleteUser
+      security:
+        - basicAdminAuth: []
+          csrfToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "204":
+          description: User deleted
+        "400":
+          description: Invalid user id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Bad Request
+                message: Invalid user id
+                status: 400
+        "401":
+          description: Admin credentials required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin credentials are not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Not Found
-                message: The requested resource was not found
+                message: User not found
                 status: 404
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ws:
+    get:
+      tags: [WebSocket]
+      summary: Upgrade to lobby WebSocket
+      description: >
+        Authenticated WebSocket endpoint. A valid session-id cookie is required
+        before the server upgrades the request. After upgrade, all messages use
+        { type, payload }. Current client events are JOIN_ROOM, LEAVE_ROOM, and
+        TOGGLE_READY. Current server events are ROOM_STATE, PLAYER_JOINED,
+        PLAYER_LEFT, PLAYER_UPDATE, and ERROR.
+      operationId: connectWebSocket
+      security:
+        - cookieAuth: []
+      responses:
+        "101":
+          description: Switching Protocols
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/random:
+    get:
+      tags: [System]
+      summary: Example standardized 404 response
+      description: This route is not implemented; it documents the JSON shape returned by unknown API routes.
+      operationId: getRandomExample404
+      responses:
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session-id
+      description: Signed HttpOnly session cookie set by POST /api/login.
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: CSRF token returned by GET /api/csrf.
+    basicAdminAuth:
+      type: http
+      scheme: basic
+      description: Admin HTTP Basic Auth.
+
   schemas:
     HealthResponse:
       type: object
@@ -166,15 +513,22 @@ components:
       properties:
         status:
           type: string
-          description: Server liveness indicator
           enum: [alive]
         database:
           type: string
-          description: Database connection status
           enum: [connected, disconnected]
+
+    CSRFResponse:
+      type: object
+      additionalProperties: false
+      required: [csrfToken]
+      properties:
+        csrfToken:
+          type: string
 
     RegisterRequest:
       type: object
+      additionalProperties: false
       required: [username, password]
       properties:
         username:
@@ -184,10 +538,26 @@ components:
         password:
           type: string
           minLength: 6
+          format: password
+          example: password123
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: testuser
+        password:
+          type: string
+          format: password
           example: password123
 
     User:
       type: object
+      description: Raw user model returned by registration.
+      required: [ID, username]
       properties:
         ID:
           type: integer
@@ -205,7 +575,210 @@ components:
         username:
           type: string
           example: testuser
+
+    UserResponse:
+      type: object
+      description: Public user response returned by GET /api/me.
       required: [ID, username]
+      properties:
+        ID:
+          type: integer
+          example: 1
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+        username:
+          type: string
+          example: testuser
+
+    AdminUser:
+      type: object
+      additionalProperties: false
+      required: [id, username]
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: testuser
+
+    RoomStatus:
+      type: string
+      enum: [open, closed, in_game]
+
+    CreateRoomRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        maxPlayers:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 6
+          example: 6
+        isPrivate:
+          type: boolean
+          default: false
+        roomName:
+          type: string
+          description: Accepted from the frontend but currently ignored by the backend.
+          example: Friday Table
+        smallBlind:
+          type: integer
+          description: Accepted from the frontend but currently ignored by the backend.
+          example: 1
+        bigBlind:
+          type: integer
+          description: Accepted from the frontend but currently ignored by the backend.
+          example: 2
+        roomPassword:
+          type: string
+          format: password
+          description: Accepted from the frontend but currently ignored by the backend.
+
+    JoinRoomRequest:
+      type: object
+      additionalProperties: true
+      required: [code]
+      properties:
+        code:
+          type: string
+          pattern: "^[A-Z0-9]{6}$"
+          example: AB12CD
+        password:
+          type: string
+          format: password
+          description: Accepted from the frontend but currently ignored by the backend.
+
+    Room:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - code
+        - name
+        - gameType
+        - smallBlind
+        - bigBlind
+        - maxPlayers
+        - currentPlayers
+        - isPrivate
+        - isFull
+        - seats
+        - status
+        - hostUserId
+      properties:
+        id:
+          type: string
+          description: String form of the database room id.
+          example: "12"
+        code:
+          type: string
+          pattern: "^[A-Z0-9]{6}$"
+          example: AB12CD
+        name:
+          type: string
+          description: Generated display name in the current backend.
+          example: Room AB12CD
+        gameType:
+          type: string
+          description: Static current value.
+          example: NLH
+        smallBlind:
+          type: integer
+          description: Static current value.
+          example: 1
+        bigBlind:
+          type: integer
+          description: Static current value.
+          example: 2
+        maxPlayers:
+          type: integer
+          minimum: 1
+          maximum: 10
+          example: 6
+        currentPlayers:
+          type: integer
+          minimum: 0
+          description: Current in-memory WebSocket occupancy for this room.
+          example: 1
+        isPrivate:
+          type: boolean
+          example: false
+        isFull:
+          type: boolean
+          example: false
+        seats:
+          type: integer
+          minimum: 0
+          description: maxPlayers minus currentPlayers.
+          example: 5
+        status:
+          $ref: "#/components/schemas/RoomStatus"
+        hostUserId:
+          type: integer
+          example: 1
+        hostUsername:
+          type: string
+          example: testuser
+
+    WebSocketEnvelope:
+      type: object
+      additionalProperties: false
+      required: [type, payload]
+      properties:
+        type:
+          type: string
+          example: JOIN_ROOM
+        payload:
+          type: object
+
+    Player:
+      type: object
+      additionalProperties: false
+      required: [id, username, isHost, isReady]
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: testuser
+        isHost:
+          type: boolean
+          example: true
+        isReady:
+          type: boolean
+          example: false
+
+    RoomStatePayload:
+      type: object
+      additionalProperties: false
+      required: [roomCode, players]
+      properties:
+        roomCode:
+          type: string
+          example: AB12CD
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+
+    WebSocketErrorPayload:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: ROOM_NOT_FOUND
+        message:
+          type: string
+          example: Room not found
 
     ErrorResponse:
       type: object
@@ -214,21 +787,38 @@ components:
       properties:
         error:
           type: string
-          description: High-level error type/category
           example: Not Found
         message:
           type: string
-          description: Human-readable error message
           example: The requested resource was not found
         status:
           type: integer
           format: int32
-          description: HTTP status code
           example: 404
 
   responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Bad Request
+            message: Invalid JSON input
+            status: 400
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Unauthorized
+            message: Authentication required
+            status: 401
     NotFound:
-      description: Standard 404 response
+      description: Not Found
       content:
         application/json:
           schema:
@@ -237,3 +827,23 @@ components:
             error: Not Found
             message: The requested resource was not found
             status: 404
+    RoomNotFound:
+      description: Room not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Not Found
+            message: Room not found
+            status: 404
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Internal Server Error
+            message: Database error
+            status: 500
