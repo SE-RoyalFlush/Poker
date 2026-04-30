@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Frontend: Responsive Poker Table — Mobile Scaling (Issue #95)](https://github.com/SE-RoyalFlush/Poker/issues/95)
+    - Created `frontend/src/styles/_variables.scss` with `$breakpoint-sm: 480px` and `$breakpoint-md: 768px`; added `stylePreprocessorOptions.includePaths` to `angular.json` for both build and test targets
+    - Added `overflow-x: hidden` and `box-sizing: border-box` globally in `styles.scss` to prevent horizontal scroll at any viewport width
+    - `TableComponent` (`table.scss`): enhanced responsive section with 768px and 480px breakpoints — hides nav username text, reduces felt oval dimensions with `vw`-based sizing, compacts community cards and player zone on small screens
+    - `CardComponent` (`card.component.scss`): card width/height use `clamp()` so cards shrink proportionally; rank, symbol, and center-suit font sizes also use `clamp()`
+    - `GameControlsComponent` (`game-controls.component.scss`): action buttons stack vertically on `< 480px`; raise panel form and field stretch to full width to prevent overflow
+    - `ProfileComponent` (`profile.scss`): stat cards grid changed to `repeat(auto-fit, minmax(140px, 1fr))` for fluid reflow; logo text hidden on `< 480px`
+    - `LeaderboardComponent` (`leaderboard.scss`): CSS-only hamburger menu (checkbox toggle) collapses nav links on `< 768px`; table header/cell padding reduced on small screens
+    - `leaderboard.html`: hamburger checkbox input and label added to nav (CSS-only, no Angular logic changes)
+    - Added Cypress E2E tests (`cypress/e2e/responsive.cy.ts`): horizontal overflow checks at 320px/375px/414px/768px for leaderboard and profile; hamburger nav open/close behaviour; desktop nav visibility check
 - [Frontend: Sound Effects Service (Issue #94)](https://github.com/SE-RoyalFlush/Poker/issues/94)
     - Created `SoundEffectsService` at `frontend/src/app/core/services/sound-effects.service.ts` (`providedIn: 'root'`) with methods `playChipsClink()`, `playCardFlip()`, and `playWinFanfare()`
     - Audio assets loaded lazily from `assets/sounds/chips-clink.mp3`, `card-flip.mp3`, and `win-fanfare.mp3`; placeholder files added to `frontend/public/assets/sounds/`

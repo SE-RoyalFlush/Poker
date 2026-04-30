@@ -2,8 +2,8 @@
 :host {
   display: inline-block;
 
-  --rf-card-w:        70px;
-  --rf-card-h:        100px;
+  --rf-card-w:        clamp(44px, 8vw, 70px);
+  --rf-card-h:        clamp(63px, 11.5vw, 100px);
   --rf-card-radius:   8px;
   --rf-card-bg:       #FAFAF8;
   --rf-card-border:   rgba(0, 0, 0, 0.12);
@@ -100,4 +100,9 @@
       );
     background-size: 8px 8px;
   }
+
+  // ── Responsive ─────────────────────────────────────────────────
+  &__rank { font-size: clamp(9px, 2vw, 14px); }
+  &__symbol { font-size: clamp(8px, 1.5vw, 11px); }
+  &__center { font-size: clamp(16px, 4vw, 28px); }
 }

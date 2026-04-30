@@ -1,3 +1,5 @@
+@use 'variables' as v;
+
 .game-controls {
   display: flex;
   flex-direction: column;
@@ -50,5 +52,33 @@
 
   &__raise-field {
     width: 160px;
+  }
+
+  // ── Mobile: stack buttons vertically ───────────────────────────
+  @media (max-width: v.$breakpoint-sm) {
+    padding: 8px;
+    gap: 8px;
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+    }
+
+    &__btn {
+      min-width: unset;
+      width: 100%;
+    }
+
+    &__raise-panel {
+      form {
+        flex-direction: column;
+        width: 100%;
+      }
+    }
+
+    &__raise-field {
+      width: 100%;
+    }
   }
 }
