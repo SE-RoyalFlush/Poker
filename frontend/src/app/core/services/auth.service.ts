@@ -103,7 +103,7 @@ export class AuthService {
         this.currentUserSubject.next(user);
       }),
       catchError((error: HttpErrorResponse) => {
-        if (error.status === 401 || error.status === 204) {
+        if (error.status === 401) {
           this.currentUserSubject.next(null);
           return of(null);
         }

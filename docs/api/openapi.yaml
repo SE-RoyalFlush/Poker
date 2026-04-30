@@ -24,6 +24,8 @@ tags:
     description: Basic-auth protected user administration
   - name: WebSocket
     description: Authenticated lobby WebSocket upgrade and message contract
+  - name: Users
+    description: User profile, statistics, and leaderboard
 
 paths:
   /api/health:
