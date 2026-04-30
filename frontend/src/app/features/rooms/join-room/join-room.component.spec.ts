@@ -80,17 +80,15 @@ describe('JoinRoomComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/lobby', mockRoom.code]);
   });
 
-  it('should reveal password field on 403 response', () => {
+  it('should show full-room error on 403 response', () => {
     roomSpy.joinRoom.and.returnValue(
-      throwError(() => ({ status: 403, error: { message: 'Password required.' } }))
+      throwError(() => ({ status: 403, error: { message: 'Room is full.' } }))
     );
     component.joinForm.patchValue({ roomCode: 'AB12CD' });
 
     component.onJoinRoom();
 
-    expect(component.showJoinPassword).toBeTrue();
-    component.joinForm.markAllAsTouched();
-    expect(component.joinForm.get('joinPassword')?.hasError('required')).toBeTrue();
+    expect(component.joinError).toBe('This room is full.');
   });
 
   it('should prefill room code and trigger join via quickJoin on open room', () => {
