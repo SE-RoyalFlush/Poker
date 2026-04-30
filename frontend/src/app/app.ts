@@ -15,9 +15,7 @@ export class App implements OnInit {
   constructor(private csrfService: CsrfService) {}
 
   ngOnInit(): void {
-    this.csrfService.fetchToken().subscribe({
-      error: (err) => console.error('Failed to fetch CSRF token:', err)
-    });
+    this.csrfService.fetchToken().subscribe();
   }
 }
 
