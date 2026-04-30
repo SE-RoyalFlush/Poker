@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { EMPTY, catchError } from 'rxjs';
 import { CsrfService } from './core/services/csrf.service';
 
 @Component({
@@ -15,7 +16,7 @@ export class App implements OnInit {
   constructor(private csrfService: CsrfService) {}
 
   ngOnInit(): void {
-    this.csrfService.fetchToken().subscribe();
+    this.csrfService.fetchToken().pipe(catchError(() => EMPTY)).subscribe();
   }
 }
 

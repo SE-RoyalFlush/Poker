@@ -46,31 +46,14 @@
 
 ---
 
-## Audio files — Manual Step Required
+## Audio files — [x] Done
 
 The `SoundEffectsService` expects three MP3 files at:
 
 ```
-frontend/public/assets/sounds/chips-clink.mp3
-frontend/public/assets/sounds/card-flip.mp3
-frontend/public/assets/sounds/win-fanfare.mp3
+frontend/public/assets/sounds/chips-clink.mp3  (~0.38s)
+frontend/public/assets/sounds/card-flip.mp3    (~0.40s)
+frontend/public/assets/sounds/win-fanfare.mp3  (~3.00s)
 ```
 
-These files currently exist as 0-byte placeholders. You need to replace them with real audio.
-
-**Where to get free royalty-free audio:**
-- https://freesound.org — search "chips", "card flip", "fanfare" (CC0 licence)
-- https://mixkit.co/free-sound-effects — poker/casino category
-- https://pixabay.com/sound-effects — no attribution required
-
-**File requirements:**
-- Format: MP3 (the service uses `new Audio(url)` — MP3 works in all browsers)
-- Duration: chips-clink ~0.5s, card-flip ~0.3s, win-fanfare ~2–3s
-- Size: keep each under 200 KB
-
-**How to add them:**
-1. Download the three files and rename them exactly as above
-2. Copy them into `frontend/public/assets/sounds/`
-3. Overwrite the existing 0-byte placeholders
-
-No code changes are needed — the service is already wired up.
+Real MP3 assets have been added and trimmed to the appropriate durations. No further action required.

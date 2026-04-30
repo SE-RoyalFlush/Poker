@@ -124,7 +124,7 @@ export class WebSocketService {
   /**
    * Send a typed message to the server.
    * Serialized as JSON with { type, payload } envelope.
-   * Warns (does not throw) when the socket is not open.
+   * Silently no-ops when the socket is not open.
    *
    * @param type    Event type string, e.g. 'JOIN_ROOM', 'FOLD'
    * @param payload Arbitrary data to include with the message
