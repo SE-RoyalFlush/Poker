@@ -163,6 +163,18 @@ func GetDB() (*gorm.DB, error) {
 	return instance, nil
 }
 
+// WithDB runs fn with the current database while preventing Close from racing
+// with the operation.
+func WithDB(fn func(*gorm.DB) error) error {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	if instance == nil {
+		return dbErr
+	}
+	return fn(instance)
+}
+
 // Close closes the database connection
 // Should be called during graceful shutdown
 func Close() error {

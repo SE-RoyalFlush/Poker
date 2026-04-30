@@ -15,6 +15,7 @@ import (
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
 	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 )
 
 const (
@@ -228,7 +229,15 @@ func loadRoomByCode(code string) (*models.Room, error) {
 		return nil, err
 	}
 
-	return room.FindByCode(database, code)
+	roomModel, err := room.FindByCode(database, code)
+	if err != nil {
+		return nil, err
+	}
+	if !roomModel.IsActive {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return roomModel, nil
 }
 
 func allowedOrigins() []string {
