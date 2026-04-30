@@ -28,7 +28,7 @@ This guide covers deploying the RoyalFlush poker app using:
 2. Connect your GitHub repository (select `SE-RoyalFlush/Poker`)
 3. Fill in deployment details:
    - **Name**: `poker-backend`
-   - **Root Directory**: `backend` (if prompted)
+   - **Root Directory**: `Backend` (if prompted)
    - **Runtime**: `Go`
    - **Build Command**: `go build -o server ./cmd/server`
    - **Start Command**: `./server`
@@ -180,7 +180,7 @@ Copy this URL.
   2. Update backend `db/config.go` to use PostgreSQL driver
   3. Run migrations on PostgreSQL database
 
-See `backend/pkg/db/client.go` for database configuration.
+See `Backend/pkg/db/client.go` for database configuration.
 
 ---
 
@@ -210,7 +210,7 @@ See `backend/pkg/db/client.go` for database configuration.
 |----------|---------|-------|
 | `APP_ENV` | `production` | Set to production |
 | `GO_ENV` | `production` | Set to production |
-| `PORT` | `8080` | Don't change |
+| `PORT` | `8080` | Render provides this automatically; set locally only when overriding the default |
 | `CSRF_AUTH_KEY` | (32-byte random) | Required, should be random |
 | `JWT_SECRET` | (random string) | Required for JWT signing |
 | `FRONTEND_URL` | `https://poker-frontend-xxx.vercel.app` | Your Vercel frontend URL |

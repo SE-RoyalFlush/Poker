@@ -14,7 +14,7 @@ This guide will help you set up and run the Poker backend server locally.
 
 ```bash
 git clone https://github.com/SE-RoyalFlush/Poker.git
-cd Poker/backend
+cd Poker/Backend
 ```
 
 ### 2. Verify Go Modules

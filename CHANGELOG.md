@@ -100,5 +100,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - Moved all backend API routes under the `/api/` prefix for better separation (e.g., `/api/health`).
+- Backend server startup now respects the `PORT` environment variable, defaulting to `8080` for local development.
+- Documentation now uses the repository's actual `Backend` directory casing and reflects the implemented `/ws` endpoint.
 
 ### Fixed
+- Fixed stale setup instructions that still described the backend WebSocket endpoint as pending.

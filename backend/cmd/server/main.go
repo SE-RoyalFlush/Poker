@@ -15,6 +15,14 @@ import (
 	"github.com/rs/cors"
 )
 
+func serverAddrFromEnv() string {
+	port := os.Getenv("PORT")
+	if port == "" {
+		return ":8080"
+	}
+	return ":" + port
+}
+
 func main() {
 	envLoaded := false
 	for _, envPath := range []string{".env", "../.env"} {
@@ -86,8 +94,9 @@ func main() {
 	})
 
 	// Start server with timeouts and graceful shutdown
+	addr := serverAddrFromEnv()
 	srv := &http.Server{
-		Addr:         ":8080",
+		Addr:         addr,
 		Handler:      corsMiddleware.Handler(csrfMiddleware(router)),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
@@ -95,7 +104,7 @@ func main() {
 	}
 
 	go func() {
-		log.Println("Starting server on :8080")
+		log.Printf("Starting server on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
 		}

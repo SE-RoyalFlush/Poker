@@ -52,7 +52,7 @@ The application emphasizes low-latency communication and a responsive user exper
 - `sendMessage(type, payload)` sends typed `{ type, payload }` JSON envelopes
 - `WS_FACTORY` InjectionToken allows mock injection in unit tests (17 tests passing)
 - Session cookies sent automatically by browser on WS handshake — no credential flag needed
-- **Pending**: backend `ws://localhost:8080/ws` endpoint (future sprint)
+- Backend `ws://localhost:8080/ws` endpoint is implemented and protected by session auth
 
 ---
 
@@ -87,7 +87,7 @@ npm run e2e:headless
 Run backend unit/API tests:
 
 ```bash
-cd backend
+cd Backend
 go test ./pkg/...
 ```
 
@@ -95,7 +95,7 @@ Run frontend-backend integration smoke test (requires backend running):
 
 ```bash
 # terminal 1
-cd backend
+cd Backend
 GO_ENV=development go run ./cmd/server
 
 # terminal 2
