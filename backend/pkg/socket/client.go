@@ -126,6 +126,8 @@ func (c *Client) ReadPump() {
 			if err := c.hub.HandleRoomMessage(c, message.Type); err != nil {
 				c.sendError("ROOM_ACTION_FAILED", err.Error())
 			}
+		case protocol.ClientMsgFold:
+			c.handleFoldMessage()
 		default:
 			c.sendError("UNKNOWN_TYPE", fmt.Sprintf("unrecognized message type: %q", message.Type))
 		}
@@ -184,6 +186,16 @@ func (c *Client) handleJoinRoomMessage(payload json.RawMessage) error {
 	}
 
 	return nil
+}
+
+func (c *Client) handleFoldMessage() {
+	database, err := db.GetDB()
+	if err != nil {
+		c.hub.CompleteFold(nil, c)
+		return
+	}
+
+	c.hub.CompleteFold(database, c)
 }
 
 func (c *Client) sendError(code, msg string) {

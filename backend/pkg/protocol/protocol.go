@@ -13,6 +13,7 @@
 //	JOIN_ROOM     { roomCode: string }
 //	LEAVE_ROOM    {}
 //	TOGGLE_READY  {}
+//	FOLD          {}
 //
 // # Server → Client events
 //
@@ -20,6 +21,7 @@
 //	PLAYER_JOINED { id, username, isHost, isReady }         (broadcast to others)
 //	PLAYER_LEFT   { id }                                    (broadcast to others)
 //	PLAYER_UPDATE { id, username, isHost, isReady }         (broadcast to all)
+//	GAME_OVER     { winnerId: number, pot: number, seats: Player[] }
 //	ERROR         { code: string, message: string }
 package protocol
 
@@ -28,6 +30,7 @@ const (
 	ClientMsgJoinRoom    = "JOIN_ROOM"
 	ClientMsgLeaveRoom   = "LEAVE_ROOM"
 	ClientMsgToggleReady = "TOGGLE_READY"
+	ClientMsgFold        = "FOLD"
 )
 
 // Server-to-client message type constants.
@@ -36,6 +39,7 @@ const (
 	ServerMsgPlayerLeft   = "PLAYER_LEFT"
 	ServerMsgPlayerUpdate = "PLAYER_UPDATE"
 	ServerMsgRoomState    = "ROOM_STATE"
+	ServerMsgGameOver     = "GAME_OVER"
 	ServerMsgError        = "ERROR"
 )
 
@@ -67,6 +71,13 @@ type PlayerLeftPayload struct {
 type RoomStatePayload struct {
 	RoomCode string   `json:"roomCode"`
 	Players  []Player `json:"players"`
+}
+
+// GameOverPayload is broadcast when a hand is completed.
+type GameOverPayload struct {
+	WinnerID uint     `json:"winnerId"`
+	Pot      int      `json:"pot"`
+	Seats    []Player `json:"seats,omitempty"`
 }
 
 // ErrorPayload is sent by the server when a client message cannot be processed.
