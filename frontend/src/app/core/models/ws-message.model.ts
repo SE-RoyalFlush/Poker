@@ -13,6 +13,7 @@ export const ClientMessageType = {
   JOIN_ROOM: 'JOIN_ROOM',
   LEAVE_ROOM: 'LEAVE_ROOM',
   TOGGLE_READY: 'TOGGLE_READY',
+  START_GAME: 'START_GAME',
 } as const;
 
 export type ClientMessageType = (typeof ClientMessageType)[keyof typeof ClientMessageType];

@@ -16,6 +16,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import {
   ClientMessageType,
+  GameServerMessageType,
+  GameStartedPayload,
   Player,
   PlayerLeftPayload,
   RoomStatePayload,
@@ -55,6 +57,17 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
   messages: ChatMessage[] = [];
   chatInput = '';
   currentUsername = '';
+  currentUserId = 0;
+
+  get isHost(): boolean {
+    return this.players.some(p => p.id === this.currentUserId && p.isHost);
+  }
+
+  get canStartGame(): boolean {
+    return this.isHost &&
+      this.players.length >= 2 &&
+      this.players.every(p => p.isReady);
+  }
 
   private shouldScroll = false;
   private readonly destroy$ = new Subject<void>();
@@ -76,12 +89,14 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
 
     const user = this.authService.getCurrentUser();
     this.currentUsername = user?.username ?? 'You';
+    this.currentUserId = Number(user?.id ?? 0);
 
     this.wsService.connect();
 
     this.wsService.connected$
       .pipe(filter(v => v), takeUntil(this.destroy$))
       .subscribe(() => {
+        this.isReady = false;
         this.wsService.sendMessage(ClientMessageType.JOIN_ROOM, { roomCode: this.roomCode });
       });
 
@@ -110,9 +125,14 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
       const payload = msg.payload as RoomStatePayload;
       this.players = uniqBy(payload.players, 'id');
       playersChanged = true;
+      this.syncOwnReadyState();
     } else if (msg.type === ServerMessageType.PLAYER_JOINED) {
       const player = msg.payload as Player;
-      this.players = uniqBy([...this.players, player], 'id');
+      // Update existing player (e.g. reconnect resets isReady on server) or add new
+      const exists = this.players.some(p => p.id === player.id);
+      this.players = exists
+        ? this.players.map(p => p.id === player.id ? { ...p, ...player } : p)
+        : [...this.players, player];
       playersChanged = true;
     } else if (msg.type === ServerMessageType.PLAYER_LEFT) {
       const { id } = msg.payload as PlayerLeftPayload;
@@ -136,10 +156,25 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
     if (playersChanged) {
       this.sortedPlayers = orderBy(this.players, ['isHost'], ['desc']);
     }
+
+    if (msg.type === GameServerMessageType.GAME_STARTED) {
+      const payload = msg.payload as GameStartedPayload;
+      this.router.navigate(['/table', payload.tableId]);
+    }
+  }
+
+  private syncOwnReadyState(): void {
+    const me = this.players.find(p => p.id === this.currentUserId);
+    if (me) this.isReady = me.isReady ?? false;
   }
 
   toggleReady(): void {
     this.wsService.sendMessage(ClientMessageType.TOGGLE_READY, {});
+  }
+
+  startGame(): void {
+    if (!this.canStartGame) return;
+    this.wsService.sendMessage(ClientMessageType.START_GAME, {});
   }
 
   sendMessage(): void {

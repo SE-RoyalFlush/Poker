@@ -291,6 +291,40 @@
   }
 }
 
+// ── Start Game button ────────────────────────────────────────────
+.rf-start-btn {
+  width: 100%;
+  height: 48px !important;
+  margin-top: 10px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  border-radius: var(--rf-radius-sm) !important;
+  letter-spacing: 0.04em !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: var(--rf-bg-surface) !important;
+  color: var(--rf-text-hint) !important;
+  border: 0.5px solid var(--rf-border) !important;
+  transition: background 0.2s, color 0.2s, border-color 0.2s !important;
+  cursor: not-allowed !important;
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+  &--enabled {
+    background: var(--rf-gold) !important;
+    color: var(--rf-bg) !important;
+    border-color: var(--rf-gold) !important;
+    cursor: pointer !important;
+
+    &:hover {
+      background: var(--rf-gold-light) !important;
+      border-color: var(--rf-gold-light) !important;
+    }
+  }
+}
+
 // ── Chat ─────────────────────────────────────────────────────────
 .rf-chat {
   &__messages {
