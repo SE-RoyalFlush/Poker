@@ -17,6 +17,7 @@ func NewRouter() *mux.Router {
 	publicAPI.HandleFunc("/login", LoginHandler).Methods(http.MethodPost)
 	publicAPI.HandleFunc("/logout", LogoutHandler).Methods(http.MethodPost)
 	publicAPI.HandleFunc("/csrf", CSRFTokenHandler).Methods(http.MethodGet)
+	publicAPI.HandleFunc("/demo/game-state", DemoGameStateHandler).Methods(http.MethodGet)
 	publicAPI.HandleFunc("/admin/users", AdminListUsersHandler).Methods(http.MethodGet)
 	publicAPI.HandleFunc("/admin/users/{id:[0-9]+}", AdminDeleteUserHandler).Methods(http.MethodDelete)
 

@@ -1,0 +1,45 @@
+.rf-demo-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #0A0A0F;
+  background: var(--rf-gold);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.rf-demo-controls {
+  gap: 10px;
+}
+
+.rf-demo-btn {
+  background: none;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  color: var(--rf-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: var(--rf-border-em);
+    color: var(--rf-text);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--reset {
+    color: var(--rf-gold-dim);
+    border-color: rgba(201, 168, 76, 0.2);
+
+    &:hover {
+      border-color: var(--rf-gold);
+      color: var(--rf-gold);
+    }
+  }
+}
