@@ -29,6 +29,7 @@ func NewRouter() *mux.Router {
 	protectedAPI.HandleFunc("/rooms", CreateRoomHandler).Methods(http.MethodPost)
 	protectedAPI.HandleFunc("/rooms/join", JoinRoomHandler).Methods(http.MethodPost)
 	protectedAPI.HandleFunc("/rooms/{code}", GetRoomHandler).Methods(http.MethodGet)
+	protectedAPI.HandleFunc("/users/{id:[0-9]+}/stats", UserStatsHandler).Methods(http.MethodGet)
 
 	protected.HandleFunc("/ws", WebSocketHandler).Methods(http.MethodGet)
 

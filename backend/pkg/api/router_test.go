@@ -131,6 +131,7 @@ var _ = Describe("Router", func() {
 			{method: http.MethodPost, target: "/api/rooms", body: []byte(`{}`)},
 			{method: http.MethodPost, target: "/api/rooms/join", body: []byte(`{}`)},
 			{method: http.MethodGet, target: "/api/rooms/ABC123"},
+			{method: http.MethodGet, target: "/api/users/1/stats"},
 			{method: http.MethodGet, target: "/ws"},
 		}
 
