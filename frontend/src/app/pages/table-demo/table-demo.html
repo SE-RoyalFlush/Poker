@@ -1,0 +1,104 @@
+<div class="rf-table">
+  <nav class="rf-nav">
+    <span class="rf-nav__logo">
+      <span class="rf-nav__badge">RF</span>
+      Royal Flush
+    </span>
+    <div class="rf-nav__user rf-demo-controls">
+      <span class="rf-demo-badge">DEMO</span>
+      <button
+        class="rf-demo-btn"
+        (click)="toggleAutoPlay()"
+        [title]="autoPlay ? 'Pause auto-play' : 'Resume auto-play'"
+      >{{ autoPlay ? '⏸' : '▶' }}</button>
+      <button
+        class="rf-demo-btn"
+        (click)="advancePhase()"
+        [disabled]="!!winner"
+        title="Next phase"
+      >Next Phase →</button>
+      <button
+        class="rf-demo-btn rf-demo-btn--reset"
+        (click)="reset()"
+        title="Reset demo"
+      >↺ Reset</button>
+    </div>
+  </nav>
+
+  <main class="rf-table__arena" data-cy="table-arena">
+    <div class="rf-table__felt">
+
+      <!-- Community cards -->
+      <div class="rf-table__community">
+        <div
+          *ngFor="let slot of communityCardSlots; let i = index"
+          class="rf-table__community-slot"
+        >
+          <app-card
+            *ngIf="slot; else emptySlot"
+            [rank]="slot.rank"
+            [suit]="slot.suit"
+            [faceDown]="false"
+          ></app-card>
+          <ng-template #emptySlot>
+            <div class="rf-table__card-slot"></div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Pot & phase info -->
+      <div class="rf-table__info">
+        <span class="rf-table__pot">Pot: ${{ pot }}</span>
+        <span class="rf-table__phase-badge">{{ phaseLabel }}</span>
+      </div>
+
+      <!-- Opponent seats -->
+      <div
+        *ngFor="let seat of opponentSeats"
+        class="rf-seat"
+        [class.rf-seat--active]="seat.isActive"
+        [attr.data-seat]="seat.seatIndex"
+      >
+        <div class="rf-seat__cards">
+          <app-card [faceDown]="true"></app-card>
+          <app-card [faceDown]="true"></app-card>
+        </div>
+        <div class="rf-seat__info">
+          <span class="rf-seat__username">{{ seat.username }}</span>
+          <span class="rf-seat__chips">${{ seat.chipCount }}</span>
+        </div>
+      </div>
+
+    </div><!-- .rf-table__felt -->
+
+    <!-- Current user's zone -->
+    <div class="rf-table__player-zone" data-cy="player-zone">
+      <div class="rf-table__hole-cards">
+        <ng-container *ngFor="let card of currentUserSeat?.holeCards ?? []">
+          <app-card [rank]="card.rank" [suit]="card.suit" [faceDown]="false"></app-card>
+        </ng-container>
+      </div>
+      <div class="rf-table__player-info">
+        <span class="rf-table__player-name">{{ currentUserSeat?.username ?? 'You' }}</span>
+        <span class="rf-table__player-chips" *ngIf="currentUserSeat">${{ currentUserSeat.chipCount }}</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Winner overlay -->
+  <div
+    *ngIf="winner"
+    class="rf-winner-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Game over"
+  >
+    <div class="rf-winner-overlay__card">
+      <div class="rf-winner-overlay__trophy">🏆</div>
+      <h2 class="rf-winner-overlay__title">{{ winner.username }} wins!</h2>
+      <p class="rf-winner-overlay__pot">${{ winner.pot }} pot</p>
+      <button class="rf-winner-overlay__btn" (click)="dismissWinner()">Play Again</button>
+    </div>
+  </div>
+</div>

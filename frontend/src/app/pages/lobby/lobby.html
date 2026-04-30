@@ -59,6 +59,20 @@
           <mat-icon>{{ isReady ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
           {{ isReady ? 'Ready' : 'Not Ready' }}
         </button>
+
+        <button
+          *ngIf="isHost"
+          mat-flat-button
+          class="rf-start-btn"
+          [class.rf-start-btn--enabled]="canStartGame"
+          [disabled]="!canStartGame"
+          (click)="startGame()"
+          aria-label="Start game"
+          data-cy="start-game-btn"
+        >
+          <mat-icon>play_arrow</mat-icon>
+          {{ canStartGame ? 'Start Game' : 'Waiting for all players…' }}
+        </button>
       </section>
 
       <!-- RIGHT: Chat panel -->
