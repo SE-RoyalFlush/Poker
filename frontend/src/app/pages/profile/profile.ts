@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -20,6 +21,8 @@ export class ProfileComponent implements OnInit {
   hasError = false;
   userId = '';
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private route: ActivatedRoute,
     private statsService: StatsService,
@@ -40,7 +43,7 @@ export class ProfileComponent implements OnInit {
     this.isLoading = true;
     this.hasError = false;
 
-    this.statsService.getUserStats(this.userId).subscribe({
+    this.statsService.getUserStats(this.userId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (stats) => {
         this.stats = stats;
         this.isLoading = false;

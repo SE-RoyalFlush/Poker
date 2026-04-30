@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -25,6 +26,8 @@ export class LeaderboardComponent implements OnInit {
   isLoading = false;
   hasError = false;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private leaderboardService: LeaderboardService,
     private toast: ToastNotificationService,
@@ -38,7 +41,7 @@ export class LeaderboardComponent implements OnInit {
     this.isLoading = true;
     this.hasError = false;
 
-    this.leaderboardService.getLeaderboard().subscribe({
+    this.leaderboardService.getLeaderboard().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (entries) => {
         this.entries = entries;
         this.sortedEntries = this.applySorting(entries, this.activeSortField);
