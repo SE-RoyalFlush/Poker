@@ -147,7 +147,7 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
         this.isReady = player.isReady ?? false;
       }
       playersChanged = true;
-    } else if (msg.type === 'CHAT_MESSAGE') {
+    } else if (msg.type === ServerMessageType.CHAT_MESSAGE) {
       const { username, text } = msg.payload as { username: string; text: string };
       this.messages.push({ sender: username, text, timestamp: new Date().toISOString() });
       this.shouldScroll = true;
@@ -183,7 +183,7 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
 
     // Don't add locally — the server broadcasts the message back to everyone
     // (including the sender), so we add it in handleMessage on receipt.
-    this.wsService.sendMessage('CHAT_MESSAGE', { text });
+    this.wsService.sendMessage(ServerMessageType.CHAT_MESSAGE, { text });
     this.chatInput = '';
   }
 

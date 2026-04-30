@@ -24,6 +24,7 @@ export const ServerMessageType = {
   PLAYER_LEFT: 'PLAYER_LEFT',
   PLAYER_UPDATE: 'PLAYER_UPDATE',
   ROOM_STATE: 'ROOM_STATE',
+  CHAT_MESSAGE: 'CHAT_MESSAGE',
   ERROR: 'ERROR',
 } as const;
 
