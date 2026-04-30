@@ -14,7 +14,8 @@ export const routes: Routes = [
       },
       {
         path: 'login',
-        loadComponent: () => import('./pages/login/login').then((m) => m.Login),
+        loadComponent: () =>
+          import('./features/auth/login/login.component').then((m) => m.LoginComponent),
       },
       {
         path: 'register',
@@ -24,6 +25,7 @@ export const routes: Routes = [
       {
         path: 'admin',
         loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminComponent),
+        canActivate: [authGuard],
       },
       {
         path: 'dashboard',
@@ -44,7 +46,7 @@ export const routes: Routes = [
 
   {
     path: '',
-    data: { access: 'protected' }, // guard will be added in auth story
+    data: { access: 'protected' },
     loadComponent: () =>
       import('./layouts/protected-shell/protected-shell').then((m) => m.ProtectedShell),
     children: [

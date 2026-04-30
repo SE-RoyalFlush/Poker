@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 
@@ -24,6 +25,8 @@ import { JoinRoomComponent } from '../../features/rooms/join-room/join-room.comp
 export class DashboardComponent implements OnInit {
   currentUser: User | null = null;
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private authService: AuthService,
     private router:      Router,
@@ -34,7 +37,7 @@ export class DashboardComponent implements OnInit {
   }
 
   onLogout(): void {
-    this.authService.logout().subscribe({
+    this.authService.logout().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       complete: () => {
         this.router.navigate(['/']);
       },

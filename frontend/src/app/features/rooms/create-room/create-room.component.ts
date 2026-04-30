@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -31,6 +32,7 @@ export class CreateRoomComponent implements OnInit {
   createLoading = false;
   createError = '';
 
+  private readonly destroyRef  = inject(DestroyRef);
   private fb          = inject(FormBuilder);
   private roomService = inject(RoomService);
   private router      = inject(Router);
@@ -45,7 +47,7 @@ export class CreateRoomComponent implements OnInit {
       roomPassword: [''],
     });
 
-    this.createForm.get('isPrivate')?.valueChanges.subscribe((isPrivate: boolean) => {
+    this.createForm.get('isPrivate')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((isPrivate: boolean) => {
       const pwCtrl = this.createForm.get('roomPassword')!;
       if (isPrivate) {
         pwCtrl.setValidators([Validators.required, Validators.minLength(4)]);

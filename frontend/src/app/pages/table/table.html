@@ -5,13 +5,15 @@
       Royal Flush
     </span>
     <div class="rf-nav__user">
-      <button
-        class="rf-nav__mute-btn"
-        (click)="onToggleMute()"
-        [attr.aria-label]="(isMuted$ | async) ? 'Unmute sounds' : 'Mute sounds'"
-        [attr.title]="(isMuted$ | async) ? 'Unmute sounds' : 'Mute sounds'"
-        data-cy="mute-btn"
-      >{{ (isMuted$ | async) ? '🔇' : '🔊' }}</button>
+      <ng-container *ngIf="{ muted: isMuted$ | async } as s">
+        <button
+          class="rf-nav__mute-btn"
+          (click)="onToggleMute()"
+          [attr.aria-label]="s.muted ? 'Unmute sounds' : 'Mute sounds'"
+          [attr.title]="s.muted ? 'Unmute sounds' : 'Mute sounds'"
+          data-cy="mute-btn"
+        >{{ s.muted ? '🔇' : '🔊' }}</button>
+      </ng-container>
       <span class="rf-nav__avatar">{{ currentUsername.charAt(0).toUpperCase() }}</span>
       <span class="rf-nav__username">{{ currentUsername }}</span>
     </div>
