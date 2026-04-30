@@ -1,14 +1,19 @@
 
 html, body {
   height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  
+
   background-color: var(--mat-sys-surface, #fafafa);
   color: var(--mat-sys-on-surface, rgba(0, 0, 0, 0.87));
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 .mat-mdc-snack-bar-container.rf-toast {

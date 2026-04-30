@@ -1,4 +1,5 @@
 @use 'sass:map';
+@use 'variables' as v;
 
 :host {
   display: block;
@@ -429,18 +430,104 @@ $seat-positions: (
 
 // ── Responsive ────────────────────────────────────────────────────────────────
 
-@media (max-width: 600px) {
+@media (max-width: v.$breakpoint-md) {
+  .rf-nav__username { display: none; }
+
   .rf-table__felt {
-    width: 98vw;
+    width: min(98vw, 600px);
+    aspect-ratio: 3 / 2;
+  }
+
+  .rf-table__community {
+    gap: 4px;
+  }
+
+  .rf-table__arena {
+    padding: 16px 8px 0;
+    gap: 16px;
   }
 
   .rf-seat__cards app-card {
-    --rf-card-w: 28px;
-    --rf-card-h: 40px;
+    --rf-card-w: 30px;
+    --rf-card-h: 44px;
   }
 
   .rf-table__card-slot {
-    width: 52px;
-    height: 74px;
+    width: 56px;
+    height: 80px;
+  }
+
+  .rf-winner-overlay__card {
+    padding: 28px 24px;
+    margin: 16px;
+  }
+}
+
+@media (max-width: v.$breakpoint-sm) {
+  .rf-table__felt {
+    width: 99vw;
+    aspect-ratio: 4 / 3;
+  }
+
+  .rf-table__community {
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .rf-table__info {
+    position: static;
+    transform: none;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .rf-seat__cards app-card {
+    --rf-card-w: 24px;
+    --rf-card-h: 34px;
+  }
+
+  .rf-seat__info {
+    padding: 2px 5px;
+    max-width: 70px;
+  }
+
+  .rf-seat__username {
+    max-width: 60px;
+    font-size: 9px;
+  }
+
+  .rf-seat__chips {
+    font-size: 9px;
+  }
+
+  .rf-table__card-slot {
+    width: 44px;
+    height: 62px;
+  }
+
+  .rf-table__player-zone {
+    padding: 8px 0 16px;
+    gap: 8px;
+  }
+
+  .rf-table__player-name {
+    font-size: 12px;
+  }
+
+  .rf-table__player-chips {
+    font-size: 11px;
+  }
+
+  .rf-winner-overlay__card {
+    padding: 24px 16px;
+  }
+
+  .rf-winner-overlay__title {
+    font-size: 20px;
+  }
+
+  .rf-winner-overlay__btn {
+    padding: 8px 20px;
   }
 }

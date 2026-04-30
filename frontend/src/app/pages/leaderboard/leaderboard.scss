@@ -1,3 +1,5 @@
+@use 'variables' as v;
+
 :host {
   display: block;
   --rf-gold:        #C9A84C;
@@ -145,6 +147,8 @@
     background: rgba(255,255,255,0.02);
     user-select: none;
 
+    @media (max-width: v.$breakpoint-sm) { padding: 10px 12px; }
+
     &--rank {
       width: 70px;
       text-align: center;
@@ -204,6 +208,11 @@
 
     &--positive { color: var(--rf-green); font-weight: 600; }
     &--negative { color: var(--rf-red); font-weight: 600; }
+
+    @media (max-width: v.$breakpoint-sm) {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
   }
 
   &__rank-badge {
@@ -242,7 +251,8 @@
   border-bottom: 0.5px solid var(--rf-border);
   z-index: 200;
 
-  @media (max-width: 600px) { padding: 14px 16px; }
+  @media (max-width: v.$breakpoint-md) { padding: 14px 20px; }
+  @media (max-width: v.$breakpoint-sm) { padding: 12px 16px; flex-wrap: wrap; }
 
   &__logo {
     display: flex;
@@ -269,12 +279,65 @@
     font-weight: 600;
     color: var(--rf-gold);
     letter-spacing: 0.03em;
+
+    @media (max-width: v.$breakpoint-sm) { display: none; }
+  }
+
+  // ── Hamburger toggle (CSS-only) ──────────────────────────────
+  &__toggle-input {
+    display: none;
+  }
+
+  &__toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    padding: 4px;
+
+    span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--rf-gold);
+      border-radius: 2px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    @media (max-width: v.$breakpoint-md) { display: flex; }
+  }
+
+  &__toggle-input:checked ~ &__toggle span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+  &__toggle-input:checked ~ &__toggle span:nth-child(2) {
+    opacity: 0;
+  }
+
+  &__toggle-input:checked ~ &__toggle span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
   }
 
   &__links {
     display: flex;
     align-items: center;
     gap: 12px;
+
+    @media (max-width: v.$breakpoint-md) {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 12px 0 4px;
+      gap: 8px;
+      border-top: 0.5px solid var(--rf-border);
+      margin-top: 12px;
+    }
+  }
+
+  &__toggle-input:checked ~ &__links {
+    @media (max-width: v.$breakpoint-md) { display: flex; }
   }
 
   &__link {
