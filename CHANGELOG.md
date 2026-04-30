@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- [Backend: GameResult History Model & Migration (Issue #104)](https://github.com/SE-RoyalFlush/Poker/issues/104)
+    - Added `GameResult` GORM struct in `backend/pkg/models/game_result.go` with fields `WinnerID` (FK → `User`), `PotSize` (int), `Date` (time.Time), and `GameType` (text enum: `texas_holdem`, `omaha`)
+    - Defined `GameType` string type with constants `GameTypeTexasHoldEm` and `GameTypeOmaha`
+    - Registered `GameResult` in `models.AllModels()` so it is included in GORM auto-migration on server startup
+    - Added Ginkgo/Gomega unit tests covering struct creation, retrieval, association preload, large pot sizes, zero pot size, and both game type variants
+    - Added `TestRunMigrationsCreatesGameResultsTable` migration integration test verifying the `game_results` table is absent before and present after `RunMigrations`
 - [Frontend: Responsive Poker Table — Mobile Scaling (Issue #95)](https://github.com/SE-RoyalFlush/Poker/issues/95)
     - Created `frontend/src/styles/_variables.scss` with `$breakpoint-sm: 480px` and `$breakpoint-md: 768px`; added `stylePreprocessorOptions.includePaths` to `angular.json` for both build and test targets
     - Added `overflow-x: hidden` and `box-sizing: border-box` globally in `styles.scss` to prevent horizontal scroll at any viewport width

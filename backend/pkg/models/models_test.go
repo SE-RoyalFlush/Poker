@@ -13,6 +13,7 @@ var _ = Describe("Models", func() {
 			allModels := models.AllModels()
 			Expect(allModels).To(ContainElement(&models.User{}))
 			Expect(allModels).To(ContainElement(&models.Room{}))
+			Expect(allModels).To(ContainElement(&models.GameResult{}))
 		})
 	})
 })

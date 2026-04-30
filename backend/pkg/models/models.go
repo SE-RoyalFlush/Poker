@@ -6,5 +6,6 @@ func AllModels() []any {
 	return []any{
 		&User{},
 		&Room{},
+		&GameResult{},
 	}
 }
