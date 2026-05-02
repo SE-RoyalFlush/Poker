@@ -138,9 +138,10 @@ export interface PhaseChangePayload {
   activePlayerId: number;
 }
 
-/** Sent when the round ends; identifies the winner and final chip counts. */
+/** Sent when the round ends; identifies the winner(s) and final chip counts. */
 export interface GameOverPayload {
   winnerId: number;
+  winnerIds: number[];
   pot: number;
   seats: PlayerSeat[];
 }

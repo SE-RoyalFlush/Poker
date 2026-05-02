@@ -299,11 +299,11 @@ func (g *Game) advancePhase() []GameEvent {
 	}}
 }
 
-// evaluateShowdown determines the winner at showdown.
+// evaluateShowdown determines the winner(s) at showdown.
+// Tied hands result in a split pot; any odd chip goes to the earliest seat.
 func (g *Game) evaluateShowdown() []GameEvent {
-	var winnerIdx int
 	var bestResult EvalResult
-	first := true
+	var tiedIndices []int
 
 	for i, p := range g.Players {
 		if p.Folded || len(p.HoleCards) == 0 {
@@ -311,22 +311,34 @@ func (g *Game) evaluateShowdown() []GameEvent {
 		}
 		all := append(p.HoleCards, g.CommunityCards...)
 		result := Evaluate(all)
-		if first || compareEval(result, bestResult) > 0 {
+		cmp := compareEval(result, bestResult)
+		if len(tiedIndices) == 0 || cmp > 0 {
 			bestResult = result
-			winnerIdx = i
-			first = false
+			tiedIndices = []int{i}
+		} else if cmp == 0 {
+			tiedIndices = append(tiedIndices, i)
 		}
 	}
 
-	winner := g.Players[winnerIdx]
-	g.Players[winnerIdx].Chips += g.Pot
+	share := g.Pot / len(tiedIndices)
+	remainder := g.Pot % len(tiedIndices)
+	winnerIDs := make([]uint, len(tiedIndices))
+	for j, idx := range tiedIndices {
+		extra := 0
+		if j == 0 {
+			extra = remainder
+		}
+		g.Players[idx].Chips += share + extra
+		winnerIDs[j] = g.Players[idx].UserID
+	}
 
 	return []GameEvent{{
 		Type: "GAME_OVER",
 		Payload: GameOverPayload{
-			WinnerID: winner.UserID,
-			Pot:      g.Pot,
-			Seats:    g.buildAllSeats(),
+			WinnerID:  winnerIDs[0],
+			WinnerIDs: winnerIDs,
+			Pot:       g.Pot,
+			Seats:     g.buildAllSeats(),
 		},
 	}}
 }
@@ -341,9 +353,10 @@ func (g *Game) awardPotToLastStanding() []GameEvent {
 			return []GameEvent{{
 				Type: "GAME_OVER",
 				Payload: GameOverPayload{
-					WinnerID: p.UserID,
-					Pot:      g.Pot,
-					Seats:    g.buildAllSeats(),
+					WinnerID:  p.UserID,
+					WinnerIDs: []uint{p.UserID},
+					Pot:       g.Pot,
+					Seats:     g.buildAllSeats(),
 				},
 			}}
 		}
@@ -502,8 +515,11 @@ type PhaseChangePayload struct {
 }
 
 // GameOverPayload is broadcast when the hand ends.
+// WinnerIDs contains all winners (len > 1 for a split pot).
+// WinnerID is always WinnerIDs[0] for backward compatibility.
 type GameOverPayload struct {
-	WinnerID uint          `json:"winnerId"`
-	Pot      int           `json:"pot"`
-	Seats    []SeatPayload `json:"seats,omitempty"`
+	WinnerID  uint          `json:"winnerId"`
+	WinnerIDs []uint        `json:"winnerIds"`
+	Pot       int           `json:"pot"`
+	Seats     []SeatPayload `json:"seats,omitempty"`
 }

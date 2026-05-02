@@ -328,7 +328,10 @@ func (h *Hub) HandleGameAction(client *Client, action string, amount int) {
 		if ev.Type == "GAME_OVER" {
 			gameOver = true
 			if p, ok2 := ev.Payload.(game.GameOverPayload); ok2 {
-				winnerID = p.WinnerID
+				// Only persist when there is a single winner; skip split pots.
+				if len(p.WinnerIDs) == 1 {
+					winnerID = p.WinnerID
+				}
 				pot = p.Pot
 			}
 			break
@@ -347,7 +350,7 @@ func (h *Hub) HandleGameAction(client *Client, action string, amount int) {
 
 	h.dispatchGameEvents(roomCode, clients, events)
 
-	if gameOver {
+	if gameOver && winnerID != 0 {
 		h.persistResult(roomCode, winnerID, pot)
 	}
 }

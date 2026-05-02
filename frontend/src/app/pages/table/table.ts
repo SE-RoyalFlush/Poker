@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
+import { ClientMessageType } from '../../core/models';
 
 import { CardComponent } from '../../shared/card/card.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -40,7 +41,12 @@ export class Table implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.tableId = this.route.snapshot.paramMap.get('id') ?? '';
 
-    // Reconnect the WebSocket if the user lands directly on the table URL.
+    this.wsService.connected$
+      .pipe(filter(v => v), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.wsService.sendMessage(ClientMessageType.JOIN_ROOM, { roomCode: this.tableId });
+      });
+
     this.wsService.connect();
 
     this.gameStateService.gameState$

@@ -137,8 +137,19 @@ export class GameStateService implements OnDestroy {
       pot: payload.pot,
       phase: 'showdown',
     });
-    const winner = payload.seats.find(s => s.playerId === payload.winnerId);
-    this.winnerSubject.next(winner ? { username: winner.username, pot: payload.pot } : null);
+    const winnerIds = payload.winnerIds ?? [payload.winnerId];
+    const isSplit = winnerIds.length > 1;
+    const winnerSeats = winnerIds.map(id => payload.seats.find(s => s.playerId === id)).filter(Boolean) as import('../models/game-state.model').PlayerSeat[];
+    if (winnerSeats.length > 0) {
+      this.winnerSubject.next({
+        username: isSplit ? 'Split pot' : winnerSeats[0].username,
+        usernames: winnerSeats.map(s => s.username),
+        pot: payload.pot,
+        isSplit,
+      });
+    } else {
+      this.winnerSubject.next(null);
+    }
   }
 
   private syncState(partial: Partial<GameState>): void {
