@@ -15,6 +15,9 @@ export interface Room {
   isPrivate: boolean;
   isFull: boolean;
   seats: number;
+  status?: string;
+  hostUserId?: number;
+  hostUsername?: string;
 }
 
 export interface CreateRoomPayload {

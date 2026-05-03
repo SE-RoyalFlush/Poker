@@ -40,7 +40,7 @@ export class CreateRoomComponent implements OnInit {
   ngOnInit(): void {
     this.createForm = this.fb.group({
       roomName:     ['', [Validators.required, Validators.maxLength(40)]],
-      maxPlayers:   [9,  [Validators.required, Validators.min(2), Validators.max(9)]],
+      maxPlayers:   [6,  [Validators.required, Validators.min(2), Validators.max(10)]],
       smallBlind:   [1,  [Validators.required, Validators.min(0.25)]],
       bigBlind:     [2,  [Validators.required, Validators.min(0.50)]],
       isPrivate:    [false],

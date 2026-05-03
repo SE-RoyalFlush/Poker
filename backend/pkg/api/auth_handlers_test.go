@@ -189,16 +189,16 @@ var _ = Describe("Authentication Handlers", func() {
 	})
 
 	Describe("MeHandler", func() {
-		It("should return 204 without a session cookie", func() {
+		It("should return 401 without a session cookie", func() {
 			req := httptest.NewRequest("GET", "/api/me", nil)
 			w := httptest.NewRecorder()
 
 			api.MeHandler(w, req)
 
-			Expect(w.Code).To(Equal(http.StatusNoContent))
+			Expect(w.Code).To(Equal(http.StatusUnauthorized))
 		})
 
-		It("should return 204 with an invalid token", func() {
+		It("should return 401 with an invalid token", func() {
 			req := httptest.NewRequest("GET", "/api/me", nil)
 			req.AddCookie(&http.Cookie{
 				Name:  "session-id",
@@ -208,7 +208,7 @@ var _ = Describe("Authentication Handlers", func() {
 
 			api.MeHandler(w, req)
 
-			Expect(w.Code).To(Equal(http.StatusNoContent))
+			Expect(w.Code).To(Equal(http.StatusUnauthorized))
 		})
 
 		It("should return 200 with valid session cookie", func() {
@@ -355,7 +355,7 @@ var _ = Describe("Authentication Handlers", func() {
 
 			api.MeHandler(meW2, meReq2)
 
-			Expect(meW2.Code).To(Equal(http.StatusNoContent))
+			Expect(meW2.Code).To(Equal(http.StatusUnauthorized))
 		})
 	})
 })

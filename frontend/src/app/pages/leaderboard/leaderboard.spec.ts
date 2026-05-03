@@ -9,9 +9,9 @@ import { LeaderboardService, LeaderboardEntry } from '../../core/services/leader
 import { ToastNotificationService } from '../../core/services/toast.service';
 
 const mockEntries: LeaderboardEntry[] = [
-  { rank: 2, userId: '2', username: 'Bob',   handsPlayed: 80,  wins: 40, winRate: 50.0, totalEarnings: 800  },
-  { rank: 1, userId: '1', username: 'Alice', handsPlayed: 100, wins: 60, winRate: 60.0, totalEarnings: 1500 },
-  { rank: 3, userId: '3', username: 'Carol', handsPlayed: 50,  wins: 20, winRate: 40.0, totalEarnings: 200  },
+  { rank: 2, userId: 2, username: 'Bob',   handsPlayed: 80,  wins: 40, winRate: 50.0, totalEarnings: 800  },
+  { rank: 1, userId: 1, username: 'Alice', handsPlayed: 100, wins: 60, winRate: 60.0, totalEarnings: 1500 },
+  { rank: 3, userId: 3, username: 'Carol', handsPlayed: 50,  wins: 20, winRate: 40.0, totalEarnings: 200  },
 ];
 
 describe('LeaderboardComponent', () => {

@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, tap, catchError, of, switchMap, throwError
 import { API_URL } from '../config/endpoints';
 
 export interface User {
-  id: number | string;
+  id: number;
   username: string;
   email?: string;
   createdAt?: string;
@@ -103,7 +103,7 @@ export class AuthService {
         this.currentUserSubject.next(user);
       }),
       catchError((error: HttpErrorResponse) => {
-        if (error.status === 401 || error.status === 204) {
+        if (error.status === 401) {
           this.currentUserSubject.next(null);
           return of(null);
         }

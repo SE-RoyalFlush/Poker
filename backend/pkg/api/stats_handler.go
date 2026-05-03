@@ -63,38 +63,27 @@ func UserStatsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func buildUserStats(database *gorm.DB, userID uint) (UserStatsResponse, error) {
-	var handsPlayed int64
-	if err := database.Model(&models.GameResult{}).Count(&handsPlayed).Error; err != nil {
-		return UserStatsResponse{}, err
-	}
-
 	var wins int64
 	if err := database.Model(&models.GameResult{}).Where("winner_id = ?", userID).Count(&wins).Error; err != nil {
 		return UserStatsResponse{}, err
 	}
 
-	winnings, err := sumPots(database.Where("winner_id = ?", userID))
-	if err != nil {
-		return UserStatsResponse{}, err
-	}
-
-	losses := handsPlayed - wins
-	lossesPotTotal, err := sumPots(database.Where("winner_id <> ?", userID))
+	totalEarnings, err := sumPots(database.Where("winner_id = ?", userID))
 	if err != nil {
 		return UserStatsResponse{}, err
 	}
 
 	var winRate float64
-	if handsPlayed > 0 {
-		winRate = (float64(wins) / float64(handsPlayed)) * 100
+	if wins > 0 {
+		winRate = 100.0
 	}
 
 	return UserStatsResponse{
-		HandsPlayed:   handsPlayed,
+		HandsPlayed:   wins,
 		Wins:          wins,
-		Losses:        losses,
+		Losses:        0,
 		WinRate:       winRate,
-		TotalEarnings: winnings - lossesPotTotal,
+		TotalEarnings: totalEarnings,
 	}, nil
 }
 

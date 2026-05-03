@@ -36,7 +36,7 @@ export class LoginComponent {
 
   readonly loginForm = this.formBuilder.nonNullable.group({
     username: ['', [Validators.required, Validators.minLength(3)]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
   isSubmitting = false;

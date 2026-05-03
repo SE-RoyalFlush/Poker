@@ -157,7 +157,7 @@ export class TableDemo implements OnInit, OnDestroy {
 
   private showWinner(): void {
     this.clearTimer();
-    this.winner = { username: 'You', pot: POT_BY_PHASE['showdown'] };
+    this.winner = { username: 'You', usernames: ['You'], pot: POT_BY_PHASE['showdown'], isSplit: false };
   }
 
   private startAutoPlay(): void {

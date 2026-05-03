@@ -5,7 +5,7 @@ import { API_URL } from '../config/endpoints';
 
 export interface LeaderboardEntry {
   rank: number;
-  userId: string;
+  userId: number;
   username: string;
   handsPlayed: number;
   wins: number;

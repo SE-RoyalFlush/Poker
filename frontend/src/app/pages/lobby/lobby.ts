@@ -141,10 +141,16 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
     } else if (msg.type === ServerMessageType.PLAYER_UPDATE) {
       const player = msg.payload as Player;
       this.players = this.players.map(p => p.id === player.id ? { ...p, ...player } : p);
-      playersChanged = true;
-      if (player.id === this.currentUserId) {
+      // Keep isReady in sync with the authoritative server value for this user.
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser && player.id === currentUser.id) {
         this.isReady = player.isReady ?? false;
       }
+      playersChanged = true;
+    } else if (msg.type === ServerMessageType.CHAT_MESSAGE) {
+      const { username, text } = msg.payload as { username: string; text: string };
+      this.messages.push({ sender: username, text, timestamp: new Date().toISOString() });
+      this.shouldScroll = true;
     }
 
     if (playersChanged) {
@@ -163,7 +169,6 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   toggleReady(): void {
-    this.isReady = !this.isReady;
     this.wsService.sendMessage(ClientMessageType.TOGGLE_READY, {});
   }
 
@@ -176,15 +181,10 @@ export class Lobby implements OnInit, OnDestroy, AfterViewChecked {
     const text = this.chatInput.trim();
     if (!text) return;
 
-    const msg: ChatMessage = {
-      sender: this.currentUsername,
-      text,
-      timestamp: new Date().toISOString(),
-    };
-    this.messages.push(msg);
-    this.wsService.sendMessage('CHAT_MESSAGE', { text });
+    // Don't add locally — the server broadcasts the message back to everyone
+    // (including the sender), so we add it in handleMessage on receipt.
+    this.wsService.sendMessage(ServerMessageType.CHAT_MESSAGE, { text });
     this.chatInput = '';
-    this.shouldScroll = true;
   }
 
   onChatKeydown(event: KeyboardEvent): void {

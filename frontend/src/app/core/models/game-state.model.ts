@@ -26,6 +26,8 @@ export interface GameState {
 }
 
 export interface WinnerInfo {
-  username: string;
+  username: string;   // primary winner; "Split pot" when isSplit is true
+  usernames: string[]; // all winners (len > 1 for a split pot)
   pot: number;
+  isSplit: boolean;
 }

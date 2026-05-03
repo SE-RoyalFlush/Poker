@@ -232,7 +232,7 @@ describe('Table', () => {
 
   describe('win fanfare', () => {
     it('calls playWinFanfare() when winner$ emits a winner', () => {
-      winnerSubject.next({ username: 'alice', pot: 500 });
+      winnerSubject.next({ username: 'alice', usernames: ['alice'], pot: 500, isSplit: false });
       fixture.detectChanges();
       expect(soundSpy.playWinFanfare).toHaveBeenCalled();
     });
@@ -253,28 +253,28 @@ describe('Table', () => {
     });
 
     it('renders overlay when winner$ emits', () => {
-      winnerSubject.next({ username: 'alice', pot: 500 });
+      winnerSubject.next({ username: 'alice', usernames: ['alice'], pot: 500, isSplit: false });
       fixture.detectChanges();
       const overlay = fixture.nativeElement.querySelector('[data-cy="winner-overlay"]');
       expect(overlay).not.toBeNull();
     });
 
     it('shows correct winner name in overlay', () => {
-      winnerSubject.next({ username: 'alice', pot: 500 });
+      winnerSubject.next({ username: 'alice', usernames: ['alice'], pot: 500, isSplit: false });
       fixture.detectChanges();
       const title: HTMLElement = fixture.nativeElement.querySelector('[data-cy="winner-title"]');
       expect(title.textContent).toContain('alice');
     });
 
     it('shows correct pot amount in overlay', () => {
-      winnerSubject.next({ username: 'alice', pot: 500 });
+      winnerSubject.next({ username: 'alice', usernames: ['alice'], pot: 500, isSplit: false });
       fixture.detectChanges();
       const pot: HTMLElement = fixture.nativeElement.querySelector('[data-cy="winner-pot"]');
       expect(pot.textContent).toContain('500');
     });
 
     it('dismisses overlay on button click', () => {
-      winnerSubject.next({ username: 'alice', pot: 500 });
+      winnerSubject.next({ username: 'alice', usernames: ['alice'], pot: 500, isSplit: false });
       fixture.detectChanges();
       const btn: HTMLElement = fixture.nativeElement.querySelector('[data-cy="winner-dismiss"]');
       btn.click();

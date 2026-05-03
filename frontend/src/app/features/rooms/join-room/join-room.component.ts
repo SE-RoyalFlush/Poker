@@ -87,11 +87,8 @@ export class JoinRoomComponent implements OnInit {
         this.joinLoading = false;
         const apiError   = err?.error;
 
-        if (err?.status === 403 && !this.showJoinPassword) {
-          this.showJoinPassword = true;
-          this.joinForm.get('joinPassword')?.setValidators([Validators.required]);
-          this.joinForm.get('joinPassword')?.updateValueAndValidity();
-          this.joinError = 'This room is password-protected. Enter the password to join.';
+        if (err?.status === 403) {
+          this.joinError = 'This room is full.';
           return;
         }
 

@@ -2,8 +2,6 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { find } from 'lodash-es';
-
 import { WebSocketService } from './websocket.service';
 import { SoundEffectsService } from './sound-effects.service';
 import { GameState, GamePhase, Card, PlayerSeat, WinnerInfo } from '../models/game-state.model';
@@ -139,8 +137,19 @@ export class GameStateService implements OnDestroy {
       pot: payload.pot,
       phase: 'showdown',
     });
-    const winner = find(payload.seats, { playerId: payload.winnerId }) as PlayerSeat | undefined;
-    this.winnerSubject.next(winner ? { username: winner.username, pot: payload.pot } : null);
+    const winnerIds = payload.winnerIds ?? [payload.winnerId];
+    const isSplit = winnerIds.length > 1;
+    const winnerSeats = winnerIds.map(id => payload.seats.find(s => s.playerId === id)).filter(Boolean) as import('../models/game-state.model').PlayerSeat[];
+    if (winnerSeats.length > 0) {
+      this.winnerSubject.next({
+        username: isSplit ? 'Split pot' : winnerSeats[0].username,
+        usernames: winnerSeats.map(s => s.username),
+        pot: payload.pot,
+        isSplit,
+      });
+    } else {
+      this.winnerSubject.next(null);
+    }
   }
 
   private syncState(partial: Partial<GameState>): void {
@@ -152,7 +161,7 @@ export class GameStateService implements OnDestroy {
    */
   getActivePlayer(): PlayerSeat | undefined {
     const activeId = this.activePlayerIdSubject.value;
-    return find(this.playersSubject.value, { playerId: activeId }) as PlayerSeat | undefined;
+    return this.playersSubject.value.find(s => s.playerId === activeId);
   }
 
   sendAction(type: string, amount?: number): void {

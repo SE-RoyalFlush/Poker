@@ -83,7 +83,7 @@ export class HomeComponent implements OnInit {
 
     this.registerForm = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
     });
 
     this.joinForm = this.fb.group({

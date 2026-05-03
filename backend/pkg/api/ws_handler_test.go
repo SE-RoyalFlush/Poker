@@ -13,6 +13,7 @@ import (
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/auth"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/game"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
@@ -366,22 +367,53 @@ func TestWebSocketHandlerPersistsGameResultWhenHandEndsOnFold(t *testing.T) {
 	guestConn := dialWebSocket(t, server.URL, sessionCookieForTest(t, "fold-guest"))
 	defer guestConn.Close()
 
+	// Both players join the room.
 	writeWSMessage(t, hostConn, wsMessage{Type: protocol.ClientMsgJoinRoom, Payload: protocol.JoinRoomPayload{RoomCode: roomModel.Code}})
-	_ = readWSMessage(t, hostConn)
+	_ = readWSMessage(t, hostConn) // ROOM_STATE
 	writeWSMessage(t, guestConn, wsMessage{Type: protocol.ClientMsgJoinRoom, Payload: protocol.JoinRoomPayload{RoomCode: roomModel.Code}})
-	_ = readWSMessage(t, guestConn)
-	_ = readWSMessage(t, hostConn)
+	_ = readWSMessage(t, guestConn) // ROOM_STATE
+	_ = readWSMessage(t, hostConn)  // PLAYER_JOINED
 
+	// Both toggle ready to start the game.
+	writeWSMessage(t, hostConn, wsMessage{Type: protocol.ClientMsgToggleReady, Payload: map[string]any{}})
+	_ = readWSMessage(t, hostConn)  // PLAYER_UPDATE (host ready)
+	_ = readWSMessage(t, guestConn) // PLAYER_UPDATE (host ready)
+
+	writeWSMessage(t, guestConn, wsMessage{Type: protocol.ClientMsgToggleReady, Payload: map[string]any{}})
+	_ = readWSMessage(t, guestConn) // PLAYER_UPDATE (guest ready)
+	_ = readWSMessage(t, hostConn)  // PLAYER_UPDATE (guest ready)
+
+	// Game starts: each player receives GAME_STARTED + CARDS_DEALT.
+	_ = readWSMessage(t, hostConn)  // GAME_STARTED
+	_ = readWSMessage(t, guestConn) // GAME_STARTED
+	_ = readWSMessage(t, hostConn)  // CARDS_DEALT
+	_ = readWSMessage(t, guestConn) // CARDS_DEALT
+
+	// Determine which connection belongs to the active player and fold.
+	// In heads-up, dealer (host, index 0) posts BB; guest (index 1) is SB and acts first.
 	writeWSMessage(t, guestConn, wsMessage{Type: protocol.ClientMsgFold, Payload: map[string]any{}})
 
-	hostGameOver := decodeGameOver(t, readWSMessage(t, hostConn).Payload)
-	if hostGameOver.WinnerID != host.ID {
-		t.Fatalf("winner ID = %d, want %d", hostGameOver.WinnerID, host.ID)
+	// PLAYER_ACTION then GAME_OVER broadcast to both.
+	hostMsg1 := readWSMessage(t, hostConn)
+	guestMsg1 := readWSMessage(t, guestConn)
+	if hostMsg1.Type == protocol.ServerMsgPlayerAction {
+		hostMsg1 = readWSMessage(t, hostConn)
 	}
-	guestGameOver := decodeGameOver(t, readWSMessage(t, guestConn).Payload)
+	if guestMsg1.Type == protocol.ServerMsgPlayerAction {
+		guestMsg1 = readWSMessage(t, guestConn)
+	}
+
+	hostGameOver := decodeGameOver(t, hostMsg1.Payload)
+	if hostGameOver.WinnerID != host.ID {
+		t.Fatalf("host winner ID = %d, want %d", hostGameOver.WinnerID, host.ID)
+	}
+	guestGameOver := decodeGameOver(t, guestMsg1.Payload)
 	if guestGameOver.WinnerID != host.ID {
 		t.Fatalf("guest saw winner ID = %d, want %d", guestGameOver.WinnerID, host.ID)
 	}
+
+	// Give a moment for async persistence.
+	time.Sleep(50 * time.Millisecond)
 
 	var results []models.GameResult
 	if err := database.Find(&results).Error; err != nil {
@@ -633,7 +665,7 @@ func decodeErrorPayload(t *testing.T, payload interface{}) protocol.ErrorPayload
 	}
 }
 
-func decodeGameOver(t *testing.T, payload interface{}) protocol.GameOverPayload {
+func decodeGameOver(t *testing.T, payload interface{}) game.GameOverPayload {
 	t.Helper()
 
 	payloadMap, ok := payload.(map[string]interface{})
@@ -641,7 +673,7 @@ func decodeGameOver(t *testing.T, payload interface{}) protocol.GameOverPayload 
 		t.Fatalf("expected map payload for game over, got %T", payload)
 	}
 
-	return protocol.GameOverPayload{
+	return game.GameOverPayload{
 		WinnerID: uint(payloadMap["winnerId"].(float64)),
 		Pot:      int(payloadMap["pot"].(float64)),
 	}

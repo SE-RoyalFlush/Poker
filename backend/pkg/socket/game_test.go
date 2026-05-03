@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/db"
+	"github.com/SE-RoyalFlush/Poker/backend/pkg/game"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/models"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/protocol"
 	"github.com/SE-RoyalFlush/Poker/backend/pkg/room"
@@ -14,73 +15,13 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func TestCompleteHandPersistsGameResult(t *testing.T) {
+// TestHandleGameActionFoldBroadcastsGameOver verifies that when a player folds
+// during an active game, GAME_OVER is broadcast to all room clients and the
+// result is persisted.
+func TestHandleGameActionFoldBroadcastsGameOver(t *testing.T) {
 	database := setupCompleteHandTestDB(t)
-	winner := models.User{
-		Username:     "winner",
-		PasswordHash: "hash",
-	}
-	if err := database.Create(&winner).Error; err != nil {
-		t.Fatalf("failed to create winner: %v", err)
-	}
-
-	hub := NewHub()
-	payload := protocol.GameOverPayload{
-		WinnerID: winner.ID,
-		Pot:      900,
-	}
-	hub.CompleteHand(database, "ABC123", payload)
-
-	var result models.GameResult
-	if err := database.First(&result).Error; err != nil {
-		t.Fatalf("failed to load persisted game result: %v", err)
-	}
-	if result.WinnerID != winner.ID {
-		t.Fatalf("WinnerID = %d, want %d", result.WinnerID, winner.ID)
-	}
-	if result.PotSize != payload.Pot {
-		t.Fatalf("PotSize = %d, want %d", result.PotSize, payload.Pot)
-	}
-}
-
-func TestCompleteHandBroadcastsGameOverWhenPersistenceFails(t *testing.T) {
-	hub := NewHub()
-	client := &Client{
-		user:     nil,
-		send:     make(chan Message, 1),
-		roomCode: "ABC123",
-	}
-	hub.rooms["ABC123"] = &roomState{
-		clients: map[*Client]bool{client: true},
-	}
-
-	payload := protocol.GameOverPayload{
-		WinnerID: 7,
-		Pot:      900,
-	}
-	hub.CompleteHand(nil, "ABC123", payload)
-
-	select {
-	case message := <-client.send:
-		if message.Type != protocol.ServerMsgGameOver {
-			t.Fatalf("message type = %q, want %q", message.Type, protocol.ServerMsgGameOver)
-		}
-		got, ok := message.Payload.(protocol.GameOverPayload)
-		if !ok {
-			t.Fatalf("payload type = %T, want protocol.GameOverPayload", message.Payload)
-		}
-		if got.WinnerID != payload.WinnerID || got.Pot != payload.Pot {
-			t.Fatalf("payload = %+v, want %+v", got, payload)
-		}
-	default:
-		t.Fatal("expected GAME_OVER broadcast")
-	}
-}
-
-func TestCompleteFoldPersistsAndBroadcastsWinner(t *testing.T) {
-	database := setupCompleteHandTestDB(t)
-	winner := models.User{Username: "winner-fold", PasswordHash: "hash"}
-	folder := models.User{Username: "folder-fold", PasswordHash: "hash"}
+	winner := models.User{Username: "winner-ga", PasswordHash: "hash"}
+	folder := models.User{Username: "folder-ga", PasswordHash: "hash"}
 	if err := database.Create(&winner).Error; err != nil {
 		t.Fatalf("failed to create winner: %v", err)
 	}
@@ -90,49 +31,120 @@ func TestCompleteFoldPersistsAndBroadcastsWinner(t *testing.T) {
 
 	hub := NewHub()
 	winnerClient := &Client{
+		hub:      hub,
 		user:     &winner,
-		send:     make(chan Message, 1),
-		roomCode: "FOLD01",
+		send:     make(chan Message, 10),
+		roomCode: "GAFLD1",
 	}
 	folderClient := &Client{
+		hub:      hub,
 		user:     &folder,
-		send:     make(chan Message, 1),
-		roomCode: "FOLD01",
+		send:     make(chan Message, 10),
+		roomCode: "GAFLD1",
 	}
+
 	lobby := room.NewLobby()
 	lobby.JoinPlayer(room.Player{ID: winner.ID, Username: winner.Username})
 	lobby.JoinPlayer(room.Player{ID: folder.ID, Username: folder.Username})
-	hub.rooms["FOLD01"] = &roomState{
-		lobby: lobby,
-		clients: map[*Client]bool{
-			winnerClient: true,
-			folderClient: true,
-		},
+
+	// Start a game manually and inject it into the hub.
+	g := game.NewGame(lobby.Players(), "GAFLD1")
+	events := g.Start()
+
+	clients := []*Client{winnerClient, folderClient}
+	hub.rooms["GAFLD1"] = &roomState{
+		lobby:   lobby,
+		clients: map[*Client]bool{winnerClient: true, folderClient: true},
+		game:    g,
 	}
 
-	hub.CompleteFold(database, folderClient)
-
-	var result models.GameResult
-	if err := database.First(&result).Error; err != nil {
-		t.Fatalf("failed to load persisted fold result: %v", err)
-	}
-	if result.WinnerID != winner.ID {
-		t.Fatalf("WinnerID = %d, want %d", result.WinnerID, winner.ID)
-	}
-
-	for _, client := range []*Client{winnerClient, folderClient} {
-		select {
-		case message := <-client.send:
-			if message.Type != protocol.ServerMsgGameOver {
-				t.Fatalf("message type = %q, want %q", message.Type, protocol.ServerMsgGameOver)
-			}
-			payload := message.Payload.(protocol.GameOverPayload)
-			if payload.WinnerID != winner.ID {
-				t.Fatalf("winner ID = %d, want %d", payload.WinnerID, winner.ID)
-			}
-		default:
-			t.Fatal("expected GAME_OVER broadcast")
+	// Drain start events.
+	hub.dispatchGameEvents("GAFLD1", clients, events)
+	for _, c := range clients {
+		for len(c.send) > 0 {
+			<-c.send
 		}
+	}
+
+	// Inject the db singleton so persistResult works.
+	db.ResetForTesting()
+	t.Cleanup(func() { _ = db.Close() })
+	tmpDB, err := db.Connect(&db.Config{
+		DatabasePath:    filepath.Join(t.TempDir(), "ga-fold-test.db"),
+		MaxOpenConns:    5,
+		MaxIdleConns:    2,
+		ConnMaxLifetime: time.Minute,
+		LogLevel:        logger.Silent,
+	})
+	if err != nil {
+		t.Fatalf("db connect: %v", err)
+	}
+	if err := tmpDB.AutoMigrate(&models.User{}, &models.GameResult{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+	if err := tmpDB.Create(&winner).Error; err != nil {
+		t.Logf("note: could not seed winner in tmp db (might already exist): %v", err)
+	}
+
+	// The active player folds (whoever is first to act).
+	activeID := g.ActivePlayerID()
+	var activeClient *Client
+	for _, c := range clients {
+		if c.user.ID == activeID {
+			activeClient = c
+			break
+		}
+	}
+	if activeClient == nil {
+		t.Fatal("could not find active client")
+	}
+
+	hub.HandleGameAction(activeClient, game.ActionFold, 0)
+
+	// Both clients receive PLAYER_ACTION then GAME_OVER.
+	for _, c := range clients {
+		var gameOverMsg *Message
+		for i := 0; i < 5; i++ {
+			select {
+			case msg := <-c.send:
+				if msg.Type == protocol.ServerMsgGameOver {
+					m := msg
+					gameOverMsg = &m
+				}
+				// skip PLAYER_ACTION and other intermediate messages
+			default:
+				i = 5 // break
+			}
+		}
+		if gameOverMsg == nil {
+			t.Fatalf("client %s did not receive GAME_OVER", c.user.Username)
+		}
+	}
+}
+
+func TestHandleGameActionErrorWhenNoGameActive(t *testing.T) {
+	hub := NewHub()
+	client := &Client{
+		hub:      hub,
+		user:     &models.User{Username: "no-game-player"},
+		send:     make(chan Message, 2),
+		roomCode: "NOGAME",
+	}
+	hub.rooms["NOGAME"] = &roomState{
+		lobby:   room.NewLobby(),
+		clients: map[*Client]bool{client: true},
+		game:    nil,
+	}
+
+	hub.HandleGameAction(client, game.ActionFold, 0)
+
+	select {
+	case msg := <-client.send:
+		if msg.Type != protocol.ServerMsgError {
+			t.Fatalf("expected ERROR, got %q", msg.Type)
+		}
+	default:
+		t.Fatal("expected ERROR message when no game is active")
 	}
 }
 

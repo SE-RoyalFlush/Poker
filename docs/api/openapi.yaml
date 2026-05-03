@@ -24,6 +24,8 @@ tags:
     description: Basic-auth protected user administration
   - name: WebSocket
     description: Authenticated lobby WebSocket upgrade and message contract
+  - name: Users
+    description: User profile, statistics, and leaderboard
 
 paths:
   /api/health:
@@ -478,6 +480,52 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/users/{id}/stats:
+    get:
+      tags: [Users]
+      summary: Get stats for a user
+      operationId: getUserStats
+      security:
+        - cookieAuth: []
+          csrfToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStatsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/leaderboard:
+    get:
+      tags: [Users]
+      summary: Get top users by wins
+      operationId: getLeaderboard
+      security:
+        - cookieAuth: []
+          csrfToken: []
+      responses:
+        "200":
+          description: Ranked list of top 50 users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /api/random:
     get:
       tags: [System]
@@ -506,6 +554,44 @@ components:
       description: Admin HTTP Basic Auth.
 
   schemas:
+    UserStatsResponse:
+      type: object
+      additionalProperties: false
+      required: [handsPlayed, wins, losses, winRate, totalEarnings]
+      properties:
+        handsPlayed:
+          type: integer
+        wins:
+          type: integer
+        losses:
+          type: integer
+        winRate:
+          type: number
+          format: float
+        totalEarnings:
+          type: integer
+
+    LeaderboardEntry:
+      type: object
+      additionalProperties: false
+      required: [rank, userId, username, handsPlayed, wins, winRate, totalEarnings]
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        handsPlayed:
+          type: integer
+        wins:
+          type: integer
+        winRate:
+          type: number
+          format: float
+        totalEarnings:
+          type: integer
+
     HealthResponse:
       type: object
       additionalProperties: false
